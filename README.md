@@ -1,6 +1,6 @@
-# Lunarr One
+# Lunarr Play
 
-LUNARR One is a modern M3U/Xtream player for Windows. It brings live television,
+Lunarr Play is a modern M3U/Xtream player for Windows. It brings live television,
 movies, series and the programme guide together in a focused desktop app with a
 clean Material 3 interface.
 
@@ -8,7 +8,7 @@ It is designed for quick navigation, large media libraries and comfortable
 everyday use — whether you are switching between live channels, continuing a
 series or looking through your provider's catalogue.
 
-> Lunarr One does not include channels, playlists or media content. You need
+> Lunarr does not include channels, playlists or media content. You need
 > your own M3U playlist or access to an Xtream-compatible provider.
 
 ## Features
@@ -51,14 +51,14 @@ playlists and settings remain available after updating to RC1.
 
 ## Data and Privacy
 
-LUNARR One stores its playlists, settings and playback data locally. Playlist
+Lunarr stores its playlists, settings and playback data locally. Playlist
 files, provider credentials, local databases and diagnostics exports may contain
 private information and should not be published or shared without checking their
 contents first.
 
 ## Building from Source
 
-LUNARR One is built with Flutter. A Windows build requires:
+Lunarr is built with Flutter. A Windows build requires:
 
 - Flutter with Windows desktop support
 - Visual Studio with the Desktop development with C++ workload
