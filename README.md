@@ -1,6 +1,6 @@
-# LUNARR One
+# Lunarr One
 
-LUNARR One is a modern IPTV player for Windows. It brings live television,
+LUNARR One is a modern M3U/Xtream player for Windows. It brings live television,
 movies, series and the programme guide together in a focused desktop app with a
 clean Material 3 interface.
 
@@ -8,7 +8,7 @@ It is designed for quick navigation, large media libraries and comfortable
 everyday use — whether you are switching between live channels, continuing a
 series or looking through your provider's catalogue.
 
-> LUNARR One does not include channels, playlists or media content. You need
+> Lunarr One does not include channels, playlists or media content. You need
 > your own M3U playlist or access to an Xtream-compatible provider.
 
 ## Features
@@ -69,8 +69,6 @@ flutter analyze lib test --no-pub
 flutter test --concurrency=1 --no-pub
 flutter build windows --release
 ```
-
-The release build is written to `build/windows/x64/runner/Release`.
 
 ## License
 
