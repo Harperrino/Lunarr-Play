@@ -72,4 +72,4 @@ flutter build windows --release
 
 ## License
 
-LUNARR One is proprietary software. See [`LICENSE`](LICENSE) for details.
+LUNARR One is available under the [MIT License](LICENSE).
