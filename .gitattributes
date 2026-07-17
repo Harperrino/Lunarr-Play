@@ -1,0 +1,23 @@
+# Keep text files stable across Windows and macOS checkouts.
+* text=auto eol=lf
+
+# Windows command scripts should keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Unix shell scripts must keep LF.
+*.sh text eol=lf
+gradlew text eol=lf
+
+# Binary assets.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.jar binary
+*.mp3 binary
+*.mp4 binary
+*.dll binary
+*.lib binary
+*.pdb binary

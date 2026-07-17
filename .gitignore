@@ -1,0 +1,91 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# Not planned platform targets
+/android/
+/linux/
+/web/
+
+# Local AI/editor tooling
+.codex/
+.agents/
+
+# Private project memory / handoff notes
+opencode.json
+memory.md
+project_notes/
+KNOWN_BUGS.md
+CHANGELOG.md
+planliste.md
+devlog.md
+VERSIONS.md
+docs/SECURITY_HARDENING_IMPLEMENTATION_PLAN.md
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+/test/failures/
+.packages
+
+# Flutter generated platform state (rebuilt by Flutter/Xcode/Gradle)
+**/flutter/ephemeral/
+**/Flutter/ephemeral/
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/flutter_export_environment.sh
+/macos/Flutter/ephemeral/
+/android/local.properties
+
+# User data, local IPTV input, diagnostics exports
+*.db
+*.sqlite
+*.sqlite3
+*.m3u
+*.m3u8
+*.xmltv
+*.epg.xml
+*.env
+*.local
+diagnostics_exports/
+exports/
+dist/
+docs/player-design-concept.html
+release/
+releases/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+.projectmem/events.jsonl
+.projectmem/watch.pid
+.projectmem/watch.log

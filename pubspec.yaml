@@ -1,0 +1,54 @@
+name: m3uxtream_player
+description: "LUNARR One, a Material 3 IPTV player for Windows desktop and future iOS builds, backed by Drift, Riverpod, and media_kit."
+publish_to: 'none'
+version: 0.9.0-rc.1+1
+
+environment:
+  sdk: '>=3.12.2 <4.0.0'
+  flutter: '>=3.44.4'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management & DI (gepinnt — siehe PUBSPEC_POLICY.md)
+  flutter_riverpod: 2.6.1
+
+  # Media Engine
+  media_kit: 1.2.6
+  media_kit_video: 2.0.1
+
+  # Native OS Binaries — exakte Pins, niemals `any`
+  media_kit_libs_windows_video: 1.0.11
+  media_kit_libs_ios_video: 1.1.4
+
+  # Local SQLite Database & Path Utilities
+  drift: 2.34.2
+  sqlite3: 3.4.0
+  path_provider: 2.1.6
+  path: 1.9.1
+
+  # Windows Native Integrations
+  window_manager: 0.5.2
+  flutter_single_instance: 1.7.0
+
+  # UI & Material 3 Design System
+  cached_network_image: 3.4.1
+  shimmer: 3.0.0
+  google_fonts: 8.2.0
+
+  # Data Parsing & Utilities
+  xml: 7.0.1
+  logger: 2.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 6.0.0
+
+  # Code Generation Tools (drift_dev-Version = drift-Version)
+  build_runner: 2.15.1
+  drift_dev: 2.34.4
+
+flutter:
+  uses-material-design: true
