@@ -1,67 +1,67 @@
 # LUNARR One
 
-LUNARR One is a Material 3 IPTV player for Windows desktop. It combines Live
-TV, VOD, series, EPG, local favorites and practical diagnostics in one focused
-desktop application.
+LUNARR One is a modern IPTV player for Windows. It brings live television,
+movies, series and the programme guide together in a focused desktop app with a
+clean Material 3 interface.
+
+It is designed for quick navigation, large media libraries and comfortable
+everyday use — whether you are switching between live channels, continuing a
+series or looking through your provider's catalogue.
 
 > LUNARR One does not include channels, playlists or media content. You need
-> your own IPTV playlist or Xtream-compatible provider access.
+> your own M3U playlist or access to an Xtream-compatible provider.
 
-## Current Version
+## Features
 
-Release candidate: `0.9.0 RC1`
-
-Git tag: `v0.9.0-rc.1`
-
-## Supported Platforms
-
-Currently supported:
-
-- Windows desktop
-
-Planned:
-
-- iOS
-
-Android, Linux and Web are not currently planned.
-
-## Highlights
-
-- Live TV playback with channel zapping
-- Responsive Material 3 desktop interface
-- High-contrast, reduced-motion and large-text support
-- VOD and series catalogues with resume and Watch Later
-- EPG grid, compact agenda and current-program display
-- Playlist management with favorites, hidden and pinned categories
-- Audio-track selection and optional stereo compatibility mode
-- Configurable live startup buffer
-- Stream fallback and redacted diagnostics tools
-- Fast catalogue search and lazy rendering for large libraries
+- Live TV playback with quick channel switching and fullscreen controls
+- Support for M3U playlists and Xtream-compatible providers
+- A shared media library for movies, series and Watch Later
+- Playback progress and resume support for VOD and series
+- EPG grid, compact agenda and current-programme information
+- Favorites and controls for hiding or pinning categories
+- Fast search and efficient browsing for large catalogues
+- Audio-track selection and an optional stereo compatibility mode
+- Configurable startup buffering and stream fallback support
+- Material 3 design with adjustable appearance settings
+- High-contrast, reduced-motion and large-text options
+- Built-in diagnostics with sensitive information redacted from exports
 
 ## Installation
 
-Download the Windows portable ZIP from GitHub Releases:
+The current Windows release is available as a portable ZIP through GitHub
+Releases.
 
-1. Extract the complete ZIP to a directory of your choice.
-2. Keep the included DLLs and `data` directory beside the executable.
+1. Download and extract the complete ZIP.
+2. Keep the included DLL files and the `data` directory beside the executable.
 3. Start `lunarr_one.exe`.
 
-No installer or separate dependency download is required. Windows may show a
-SmartScreen warning because the release executable is not code-signed.
+No installer or separate runtime download is required. Windows may display a
+SmartScreen warning because the application is not currently code-signed.
 
-### Updating from Beta 5
+## Current Status
 
-RC1 continues to use the existing local `v2` database. Playlists and settings
-from Beta 5 remain compatible. The legacy Beta-4 database is still left
-untouched and is not imported automatically.
+The current release candidate is **LUNARR One 0.9.0 RC1**
+(`v0.9.0-rc.1`).
+
+Windows desktop is the currently supported platform. An iOS version is planned.
+Android, Linux and Web versions are not currently planned.
+
+Existing Beta 5 installations can continue using their local `v2` database, so
+playlists and settings remain available after updating to RC1.
+
+## Data and Privacy
+
+LUNARR One stores its playlists, settings and playback data locally. Playlist
+files, provider credentials, local databases and diagnostics exports may contain
+private information and should not be published or shared without checking their
+contents first.
 
 ## Building from Source
 
-Requirements:
+LUNARR One is built with Flutter. A Windows build requires:
 
-- Flutter SDK with Windows desktop support
-- Visual Studio Windows desktop build tools
-- Xcode on macOS for future iOS builds
+- Flutter with Windows desktop support
+- Visual Studio with the Desktop development with C++ workload
 
 ```powershell
 flutter pub get
@@ -70,16 +70,8 @@ flutter test --concurrency=1 --no-pub
 flutter build windows --release
 ```
 
-The Windows build is generated under
-`build/windows/x64/runner/Release`.
-
-## Privacy
-
-LUNARR One stores user data locally. Never commit or share personal playlists,
-provider credentials, local databases, diagnostics exports or release ZIPs.
-Release builds are produced from a neutral build path and scanned for private
-paths and data before publication.
+The release build is written to `build/windows/x64/runner/Release`.
 
 ## License
 
-Proprietary. See `LICENSE`.
+LUNARR One is proprietary software. See [`LICENSE`](LICENSE) for details.
