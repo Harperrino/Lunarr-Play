@@ -70,6 +70,12 @@ flutter test --concurrency=1 --no-pub
 flutter build windows --release
 ```
 
+## Contributors
+
+- **Harperrino** — creator and maintainer
+- **Codex by OpenAI** — AI-assisted engineering, refactoring, UI quality
+  assurance, testing, release verification and documentation
+
 ## License
 
 LUNARR One is available under the [MIT License](LICENSE).
