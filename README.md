@@ -73,8 +73,9 @@ flutter build windows --release
 ## Contributors
 
 - **Harperrino** — creator and maintainer
-- **Codex by OpenAI** — AI-assisted engineering, refactoring, UI quality
-  assurance, testing, release verification and documentation
+- **Codex by OpenAI** ([@codex](https://github.com/codex)) — AI-assisted
+  engineering, refactoring, UI quality assurance, testing, release
+  verification and documentation
 
 ## License
 
