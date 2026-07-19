@@ -1,5 +1,6 @@
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/series_resume_state.dart';
+import 'package:m3uxtream_player/core/models/channel_sort_mode.dart';
 import 'package:m3uxtream_player/core/repository/app_state_stores.dart';
 
 export 'package:m3uxtream_player/core/models/series_resume_state.dart';
@@ -18,6 +19,7 @@ class AppStateRepository {
     _playlistVisibility = PlaylistVisibilityStateStore(_values);
     _epgReminder = EpgReminderStateStore(_values);
     _seriesResume = SeriesResumeStateStore(_values);
+    _catalogue = CatalogueStateStore(_values);
   }
 
   final AppStateValueStore _values;
@@ -27,6 +29,7 @@ class AppStateRepository {
   late final PlaylistVisibilityStateStore _playlistVisibility;
   late final EpgReminderStateStore _epgReminder;
   late final SeriesResumeStateStore _seriesResume;
+  late final CatalogueStateStore _catalogue;
 
   static String epgReminderDismissedKey(int playlistId) =>
       AppStateKeys.epgReminderDismissed(playlistId);
@@ -111,6 +114,11 @@ class AppStateRepository {
       _playlistVisibility.getPinnedGroups(playlistId);
   Future<void> setPinnedGroups(int playlistId, List<String> pinned) =>
       _playlistVisibility.setPinnedGroups(playlistId, pinned);
+
+  Future<ChannelSortMode> getChannelSortMode(int playlistId) =>
+      _catalogue.getChannelSortMode(playlistId);
+  Future<void> setChannelSortMode(int playlistId, ChannelSortMode mode) =>
+      _catalogue.setChannelSortMode(playlistId, mode);
 
   Future<bool> isEpgReminderDismissed(int playlistId) =>
       _epgReminder.isDismissed(playlistId);

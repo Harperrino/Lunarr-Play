@@ -7,6 +7,7 @@ import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
 
 Channel _channel({int id = 1, String name = 'RTL HD', String? tvgId}) {
   return Channel(
+    providerOrder: 0,
     id: id,
     playlistId: 1,
     streamId: null,

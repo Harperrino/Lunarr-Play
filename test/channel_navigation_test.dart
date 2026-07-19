@@ -4,6 +4,7 @@ import 'package:m3uxtream_player/core/services/channel_navigation.dart';
 
 Channel _channel(int id, String name) {
   return Channel(
+    providerOrder: 0,
     id: id,
     playlistId: 1,
     name: name,

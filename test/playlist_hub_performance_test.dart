@@ -48,6 +48,7 @@ void main() {
     final channels = List<Channel>.generate(
       300,
       (index) => Channel(
+        providerOrder: 0,
         id: index + 1,
         playlistId: 1,
         name: 'Channel $index',
@@ -114,6 +115,7 @@ final _playlist = Playlist(
 
 Channel _channel(int id, String groupName, String channelType) {
   return Channel(
+    providerOrder: 0,
     id: id,
     playlistId: 1,
     name: 'Channel $id',

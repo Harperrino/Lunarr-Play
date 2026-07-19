@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/core/models/series_resume_state.dart';
+import 'package:m3uxtream_player/core/models/channel_sort_mode.dart';
 
 class AppStateKeys {
   const AppStateKeys._();
@@ -15,6 +16,8 @@ class AppStateKeys {
       'series_resume_${playlistId}_$seriesStreamId';
   static String hiddenGroups(int playlistId) => 'hidden_groups_$playlistId';
   static String pinnedGroups(int playlistId) => 'pinned_groups_$playlistId';
+  static String channelSortMode(int playlistId) =>
+      'channel_sort_mode_$playlistId';
 
   static const playerBufferSeconds = 'player_buffer_seconds';
   static const vodPreBufferEnabled = 'vod_pre_buffer_enabled';
@@ -392,6 +395,34 @@ class PlaylistVisibilityStateStore {
       await _values.write(key, value);
     } catch (error, stackTrace) {
       AppLogger.error('Failed writing $label', error, stackTrace);
+      rethrow;
+    }
+  }
+}
+
+class CatalogueStateStore {
+  CatalogueStateStore(this._values);
+  final AppStateValueStore _values;
+
+  Future<ChannelSortMode> getChannelSortMode(int playlistId) async {
+    try {
+      return channelSortModeFromStorage(
+        await _values.read(AppStateKeys.channelSortMode(playlistId)),
+      );
+    } catch (error, stackTrace) {
+      AppLogger.error('Failed reading channel sort mode', error, stackTrace);
+      return ChannelSortMode.providerDefault;
+    }
+  }
+
+  Future<void> setChannelSortMode(int playlistId, ChannelSortMode mode) async {
+    try {
+      await _values.write(
+        AppStateKeys.channelSortMode(playlistId),
+        mode.storageValue,
+      );
+    } catch (error, stackTrace) {
+      AppLogger.error('Failed writing channel sort mode', error, stackTrace);
       rethrow;
     }
   }

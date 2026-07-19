@@ -10,6 +10,7 @@ import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 List<Channel> _channels(String type) => List<Channel>.generate(
   30,
   (index) => Channel(
+    providerOrder: 0,
     id:
         index +
         (type == 'vod'

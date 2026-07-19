@@ -27,6 +27,7 @@ EpgEntry _entry() => EpgEntry(
 );
 
 Channel _channel() => const Channel(
+  providerOrder: 0,
   id: 1,
   playlistId: 1,
   streamId: null,

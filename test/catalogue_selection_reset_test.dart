@@ -9,6 +9,7 @@ import 'package:m3uxtream_player/features/xtream/providers/series_providers.dart
 import 'package:m3uxtream_player/features/xtream/providers/vod_providers.dart';
 
 const _vodA = Channel(
+  providerOrder: 0,
   id: 101,
   playlistId: 1,
   streamId: 'vod-a',
@@ -21,6 +22,7 @@ const _vodA = Channel(
 );
 
 const _seriesA = Channel(
+  providerOrder: 0,
   id: 201,
   playlistId: 1,
   streamId: 'series-a',

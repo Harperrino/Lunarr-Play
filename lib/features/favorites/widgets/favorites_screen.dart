@@ -65,10 +65,15 @@ class FavoritesScreen extends ConsumerWidget {
           return FavoriteChannelList(
             channels: favorites,
             selectedChannelId: selectedChannel?.id,
-            isFavoriteActionBusy: favoriteAction.isLoading,
+            isFavoriteActionBusyFor: (channel) =>
+                favoriteAction.isBusy(channel.id),
+            isFavoriteFor: favoriteAction.isFavorite,
             onToggleFavorite: (channel) => ref
                 .read(channelFavoriteControllerProvider.notifier)
-                .toggle(channel.id),
+                .toggle(
+                  channel.id,
+                  currentFavorite: favoriteAction.isFavorite(channel),
+                ),
             onActivate: (channel) => activateFavoriteLiveChannel(
               channel: channel,
               onSelectChannel: (selected) =>

@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/services/live_layout_geometry.dart';
 import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/pinned_groups_providers.dart';
+import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/shared/widgets/category_sidebar.dart';
 
 /// Live-tab category panel — reads channel groups from Riverpod.
@@ -22,6 +25,7 @@ class LiveCategorySidebar extends ConsumerWidget {
     final selected = ref.watch(selectedGroupFilterProvider);
     final pinnedGroups =
         ref.watch(pinnedGroupsProvider).valueOrNull ?? const <String>[];
+    final selectedPlaylistId = ref.watch(selectedPlaylistIdProvider);
 
     return CategorySidebar(
       groups: groups,
@@ -29,6 +33,15 @@ class LiveCategorySidebar extends ConsumerWidget {
       onSelected: (group) =>
           ref.read(selectedGroupFilterProvider.notifier).state = group,
       pinnedGroups: pinnedGroups,
+      onPinChanged: selectedPlaylistId == null
+          ? null
+          : (groupName, pinned) {
+              unawaited(
+                ref
+                    .read(pinnedGroupsProvider.notifier)
+                    .toggleGroup(selectedPlaylistId, groupName, pinned),
+              );
+            },
       width: width,
       headerActions: headerActions,
     );

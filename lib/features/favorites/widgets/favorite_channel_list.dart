@@ -13,6 +13,8 @@ class FavoriteChannelList extends StatelessWidget {
     required this.onActivate,
     required this.onToggleFavorite,
     this.isFavoriteActionBusy = false,
+    this.isFavoriteActionBusyFor,
+    this.isFavoriteFor,
   });
 
   final List<Channel> channels;
@@ -20,6 +22,8 @@ class FavoriteChannelList extends StatelessWidget {
   final ValueChanged<Channel> onActivate;
   final ValueChanged<Channel> onToggleFavorite;
   final bool isFavoriteActionBusy;
+  final bool Function(Channel channel)? isFavoriteActionBusyFor;
+  final bool Function(Channel channel)? isFavoriteFor;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +43,9 @@ class FavoriteChannelList extends StatelessWidget {
             isSelected: channel.id == selectedChannelId,
             onActivate: () => onActivate(channel),
             onToggleFavorite: () => onToggleFavorite(channel),
-            isFavoriteActionBusy: isFavoriteActionBusy,
+            isFavoriteActionBusy:
+                isFavoriteActionBusyFor?.call(channel) ?? isFavoriteActionBusy,
+            isFavorite: isFavoriteFor?.call(channel) ?? channel.isFavorite,
           );
         },
       ),
@@ -55,6 +61,7 @@ class FavoriteChannelTile extends StatelessWidget {
     required this.onActivate,
     required this.onToggleFavorite,
     required this.isFavoriteActionBusy,
+    this.isFavorite,
   });
 
   final Channel channel;
@@ -62,6 +69,7 @@ class FavoriteChannelTile extends StatelessWidget {
   final VoidCallback onActivate;
   final VoidCallback onToggleFavorite;
   final bool isFavoriteActionBusy;
+  final bool? isFavorite;
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +100,7 @@ class FavoriteChannelTile extends StatelessWidget {
         children: [
           ChannelFavoriteButton(
             channelId: channel.id,
-            isFavorite: channel.isFavorite,
+            isFavorite: isFavorite ?? channel.isFavorite,
             isBusy: isFavoriteActionBusy,
             onToggle: onToggleFavorite,
           ),

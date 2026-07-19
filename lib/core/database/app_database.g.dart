@@ -707,6 +707,29 @@ class $ChannelsTable extends Channels with TableInfo<$ChannelsTable, Channel> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _providerOrderMeta = const VerificationMeta(
+    'providerOrder',
+  );
+  @override
+  late final GeneratedColumn<int> providerOrder = GeneratedColumn<int>(
+    'provider_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _channelNumberMeta = const VerificationMeta(
+    'channelNumber',
+  );
+  @override
+  late final GeneratedColumn<String> channelNumber = GeneratedColumn<String>(
+    'channel_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isFavoriteMeta = const VerificationMeta(
     'isFavorite',
   );
@@ -791,6 +814,8 @@ class $ChannelsTable extends Channels with TableInfo<$ChannelsTable, Channel> {
     groupName,
     tvgId,
     streamUrl,
+    providerOrder,
+    channelNumber,
     isFavorite,
     isWatchLater,
     channelType,
@@ -860,6 +885,24 @@ class $ChannelsTable extends Channels with TableInfo<$ChannelsTable, Channel> {
       );
     } else if (isInserting) {
       context.missing(_streamUrlMeta);
+    }
+    if (data.containsKey('provider_order')) {
+      context.handle(
+        _providerOrderMeta,
+        providerOrder.isAcceptableOrUnknown(
+          data['provider_order']!,
+          _providerOrderMeta,
+        ),
+      );
+    }
+    if (data.containsKey('channel_number')) {
+      context.handle(
+        _channelNumberMeta,
+        channelNumber.isAcceptableOrUnknown(
+          data['channel_number']!,
+          _channelNumberMeta,
+        ),
+      );
     }
     if (data.containsKey('is_favorite')) {
       context.handle(
@@ -952,6 +995,14 @@ class $ChannelsTable extends Channels with TableInfo<$ChannelsTable, Channel> {
         DriftSqlType.string,
         data['${effectivePrefix}stream_url'],
       )!,
+      providerOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}provider_order'],
+      )!,
+      channelNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}channel_number'],
+      ),
       isFavorite: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_favorite'],
@@ -994,6 +1045,8 @@ class Channel extends DataClass implements Insertable<Channel> {
   final String? groupName;
   final String? tvgId;
   final String streamUrl;
+  final int providerOrder;
+  final String? channelNumber;
   final bool isFavorite;
   final bool isWatchLater;
   final String channelType;
@@ -1009,6 +1062,8 @@ class Channel extends DataClass implements Insertable<Channel> {
     this.groupName,
     this.tvgId,
     required this.streamUrl,
+    required this.providerOrder,
+    this.channelNumber,
     required this.isFavorite,
     required this.isWatchLater,
     required this.channelType,
@@ -1035,6 +1090,10 @@ class Channel extends DataClass implements Insertable<Channel> {
       map['tvg_id'] = Variable<String>(tvgId);
     }
     map['stream_url'] = Variable<String>(streamUrl);
+    map['provider_order'] = Variable<int>(providerOrder);
+    if (!nullToAbsent || channelNumber != null) {
+      map['channel_number'] = Variable<String>(channelNumber);
+    }
     map['is_favorite'] = Variable<bool>(isFavorite);
     map['is_watch_later'] = Variable<bool>(isWatchLater);
     map['channel_type'] = Variable<String>(channelType);
@@ -1066,6 +1125,10 @@ class Channel extends DataClass implements Insertable<Channel> {
           ? const Value.absent()
           : Value(tvgId),
       streamUrl: Value(streamUrl),
+      providerOrder: Value(providerOrder),
+      channelNumber: channelNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(channelNumber),
       isFavorite: Value(isFavorite),
       isWatchLater: Value(isWatchLater),
       channelType: Value(channelType),
@@ -1095,6 +1158,8 @@ class Channel extends DataClass implements Insertable<Channel> {
       groupName: serializer.fromJson<String?>(json['groupName']),
       tvgId: serializer.fromJson<String?>(json['tvgId']),
       streamUrl: serializer.fromJson<String>(json['streamUrl']),
+      providerOrder: serializer.fromJson<int>(json['providerOrder']),
+      channelNumber: serializer.fromJson<String?>(json['channelNumber']),
       isFavorite: serializer.fromJson<bool>(json['isFavorite']),
       isWatchLater: serializer.fromJson<bool>(json['isWatchLater']),
       channelType: serializer.fromJson<String>(json['channelType']),
@@ -1117,6 +1182,8 @@ class Channel extends DataClass implements Insertable<Channel> {
       'groupName': serializer.toJson<String?>(groupName),
       'tvgId': serializer.toJson<String?>(tvgId),
       'streamUrl': serializer.toJson<String>(streamUrl),
+      'providerOrder': serializer.toJson<int>(providerOrder),
+      'channelNumber': serializer.toJson<String?>(channelNumber),
       'isFavorite': serializer.toJson<bool>(isFavorite),
       'isWatchLater': serializer.toJson<bool>(isWatchLater),
       'channelType': serializer.toJson<String>(channelType),
@@ -1135,6 +1202,8 @@ class Channel extends DataClass implements Insertable<Channel> {
     Value<String?> groupName = const Value.absent(),
     Value<String?> tvgId = const Value.absent(),
     String? streamUrl,
+    int? providerOrder,
+    Value<String?> channelNumber = const Value.absent(),
     bool? isFavorite,
     bool? isWatchLater,
     String? channelType,
@@ -1150,6 +1219,10 @@ class Channel extends DataClass implements Insertable<Channel> {
     groupName: groupName.present ? groupName.value : this.groupName,
     tvgId: tvgId.present ? tvgId.value : this.tvgId,
     streamUrl: streamUrl ?? this.streamUrl,
+    providerOrder: providerOrder ?? this.providerOrder,
+    channelNumber: channelNumber.present
+        ? channelNumber.value
+        : this.channelNumber,
     isFavorite: isFavorite ?? this.isFavorite,
     isWatchLater: isWatchLater ?? this.isWatchLater,
     channelType: channelType ?? this.channelType,
@@ -1173,6 +1246,12 @@ class Channel extends DataClass implements Insertable<Channel> {
       groupName: data.groupName.present ? data.groupName.value : this.groupName,
       tvgId: data.tvgId.present ? data.tvgId.value : this.tvgId,
       streamUrl: data.streamUrl.present ? data.streamUrl.value : this.streamUrl,
+      providerOrder: data.providerOrder.present
+          ? data.providerOrder.value
+          : this.providerOrder,
+      channelNumber: data.channelNumber.present
+          ? data.channelNumber.value
+          : this.channelNumber,
       isFavorite: data.isFavorite.present
           ? data.isFavorite.value
           : this.isFavorite,
@@ -1203,6 +1282,8 @@ class Channel extends DataClass implements Insertable<Channel> {
           ..write('groupName: $groupName, ')
           ..write('tvgId: $tvgId, ')
           ..write('streamUrl: $streamUrl, ')
+          ..write('providerOrder: $providerOrder, ')
+          ..write('channelNumber: $channelNumber, ')
           ..write('isFavorite: $isFavorite, ')
           ..write('isWatchLater: $isWatchLater, ')
           ..write('channelType: $channelType, ')
@@ -1223,6 +1304,8 @@ class Channel extends DataClass implements Insertable<Channel> {
     groupName,
     tvgId,
     streamUrl,
+    providerOrder,
+    channelNumber,
     isFavorite,
     isWatchLater,
     channelType,
@@ -1242,6 +1325,8 @@ class Channel extends DataClass implements Insertable<Channel> {
           other.groupName == this.groupName &&
           other.tvgId == this.tvgId &&
           other.streamUrl == this.streamUrl &&
+          other.providerOrder == this.providerOrder &&
+          other.channelNumber == this.channelNumber &&
           other.isFavorite == this.isFavorite &&
           other.isWatchLater == this.isWatchLater &&
           other.channelType == this.channelType &&
@@ -1259,6 +1344,8 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
   final Value<String?> groupName;
   final Value<String?> tvgId;
   final Value<String> streamUrl;
+  final Value<int> providerOrder;
+  final Value<String?> channelNumber;
   final Value<bool> isFavorite;
   final Value<bool> isWatchLater;
   final Value<String> channelType;
@@ -1274,6 +1361,8 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
     this.groupName = const Value.absent(),
     this.tvgId = const Value.absent(),
     this.streamUrl = const Value.absent(),
+    this.providerOrder = const Value.absent(),
+    this.channelNumber = const Value.absent(),
     this.isFavorite = const Value.absent(),
     this.isWatchLater = const Value.absent(),
     this.channelType = const Value.absent(),
@@ -1290,6 +1379,8 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
     this.groupName = const Value.absent(),
     this.tvgId = const Value.absent(),
     required String streamUrl,
+    this.providerOrder = const Value.absent(),
+    this.channelNumber = const Value.absent(),
     this.isFavorite = const Value.absent(),
     this.isWatchLater = const Value.absent(),
     required String channelType,
@@ -1309,6 +1400,8 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
     Expression<String>? groupName,
     Expression<String>? tvgId,
     Expression<String>? streamUrl,
+    Expression<int>? providerOrder,
+    Expression<String>? channelNumber,
     Expression<bool>? isFavorite,
     Expression<bool>? isWatchLater,
     Expression<String>? channelType,
@@ -1325,6 +1418,8 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
       if (groupName != null) 'group_name': groupName,
       if (tvgId != null) 'tvg_id': tvgId,
       if (streamUrl != null) 'stream_url': streamUrl,
+      if (providerOrder != null) 'provider_order': providerOrder,
+      if (channelNumber != null) 'channel_number': channelNumber,
       if (isFavorite != null) 'is_favorite': isFavorite,
       if (isWatchLater != null) 'is_watch_later': isWatchLater,
       if (channelType != null) 'channel_type': channelType,
@@ -1344,6 +1439,8 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
     Value<String?>? groupName,
     Value<String?>? tvgId,
     Value<String>? streamUrl,
+    Value<int>? providerOrder,
+    Value<String?>? channelNumber,
     Value<bool>? isFavorite,
     Value<bool>? isWatchLater,
     Value<String>? channelType,
@@ -1360,6 +1457,8 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
       groupName: groupName ?? this.groupName,
       tvgId: tvgId ?? this.tvgId,
       streamUrl: streamUrl ?? this.streamUrl,
+      providerOrder: providerOrder ?? this.providerOrder,
+      channelNumber: channelNumber ?? this.channelNumber,
       isFavorite: isFavorite ?? this.isFavorite,
       isWatchLater: isWatchLater ?? this.isWatchLater,
       channelType: channelType ?? this.channelType,
@@ -1396,6 +1495,12 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
     if (streamUrl.present) {
       map['stream_url'] = Variable<String>(streamUrl.value);
     }
+    if (providerOrder.present) {
+      map['provider_order'] = Variable<int>(providerOrder.value);
+    }
+    if (channelNumber.present) {
+      map['channel_number'] = Variable<String>(channelNumber.value);
+    }
     if (isFavorite.present) {
       map['is_favorite'] = Variable<bool>(isFavorite.value);
     }
@@ -1428,6 +1533,8 @@ class ChannelsCompanion extends UpdateCompanion<Channel> {
           ..write('groupName: $groupName, ')
           ..write('tvgId: $tvgId, ')
           ..write('streamUrl: $streamUrl, ')
+          ..write('providerOrder: $providerOrder, ')
+          ..write('channelNumber: $channelNumber, ')
           ..write('isFavorite: $isFavorite, ')
           ..write('isWatchLater: $isWatchLater, ')
           ..write('channelType: $channelType, ')
@@ -2716,6 +2823,8 @@ typedef $$ChannelsTableCreateCompanionBuilder =
       Value<String?> groupName,
       Value<String?> tvgId,
       required String streamUrl,
+      Value<int> providerOrder,
+      Value<String?> channelNumber,
       Value<bool> isFavorite,
       Value<bool> isWatchLater,
       required String channelType,
@@ -2733,6 +2842,8 @@ typedef $$ChannelsTableUpdateCompanionBuilder =
       Value<String?> groupName,
       Value<String?> tvgId,
       Value<String> streamUrl,
+      Value<int> providerOrder,
+      Value<String?> channelNumber,
       Value<bool> isFavorite,
       Value<bool> isWatchLater,
       Value<String> channelType,
@@ -2804,6 +2915,16 @@ class $$ChannelsTableFilterComposer
 
   ColumnFilters<String> get streamUrl => $composableBuilder(
     column: $table.streamUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get providerOrder => $composableBuilder(
+    column: $table.providerOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get channelNumber => $composableBuilder(
+    column: $table.channelNumber,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2905,6 +3026,16 @@ class $$ChannelsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get providerOrder => $composableBuilder(
+    column: $table.providerOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get channelNumber => $composableBuilder(
+    column: $table.channelNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isFavorite => $composableBuilder(
     column: $table.isFavorite,
     builder: (column) => ColumnOrderings(column),
@@ -2988,6 +3119,16 @@ class $$ChannelsTableAnnotationComposer
 
   GeneratedColumn<String> get streamUrl =>
       $composableBuilder(column: $table.streamUrl, builder: (column) => column);
+
+  GeneratedColumn<int> get providerOrder => $composableBuilder(
+    column: $table.providerOrder,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get channelNumber => $composableBuilder(
+    column: $table.channelNumber,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isFavorite => $composableBuilder(
     column: $table.isFavorite,
@@ -3077,6 +3218,8 @@ class $$ChannelsTableTableManager
                 Value<String?> groupName = const Value.absent(),
                 Value<String?> tvgId = const Value.absent(),
                 Value<String> streamUrl = const Value.absent(),
+                Value<int> providerOrder = const Value.absent(),
+                Value<String?> channelNumber = const Value.absent(),
                 Value<bool> isFavorite = const Value.absent(),
                 Value<bool> isWatchLater = const Value.absent(),
                 Value<String> channelType = const Value.absent(),
@@ -3092,6 +3235,8 @@ class $$ChannelsTableTableManager
                 groupName: groupName,
                 tvgId: tvgId,
                 streamUrl: streamUrl,
+                providerOrder: providerOrder,
+                channelNumber: channelNumber,
                 isFavorite: isFavorite,
                 isWatchLater: isWatchLater,
                 channelType: channelType,
@@ -3109,6 +3254,8 @@ class $$ChannelsTableTableManager
                 Value<String?> groupName = const Value.absent(),
                 Value<String?> tvgId = const Value.absent(),
                 required String streamUrl,
+                Value<int> providerOrder = const Value.absent(),
+                Value<String?> channelNumber = const Value.absent(),
                 Value<bool> isFavorite = const Value.absent(),
                 Value<bool> isWatchLater = const Value.absent(),
                 required String channelType,
@@ -3124,6 +3271,8 @@ class $$ChannelsTableTableManager
                 groupName: groupName,
                 tvgId: tvgId,
                 streamUrl: streamUrl,
+                providerOrder: providerOrder,
+                channelNumber: channelNumber,
                 isFavorite: isFavorite,
                 isWatchLater: isWatchLater,
                 channelType: channelType,

@@ -169,6 +169,7 @@ Future<void> _pumpGrid(WidgetTester tester, ProviderContainer container) async {
 EpgGridRowData _row(DateTime windowStart, DateTime windowEnd) {
   return EpgGridRowData(
     channel: const Channel(
+      providerOrder: 0,
       id: 1,
       playlistId: 1,
       streamId: null,

@@ -12,6 +12,8 @@ class ParsedChannel {
   final String? groupName;
   final String channelType; // 'live', 'vod', 'series'
   final String? streamId; // Optional identifier for Xtream Codes
+  final int providerOrder;
+  final String? channelNumber;
 
   const ParsedChannel({
     required this.name,
@@ -22,6 +24,8 @@ class ParsedChannel {
     this.groupName,
     required this.channelType,
     this.streamId,
+    this.providerOrder = 0,
+    this.channelNumber,
   });
 
   @override
@@ -117,6 +121,7 @@ class M3uParser {
               currentExtInfLine,
               line,
               currentExtGrp,
+              channels.length,
             );
             if (channel != null) {
               channels.add(channel);
@@ -147,6 +152,7 @@ class M3uParser {
     String extInfLine,
     String url,
     String? extGrpGroup,
+    int providerOrder,
   ) {
     if (url.isEmpty) return null;
 
@@ -154,6 +160,11 @@ class M3uParser {
     final tvgId = _extractAttribute(extInfLine, 'tvg-id');
     final tvgName = _extractAttribute(extInfLine, 'tvg-name');
     final tvgLogo = _extractAttribute(extInfLine, 'tvg-logo');
+    final channelNumber = _firstNonEmptyAttribute(extInfLine, const [
+      'tvg-chno',
+      'channel-number',
+      'ch-number',
+    ]);
 
     // Group name extraction (group-title attribute takes precedence over #EXTGRP)
     var groupName = _extractAttribute(extInfLine, 'group-title') ?? extGrpGroup;
@@ -179,7 +190,17 @@ class M3uParser {
       tvgLogo: tvgLogo,
       groupName: groupName,
       channelType: channelType,
+      providerOrder: providerOrder,
+      channelNumber: channelNumber,
     );
+  }
+
+  static String? _firstNonEmptyAttribute(String line, List<String> keys) {
+    for (final key in keys) {
+      final value = _extractAttribute(line, key)?.trim();
+      if (value != null && value.isNotEmpty) return value;
+    }
+    return null;
   }
 
   /// Robustly extracts an attribute value from the `#EXTINF` line using RegEx.

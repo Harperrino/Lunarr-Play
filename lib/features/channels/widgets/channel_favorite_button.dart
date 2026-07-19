@@ -33,6 +33,12 @@ class ChannelFavoriteButton extends StatelessWidget {
       backgroundColor: isFavorite
           ? colorScheme.tertiaryContainer
           : colorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: isFavorite
+            ? BorderSide.none
+            : BorderSide(color: colorScheme.outlineVariant),
+      ),
       tooltip: label,
       semanticLabel: label,
       toggled: isFavorite,

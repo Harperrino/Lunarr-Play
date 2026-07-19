@@ -173,6 +173,7 @@ final _playlist = Playlist(
 );
 
 const _channel = Channel(
+  providerOrder: 0,
   id: 1,
   playlistId: 1,
   streamId: null,

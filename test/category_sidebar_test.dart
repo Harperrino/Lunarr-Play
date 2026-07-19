@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
@@ -145,6 +146,85 @@ void main() {
 
     expect(find.text('All'), findsOneWidget);
     expect(find.byIcon(Icons.push_pin_rounded), findsOneWidget);
+  });
+
+  testWidgets('pin action does not activate the category row', (tester) async {
+    final selectedGroups = <String>[];
+    final pinChanges = <(String, bool)>[];
+
+    await tester.pumpWidget(
+      _wrap(
+        CategorySidebar(
+          groups: const ['Alpha', 'Beta'],
+          selectedGroup: 'All',
+          onSelected: selectedGroups.add,
+          onPinChanged: (group, pinned) => pinChanges.add((group, pinned)),
+        ),
+      ),
+    );
+
+    final alphaRow = find.ancestor(
+      of: find.text('Alpha'),
+      matching: find.byType(M3NavigationItem),
+    );
+    final alphaPin = find.descendant(
+      of: alphaRow,
+      matching: find.byTooltip('Pin category'),
+    );
+    expect(alphaPin, findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.ancestor(
+          of: find.text('All'),
+          matching: find.byType(M3NavigationItem),
+        ),
+        matching: find.byTooltip('Pin category'),
+      ),
+      findsNothing,
+    );
+
+    await tester.tap(alphaPin);
+    await tester.pump();
+
+    expect(pinChanges, [('Alpha', true)]);
+    expect(selectedGroups, isEmpty);
+  });
+
+  testWidgets('category context menu offers pin and unpin actions', (
+    tester,
+  ) async {
+    final pinChanges = <(String, bool)>[];
+    await tester.pumpWidget(
+      _wrap(
+        CategorySidebar(
+          groups: const ['Alpha', 'Beta'],
+          selectedGroup: 'Alpha',
+          pinnedGroups: const ['Beta'],
+          onSelected: (_) {},
+          onPinChanged: (group, pinned) => pinChanges.add((group, pinned)),
+        ),
+      ),
+    );
+
+    await tester.tapAt(
+      tester.getCenter(find.text('Alpha')),
+      buttons: kSecondaryButton,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Pin category'), findsOneWidget);
+    await tester.tap(find.text('Pin category'));
+    await tester.pumpAndSettle();
+    expect(pinChanges, [('Alpha', true)]);
+
+    await tester.tapAt(
+      tester.getCenter(find.text('Beta')),
+      buttons: kSecondaryButton,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Unpin category'), findsOneWidget);
+    await tester.tap(find.text('Unpin category'));
+    await tester.pumpAndSettle();
+    expect(pinChanges, [('Alpha', true), ('Beta', false)]);
   });
 
   testWidgets('category list owns one scrollbar on desktop', (tester) async {

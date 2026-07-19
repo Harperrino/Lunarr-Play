@@ -14,6 +14,7 @@ import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 
 const _favorite = Channel(
+  providerOrder: 0,
   id: 71,
   playlistId: 1,
   name: 'Expressiver Lieblingssender',
@@ -163,6 +164,7 @@ void main() {
             (ref) => ChannelFavoriteController((_) async {
               channels.add(const <Channel>[
                 Channel(
+                  providerOrder: 0,
                   id: 71,
                   playlistId: 1,
                   name: 'Expressiver Lieblingssender',

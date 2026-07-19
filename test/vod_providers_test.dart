@@ -5,6 +5,7 @@ import 'package:m3uxtream_player/features/xtream/providers/vod_providers.dart';
 
 Channel _vodChannel({int id = 1, String name = 'Movie', String? groupName}) {
   return Channel(
+    providerOrder: 0,
     id: id,
     playlistId: 1,
     streamId: '100',

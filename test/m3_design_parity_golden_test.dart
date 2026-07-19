@@ -35,6 +35,7 @@ const _overlayHostKey = ValueKey('m3-overlay-host');
 const _d10RealConsumersBoundaryKey = ValueKey('d10-real-consumers-boundary');
 
 const _d10FavoriteChannel = Channel(
+  providerOrder: 0,
   id: 301,
   playlistId: 1,
   name: 'Aurora Documentary',

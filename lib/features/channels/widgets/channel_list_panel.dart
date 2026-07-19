@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/features/channels/providers/channel_sort_providers.dart';
 import 'package:m3uxtream_player/features/channels/widgets/channel_favorite_button.dart';
 import 'package:m3uxtream_player/features/diagnostics/providers/ui_logs_providers.dart';
 import 'package:m3uxtream_player/features/epg/providers/epg_channel_providers.dart';
@@ -46,7 +47,7 @@ class ChannelListPanel extends ConsumerWidget {
     final liveChannels = channelsAsync.valueOrNull ?? const <Channel>[];
     final syncAsync = ref.watch(playlistSyncNotifierProvider);
     final epgSyncAsync = ref.watch(epgSyncNotifierProvider);
-    final filteredChannels = ref.watch(filteredChannelsProvider);
+    final filteredChannels = ref.watch(sortedFilteredChannelsProvider);
     final searchQuery = ref.watch(globalSearchQueryProvider).trim();
     final totalLiveCount = liveChannels.length;
     final selectedPlaylistId = ref.watch(selectedPlaylistIdProvider);
@@ -247,6 +248,14 @@ class ChannelListPanel extends ConsumerWidget {
             ),
       orElse: () => null,
     );
+    final sortButton = selectedPlaylistId == null
+        ? null
+        : _ChannelSortMenu(
+            mode: ref.watch(channelSortModeProvider(selectedPlaylistId)),
+            onChanged: (mode) => ref
+                .read(channelSortModeProvider(selectedPlaylistId).notifier)
+                .setMode(mode),
+          );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -281,13 +290,15 @@ class ChannelListPanel extends ConsumerWidget {
           ),
         );
 
-        final boundedHeaderActions = headerActions == null
+        final boundedHeaderActions = headerActions == null && sortButton == null
             ? null
             : SizedBox(
                 width: constraints.maxWidth,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: headerActions,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: [?sortButton, ?headerActions],
                 ),
               );
         final regularPlaylistStatus = ConstrainedBox(
@@ -315,6 +326,7 @@ class ChannelListPanel extends ConsumerWidget {
           children: [
             regularPlaylistStatus,
             ?syncButton,
+            ?sortButton,
             if (headerActions != null) ...[
               const SizedBox(width: 4),
               headerActions,
@@ -376,11 +388,14 @@ class ChannelListPanel extends ConsumerWidget {
               children: [
                 ChannelFavoriteButton(
                   channelId: channel.id,
-                  isFavorite: channel.isFavorite,
-                  isBusy: favoriteAction.isLoading,
+                  isFavorite: favoriteAction.isFavorite(channel),
+                  isBusy: favoriteAction.isBusy(channel.id),
                   onToggle: () => ref
                       .read(channelFavoriteControllerProvider.notifier)
-                      .toggle(channel.id),
+                      .toggle(
+                        channel.id,
+                        currentFavorite: favoriteAction.isFavorite(channel),
+                      ),
                 ),
                 const SizedBox(width: 4),
                 M3LeadingSlot(
@@ -425,6 +440,50 @@ class ChannelListPanel extends ConsumerWidget {
     return _ChannelListMessage(icon: icon, title: title, subtitle: subtitle);
   }
 }
+
+class _ChannelSortMenu extends StatelessWidget {
+  const _ChannelSortMenu({required this.mode, required this.onChanged});
+
+  final ChannelSortMode mode;
+  final ValueChanged<ChannelSortMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return MenuAnchor(
+      consumeOutsideTap: false,
+      menuChildren: [
+        for (final option in ChannelSortMode.values)
+          MenuItemButton(
+            leadingIcon: Icon(
+              option == mode ? Icons.check_rounded : Icons.sort_rounded,
+            ),
+            onPressed: () => onChanged(option),
+            child: Text(_channelSortModeLabel(option)),
+          ),
+      ],
+      builder: (context, controller, child) {
+        return IconButton(
+          key: const ValueKey('channel-sort-menu'),
+          tooltip: 'Sortierung: ${_channelSortModeLabel(mode)}',
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+          icon: const Icon(Icons.sort_rounded),
+        );
+      },
+    );
+  }
+}
+
+String _channelSortModeLabel(ChannelSortMode mode) => switch (mode) {
+  ChannelSortMode.providerDefault => 'Provider-Reihenfolge',
+  ChannelSortMode.alphabetical => 'Alphabetisch',
+  ChannelSortMode.numeric => 'Kanalnummer',
+};
 
 /// Responsive empty/error/info presentation for the channel list.
 ///

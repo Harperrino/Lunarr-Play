@@ -10,6 +10,7 @@ class _FakePlayer extends Fake implements Player {}
 void main() {
   final player = _FakePlayer();
   const selectedChannel = Channel(
+    providerOrder: 0,
     id: 7,
     playlistId: 1,
     name: 'Demo Channel',

@@ -102,6 +102,7 @@ void main() {
     final player = _FakePlayer();
 
     const channel = Channel(
+      providerOrder: 0,
       id: 1,
       playlistId: 1,
       name: 'Live Channel',

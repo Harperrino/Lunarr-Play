@@ -8,6 +8,7 @@ import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
 import 'package:m3uxtream_player/core/parsers/xtream_parser.dart';
 import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/features/channels/providers/channel_sort_providers.dart';
 import 'package:m3uxtream_player/features/channels/widgets/channel_list_panel.dart';
 import 'package:m3uxtream_player/features/epg/providers/epg_grid_providers.dart';
 import 'package:m3uxtream_player/features/epg/providers/epg_providers.dart';
@@ -201,6 +202,9 @@ Future<void> _pumpChannelList(
           ),
         ),
         liveChannelsStreamProvider.overrideWith((ref) => channelsStream),
+        channelSortModeProvider(
+          1,
+        ).overrideWith((ref) => ChannelSortModeNotifier.test(1)),
         hiddenGroupsProvider.overrideWith(_EmptyHiddenGroupsNotifier.new),
         channelFavoriteControllerProvider.overrideWith(
           (ref) => ChannelFavoriteController((channelId) async => true),
@@ -341,6 +345,7 @@ final _playlist = Playlist(
 );
 
 const _liveChannel = Channel(
+  providerOrder: 0,
   id: 1,
   playlistId: 1,
   streamId: null,
@@ -358,6 +363,7 @@ const _liveChannel = Channel(
 );
 
 const _seriesChannel = Channel(
+  providerOrder: 0,
   id: 2,
   playlistId: 1,
   streamId: 'series-2',

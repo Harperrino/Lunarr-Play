@@ -156,6 +156,8 @@ class PlaylistRepository {
                 ),
               ),
               streamId: Value(channel.streamId),
+              providerOrder: Value(channel.providerOrder),
+              channelNumber: Value(channel.channelNumber),
             );
           }).toList();
 
@@ -348,6 +350,18 @@ class PlaylistRepository {
                 tbl.channelType.equals(channelType),
           )
           ..orderBy([(tbl) => OrderingTerm.asc(tbl.name)]))
+        .watch();
+  }
+
+  /// One reactive catalogue stream used by global search across playlists.
+  /// Playlist activity and hidden-category state are applied above this
+  /// boundary, so search never opens one query per playlist or result.
+  Stream<List<Channel>> watchAllChannels() {
+    return (_db.select(_db.channels)..orderBy([
+          (tbl) => OrderingTerm.asc(tbl.providerOrder),
+          (tbl) => OrderingTerm.asc(tbl.name),
+          (tbl) => OrderingTerm.asc(tbl.id),
+        ]))
         .watch();
   }
 

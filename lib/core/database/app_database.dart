@@ -49,6 +49,8 @@ class Channels extends Table {
   TextColumn get groupName => text().nullable()(); // tvg-group or Category Name
   TextColumn get tvgId => text().nullable()(); // EPG Mapping-ID from XMLTV
   TextColumn get streamUrl => text()();
+  IntColumn get providerOrder => integer().withDefault(const Constant(0))();
+  TextColumn get channelNumber => text().nullable()();
   BoolColumn get isFavorite => boolean().withDefault(const Constant(false))();
   BoolColumn get isWatchLater => boolean().withDefault(const Constant(false))();
 
@@ -111,7 +113,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void>? _closeFuture;
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   Future<void> close() {
@@ -184,6 +186,16 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(channels, channels.isWatchLater);
             AppLogger.info(
               'Database Migration: Added Channels.isWatchLater (v4 → v5).',
+            );
+          }
+          if (from < 6) {
+            await m.addColumn(channels, channels.providerOrder);
+            await m.addColumn(channels, channels.channelNumber);
+            await customStatement(
+              'UPDATE channels SET provider_order = id WHERE provider_order = 0;',
+            );
+            AppLogger.info(
+              'Database Migration: Added channel ordering metadata and backfilled provider order (v5 → v6).',
             );
           }
           AppLogger.info(
