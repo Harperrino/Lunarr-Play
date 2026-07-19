@@ -104,6 +104,7 @@ void main() {
           ),
           selectedChannelProvider.overrideWith(
             (ref) => const Channel(
+              providerOrder: 0,
               id: 1,
               playlistId: 1,
               name: 'VOD Dummy',

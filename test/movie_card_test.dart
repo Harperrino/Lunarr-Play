@@ -12,6 +12,7 @@ import 'package:m3uxtream_player/shared/widgets/media/media_metadata_row.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_poster_frame.dart';
 
 const _movie = Channel(
+  providerOrder: 0,
   id: 42,
   playlistId: 1,
   name: 'Expressive Film',

@@ -18,6 +18,7 @@ class CategorySidebar extends StatefulWidget {
     required this.onSelected,
     this.pinnedGroups = const <String>[],
     this.showPinIndicators = true,
+    this.onPinChanged,
     this.title = 'Categories',
     this.width = LiveLayoutMetrics.categoryPanelWidth,
     this.headerActions,
@@ -28,6 +29,7 @@ class CategorySidebar extends StatefulWidget {
   final ValueChanged<String> onSelected;
   final List<String> pinnedGroups;
   final bool showPinIndicators;
+  final void Function(String groupName, bool pinned)? onPinChanged;
   final String title;
   final double width;
   final Widget? headerActions;
@@ -119,12 +121,17 @@ class _CategorySidebarState extends State<CategorySidebar> {
                         : GroupAccent.forGroup(group);
 
                     return _CategoryTile(
+                      groupName: group,
                       label: label,
                       isAll: group == kAllGroupsFilter,
                       isSelected: isSelected,
                       isPinned: isPinned,
+                      showPinIndicator: widget.showPinIndicators,
                       accent: accent,
                       onTap: () => widget.onSelected(group),
+                      onPinChanged: group == kAllGroupsFilter
+                          ? null
+                          : widget.onPinChanged,
                     );
                   },
                 ),
@@ -139,32 +146,54 @@ class _CategorySidebarState extends State<CategorySidebar> {
 
 class _CategoryTile extends StatelessWidget {
   const _CategoryTile({
+    required this.groupName,
     required this.label,
     required this.isAll,
     required this.isSelected,
     required this.isPinned,
+    required this.showPinIndicator,
     required this.accent,
     required this.onTap,
+    this.onPinChanged,
   });
 
+  final String groupName;
   final String label;
   final bool isAll;
   final bool isSelected;
   final bool isPinned;
+  final bool showPinIndicator;
   final Color accent;
   final VoidCallback onTap;
+  final void Function(String groupName, bool pinned)? onPinChanged;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return M3NavigationItem(
+    final canPin = onPinChanged != null;
+    final navigationItem = M3NavigationItem(
       label: label,
       leading: _CategoryLeadingIcon(
         isAll: isAll,
         selected: isSelected,
         colorScheme: colorScheme,
       ),
-      trailing: isPinned
+      trailing: canPin
+          ? M3ActionSlot(
+              icon: isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+              tooltip: isPinned ? 'Unpin category' : 'Pin category',
+              semanticLabel: isPinned
+                  ? 'Unpin category $label'
+                  : 'Pin category $label',
+              toggled: isPinned,
+              selected: isPinned,
+              foregroundColor: isSelected
+                  ? colorScheme.onSecondaryContainer
+                  : accent.withValues(alpha: 0.92),
+              backgroundColor: Colors.transparent,
+              onPressed: () => onPinChanged!(groupName, !isPinned),
+            )
+          : showPinIndicator && isPinned
           ? Icon(
               Icons.push_pin_rounded,
               size: 15,
@@ -173,6 +202,7 @@ class _CategoryTile extends StatelessWidget {
                   : accent.withValues(alpha: 0.92),
             )
           : null,
+      trailingInteractive: canPin,
       selected: isSelected,
       onPressed: onTap,
       visualRole: M3NavigationItemVisualRole.categoryNavigation,
@@ -181,6 +211,31 @@ class _CategoryTile extends StatelessWidget {
       transitionDuration: AppMotion.of(context).content,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    );
+
+    if (!canPin) return navigationItem;
+
+    return MenuAnchor(
+      consumeOutsideTap: false,
+      alignmentOffset: const Offset(0, 4),
+      menuChildren: [
+        MenuItemButton(
+          key: ValueKey('category-pin-context-menu-$groupName'),
+          leadingIcon: Icon(
+            isPinned ? Icons.push_pin_outlined : Icons.push_pin_rounded,
+          ),
+          onPressed: () => onPinChanged!(groupName, !isPinned),
+          child: Text(isPinned ? 'Unpin category' : 'Pin category'),
+        ),
+      ],
+      builder: (context, controller, child) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onSecondaryTapUp: (details) {
+          controller.open(position: details.localPosition);
+        },
+        child: child!,
+      ),
+      child: navigationItem,
     );
   }
 }

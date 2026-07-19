@@ -4,6 +4,7 @@ import 'package:m3uxtream_player/core/services/channel_group_filter.dart';
 
 Channel _channel(String groupName, {String channelType = 'live'}) {
   return Channel(
+    providerOrder: 0,
     id: groupName.hashCode,
     playlistId: 1,
     name: groupName,

@@ -6,6 +6,7 @@ import 'package:m3uxtream_player/features/xtream/providers/series_providers.dart
 
 Channel _seriesChannel({int id = 1, String name = 'Show', String? groupName}) {
   return Channel(
+    providerOrder: 0,
     id: id,
     playlistId: 1,
     streamId: '9001',

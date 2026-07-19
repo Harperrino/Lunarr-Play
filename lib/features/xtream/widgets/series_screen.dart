@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
@@ -176,6 +178,19 @@ class SeriesScreen extends ConsumerWidget {
                                       .state =
                                   group,
                           pinnedGroups: pinnedGroups,
+                          onPinChanged: selectedPlaylistId == null
+                              ? null
+                              : (groupName, pinned) {
+                                  unawaited(
+                                    ref
+                                        .read(pinnedGroupsProvider.notifier)
+                                        .toggleGroup(
+                                          selectedPlaylistId,
+                                          groupName,
+                                          pinned,
+                                        ),
+                                  );
+                                },
                           title: 'Genres',
                         ),
                       ],

@@ -14,6 +14,7 @@ import 'package:m3uxtream_player/features/xtream/widgets/movie_card.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_poster_frame.dart';
 
 const _channel = Channel(
+  providerOrder: 0,
   id: 101,
   playlistId: 1,
   name: 'Geometry Channel',

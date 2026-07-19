@@ -13,6 +13,7 @@ import 'package:m3uxtream_player/features/player/providers/player_providers.dart
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_ui_providers.dart';
 import 'package:m3uxtream_player/features/player/widgets/player_panel.dart';
+import 'package:m3uxtream_player/features/player/widgets/player_transport_bar.dart';
 import 'package:m3uxtream_player/shared/theme/app_color_roles.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
@@ -35,6 +36,7 @@ void main() {
   });
 
   const liveChannel = Channel(
+    providerOrder: 0,
     id: 1,
     playlistId: 1,
     name: 'Live',
@@ -130,6 +132,54 @@ void main() {
       );
     },
   );
+
+  testWidgets('windowed player keeps fixed header and transport spacing', (
+    tester,
+  ) async {
+    final container = buildContainer(
+      playbackUri: null,
+      player: FakeMediaPlayer(),
+    );
+    addTearDown(container.dispose);
+
+    for (final height in [600.0, 800.0, 560.0]) {
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: ThemeData(
+              useMaterial3: true,
+              colorScheme: AppColorRoles.darkScheme,
+            ),
+            home: Scaffold(
+              body: SizedBox(
+                width: 800,
+                height: height,
+                child: PlayerPanel(key: ValueKey(height)),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      final stage = tester.getRect(
+        find.byKey(const ValueKey('windowed-player-stage')),
+      );
+      final header = tester.getRect(
+        find.byKey(const ValueKey('windowed-player-header')),
+      );
+      final transport = tester.getRect(find.byType(PlayerTransportBar));
+      final expectedGap = height < 600 ? 12.0 : 16.0;
+
+      expect(stage.top - header.bottom, closeTo(expectedGap, 0.01));
+      expect(stage.width / stage.height, closeTo(16 / 9, 0.001));
+      expect(transport.top - stage.bottom, greaterThanOrEqualTo(expectedGap));
+      expect(stage.bottom, lessThanOrEqualTo(transport.top));
+      expect(tester.takeException(), isNull);
+    }
+  });
 
   testWidgets(
     'PlayerPanel mounts Video when controller and playbackUri are present',

@@ -16,6 +16,7 @@ import 'package:m3uxtream_player/shared/widgets/media/media_poster_frame.dart';
 import 'package:shimmer/shimmer.dart';
 
 const _movie = Channel(
+  providerOrder: 0,
   id: 42,
   playlistId: 1,
   name: 'Expressive Film',
@@ -28,6 +29,7 @@ const _movie = Channel(
 );
 
 const _series = Channel(
+  providerOrder: 0,
   id: 73,
   playlistId: 1,
   name: 'Expressive Serie',

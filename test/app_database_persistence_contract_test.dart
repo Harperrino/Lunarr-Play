@@ -171,13 +171,13 @@ AppDatabase _openFileDatabase(File file) {
 }
 
 Future<void> _expectSchemaContract(AppDatabase database) async {
-  expect(database.schemaVersion, 5);
+  expect(database.schemaVersion, 6);
 
   final userVersion = await database
       .customSelect('PRAGMA user_version')
       .map((row) => row.read<int>('user_version'))
       .getSingle();
-  expect(userVersion, 5);
+  expect(userVersion, 6);
 
   final foreignKeys = await database
       .customSelect('PRAGMA foreign_keys')
@@ -221,6 +221,8 @@ Future<void> _expectSchemaContract(AppDatabase database) async {
     'group_name',
     'tvg_id',
     'stream_url',
+    'provider_order',
+    'channel_number',
     'is_favorite',
     'is_watch_later',
     'channel_type',

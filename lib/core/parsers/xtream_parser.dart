@@ -170,6 +170,7 @@ class XtreamParser {
               groupName: groupName,
               channelType: 'series',
               streamId: seriesId,
+              providerOrder: i,
             ),
           );
         } catch (e, stackTrace) {
@@ -303,6 +304,7 @@ class XtreamParser {
           final name = stream['name']?.toString() ?? 'Unknown';
           final logo = _firstNonEmptyString(stream, logoFields);
           final tvgId = stream['epg_channel_id']?.toString();
+          final channelNumber = stream['num']?.toString().trim();
           final categoryId = stream['category_id']?.toString();
           final groupName = categoryId != null ? categoryMap[categoryId] : null;
 
@@ -316,6 +318,10 @@ class XtreamParser {
               groupName: groupName,
               channelType: channelType,
               streamId: streamId,
+              providerOrder: i,
+              channelNumber: channelNumber == null || channelNumber.isEmpty
+                  ? null
+                  : channelNumber,
             ),
           );
         } catch (e, stackTrace) {

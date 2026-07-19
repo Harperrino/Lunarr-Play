@@ -65,6 +65,7 @@ void main() {
       final player = _FakePlayer();
 
       const liveChannel = Channel(
+        providerOrder: 0,
         id: 1,
         playlistId: 1,
         name: 'Live',
@@ -182,6 +183,7 @@ void main() {
       final player = _FakePlayer();
 
       const liveChannel = Channel(
+        providerOrder: 0,
         id: 1,
         playlistId: 1,
         name: 'Live',
@@ -249,6 +251,7 @@ void main() {
       final seeks = <Duration>[];
       final volumeChanges = <double>[];
       const vodChannel = Channel(
+        providerOrder: 0,
         id: 1,
         playlistId: 1,
         name: 'Movie',
@@ -322,6 +325,7 @@ void main() {
   ) async {
     final container = _createTestContainer(
       channel: const Channel(
+        providerOrder: 0,
         id: 1,
         playlistId: 1,
         name: 'Live',
@@ -379,6 +383,7 @@ void main() {
       final player = _FakePlayer();
 
       const liveChannel = Channel(
+        providerOrder: 0,
         id: 1,
         playlistId: 1,
         name: 'Live',
@@ -440,6 +445,7 @@ void main() {
     final player = _FakePlayer();
 
     const liveChannel = Channel(
+      providerOrder: 0,
       id: 1,
       playlistId: 1,
       name: 'Live',

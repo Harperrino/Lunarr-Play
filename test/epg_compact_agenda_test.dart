@@ -8,6 +8,7 @@ import 'package:m3uxtream_player/shared/theme/app_status_colors.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 
 Channel _channel() => const Channel(
+  providerOrder: 0,
   id: 1,
   playlistId: 1,
   streamId: null,

@@ -27,6 +27,7 @@ class M3NavigationItem extends StatefulWidget {
     this.icon,
     this.leading,
     this.trailing,
+    this.trailingInteractive = false,
     this.selected = false,
     this.enabled = true,
     this.expanded = true,
@@ -47,6 +48,7 @@ class M3NavigationItem extends StatefulWidget {
   final IconData? icon;
   final Widget? leading;
   final Widget? trailing;
+  final bool trailingInteractive;
   final bool selected;
   final bool enabled;
   final bool expanded;
@@ -157,6 +159,8 @@ class _M3NavigationItemState extends State<M3NavigationItem> {
     );
     final trailing = widget.trailing == null
         ? null
+        : widget.trailingInteractive
+        ? widget.trailing
         : M3LeadingSlot(
             foregroundColor: iconForeground,
             child: widget.trailing,
@@ -189,7 +193,7 @@ class _M3NavigationItemState extends State<M3NavigationItem> {
           selected: widget.selected,
           label: widget.label,
           onTap: widget.enabled ? widget.onPressed : null,
-          excludeSemantics: true,
+          excludeSemantics: !widget.trailingInteractive,
           child: AppSurfaceStateLayer(
             shape: itemShape,
             states: _states,

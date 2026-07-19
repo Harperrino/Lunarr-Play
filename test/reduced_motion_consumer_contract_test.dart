@@ -200,6 +200,7 @@ class _ReadyPreBufferTargetNotifier extends VodPreBufferTargetSecondsNotifier {
 }
 
 const _channel = Channel(
+  providerOrder: 0,
   id: 1,
   playlistId: 1,
   streamId: 'movie-1',

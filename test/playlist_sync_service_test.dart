@@ -65,7 +65,10 @@ https://example.com/live/test.m3u8
 
         final playlist = await repository.getPlaylistById(playlistId);
         expect(playlist?.lastSyncedAt, isNotNull);
-        expect(await db.select(db.channels).get(), hasLength(1));
+        final channels = await db.select(db.channels).get();
+        expect(channels, hasLength(1));
+        expect(channels.single.providerOrder, 0);
+        expect(channels.single.channelNumber, isNull);
       }, RealHttpOverrides());
     });
 

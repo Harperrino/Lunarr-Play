@@ -22,6 +22,7 @@ void main() {
   });
 
   const vodChannel = Channel(
+    providerOrder: 0,
     id: 2,
     playlistId: 1,
     name: 'VOD Movie',

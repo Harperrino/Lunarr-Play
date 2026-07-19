@@ -13,5 +13,11 @@ List<Channel> filterFavoriteLiveChannels(List<Channel> channels) {
 /// Existing selected-playlist stream, narrowed without persistence or effects.
 final favoriteLiveChannelsProvider = Provider.autoDispose<List<Channel>>((ref) {
   final channels = ref.watch(channelsStreamProvider).valueOrNull ?? const [];
-  return filterFavoriteLiveChannels(channels);
+  final favoriteState = ref.watch(channelFavoriteControllerProvider);
+  return channels
+      .where(
+        (channel) =>
+            channel.channelType == 'live' && favoriteState.isFavorite(channel),
+      )
+      .toList(growable: false);
 });

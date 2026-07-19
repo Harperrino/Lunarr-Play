@@ -17,6 +17,7 @@ Channel _channel({
   String channelType = 'live',
 }) {
   return Channel(
+    providerOrder: 0,
     id: id,
 
     playlistId: 1,

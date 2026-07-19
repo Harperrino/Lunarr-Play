@@ -4,6 +4,7 @@ import 'package:m3uxtream_player/core/services/series_episode_service.dart';
 
 Channel _channel({required String streamUrl}) {
   return Channel(
+    providerOrder: 0,
     id: 1,
     playlistId: 1,
     streamId: '9001',

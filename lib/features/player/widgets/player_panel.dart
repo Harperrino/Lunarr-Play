@@ -152,7 +152,12 @@ class _PlayerPanelState extends ConsumerState<PlayerPanel> {
             : _PlayerVideoAreaSection(immersive: widget.immersive);
         final videoArea = widget.immersive
             ? stage
-            : Center(
+            : hasPanelStatus
+            ? Center(
+                child: AspectRatio(aspectRatio: 16 / 9, child: stage),
+              )
+            : Align(
+                alignment: Alignment.topCenter,
                 child: AspectRatio(aspectRatio: 16 / 9, child: stage),
               );
 
@@ -164,6 +169,8 @@ class _PlayerPanelState extends ConsumerState<PlayerPanel> {
               children: [
                 if (!widget.immersive && !hasPanelStatus)
                   _PlayerHeaderSection(compact: compact),
+                if (!widget.immersive && !hasPanelStatus)
+                  SizedBox(height: compact ? 12 : 16),
                 Expanded(child: videoArea),
                 if (!widget.immersive && !hasPanelStatus) ...[
                   SizedBox(height: compact ? 12 : 16),
@@ -428,6 +435,7 @@ class _PlayerHeader extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
 
     return AppSurface(
+      key: const ValueKey('windowed-player-header'),
       level: AppSurfaceLevel.low,
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 12 : 14,
