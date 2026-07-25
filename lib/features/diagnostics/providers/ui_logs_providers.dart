@@ -38,7 +38,7 @@ class UiLogsNotifier extends StateNotifier<List<String>> {
   }
 
   void _queueAppLog(AppLogEntry entry) {
-    Future<void>.delayed(Duration.zero, () {
+    Future<void>.microtask(() {
       if (_disposed) return;
       if (!entry.timestamp.isAfter(_ignoreAppLogsBefore)) return;
       _ingestAppLog(entry);

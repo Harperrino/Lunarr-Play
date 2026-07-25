@@ -125,7 +125,9 @@ class ShellCommandArea extends StatelessWidget {
                   ),
                 if (search != null)
                   Positioned(
-                    top: (scaleAwareHeight - GlobalSearchField.fieldHeight) / 2,
+                    top:
+                        (scaleAwareHeight - GlobalSearchField.fieldHeight) / 2 -
+                        leadingOpticalInset,
                     left: (constraints.maxWidth - searchWidth) / 2,
                     width: searchWidth,
                     child: SizedBox(

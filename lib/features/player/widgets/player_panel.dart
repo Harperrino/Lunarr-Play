@@ -171,7 +171,10 @@ class _PlayerPanelState extends ConsumerState<PlayerPanel> {
                   _PlayerHeaderSection(compact: compact),
                 if (!widget.immersive && !hasPanelStatus)
                   SizedBox(height: compact ? 12 : 16),
-                Expanded(child: videoArea),
+                if (widget.immersive || hasPanelStatus)
+                  Expanded(child: videoArea)
+                else
+                  Flexible(fit: FlexFit.loose, child: videoArea),
                 if (!widget.immersive && !hasPanelStatus) ...[
                   SizedBox(height: compact ? 12 : 16),
                   PlayerTransportBar(

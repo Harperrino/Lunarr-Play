@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/database/app_database.dart';
+import 'package:m3uxtream_player/core/services/detached_future.dart';
 import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_sync_providers.dart';
@@ -153,13 +156,7 @@ class SeriesScreen extends ConsumerWidget {
                             return SeriesGrid(
                               channels: seriesList,
                               onSeriesTap: (channel) =>
-                                  ref
-                                          .read(
-                                            selectedSeriesChannelProvider
-                                                .notifier,
-                                          )
-                                          .state =
-                                      channel,
+                                  _selectSeries(ref, channel),
                             );
                           },
                         ),
@@ -168,6 +165,9 @@ class SeriesScreen extends ConsumerWidget {
                         const SizedBox(width: 16),
                         CategorySidebar(
                           groups: groups,
+                          categoryEntries: ref.watch(
+                            seriesCategoryEntriesProvider,
+                          ),
                           selectedGroup: selectedGroup,
                           onSelected: (group) =>
                               ref
@@ -191,6 +191,31 @@ class SeriesScreen extends ConsumerWidget {
                                         ),
                                   );
                                 },
+                          onCategoryPinChanged: (category, pinned) {
+                            runDetached(() async {
+                              final repository = ref.read(
+                                appStateRepositoryProvider,
+                              );
+                              final current = await repository.getPinnedGroups(
+                                category.playlistId,
+                              );
+                              if (pinned) {
+                                current.remove(category.groupName);
+                                current.add(category.groupName);
+                              } else {
+                                current.remove(category.groupName);
+                              }
+                              await repository.setPinnedGroups(
+                                category.playlistId,
+                                current,
+                              );
+                              ref.invalidate(
+                                pinnedGroupsForPlaylistProvider(
+                                  category.playlistId,
+                                ),
+                              );
+                            }, label: 'pin series category');
+                          },
                           title: 'Genres',
                         ),
                       ],
@@ -200,6 +225,11 @@ class SeriesScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _selectSeries(WidgetRef ref, Channel channel) {
+    selectConcretePlaylistContext(ref, channel.playlistId);
+    ref.read(selectedSeriesChannelProvider.notifier).state = channel;
   }
 }
 

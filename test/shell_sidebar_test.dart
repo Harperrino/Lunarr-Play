@@ -8,7 +8,6 @@ import 'package:m3uxtream_player/app/shell/shell_sidebar.dart';
 import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
 import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/shared/theme/app_status_colors.dart';
-import 'package:m3uxtream_player/shared/widgets/app_brand_mark.dart';
 
 Widget _wrap(Widget child, {ThemeData? theme}) {
   return MaterialApp(
@@ -77,26 +76,24 @@ void main() {
     );
 
     expect(find.byTooltip('Collapse sidebar'), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey('shell-sidebar-brand-wordmark')),
-      findsOneWidget,
-    );
-    expect(find.text('LUNARR One'), findsOneWidget);
+    expect(find.byKey(const ValueKey('shell-sidebar-brand')), findsNothing);
     expect(
       find.byKey(const ValueKey('shell-sidebar-brand-mark')),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(find.byKey(AppBrandMark.painterKey), findsOneWidget);
-    final sidebarCenter = tester.getCenter(find.byType(ShellSidebar)).dx;
-    final brandCenter = tester
-        .getCenter(find.byKey(const ValueKey('shell-sidebar-brand')))
-        .dx;
-    final brandRect = tester.getRect(
-      find.byKey(const ValueKey('shell-sidebar-brand')),
+    expect(
+      find.byKey(const ValueKey('shell-sidebar-brand-wordmark')),
+      findsNothing,
     );
+    expect(find.text('Lunarr Player'), findsNothing);
+    final header = find.byType(SizedBox).evaluate().where((element) {
+      final widget = element.widget;
+      return widget is SizedBox && widget.height == 48;
+    });
+    expect(header, isNotEmpty);
     final collapseRect = tester.getRect(find.byTooltip('Collapse sidebar'));
-    expect(brandCenter, lessThan(sidebarCenter));
-    expect(brandRect.right, lessThanOrEqualTo(collapseRect.left - 16));
+    final sidebarRect = tester.getRect(find.byType(ShellSidebar));
+    expect(collapseRect.right, lessThanOrEqualTo(sidebarRect.right));
     await tester.tap(find.byTooltip('Collapse sidebar'));
     await tester.pump();
 

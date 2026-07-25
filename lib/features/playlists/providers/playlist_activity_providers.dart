@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/features/playlists/providers/playlist_catalog_providers.dart';
 
 /// Persisted inactive playlist IDs (stored in AppStates).
 final inactivePlaylistIdsProvider =
@@ -21,9 +22,10 @@ class InactivePlaylistIdsNotifier extends AsyncNotifier<Set<int>> {
 
   Future<void> setActive(int playlistId, bool active) async {
     final repository = ref.read(appStateRepositoryProvider);
-    final inactiveIds = {
+    final previousInactiveIds = {
       ...(state.valueOrNull ?? await repository.getInactivePlaylistIds()),
     };
+    final inactiveIds = {...previousInactiveIds};
 
     if (active) {
       inactiveIds.remove(playlistId);
@@ -31,8 +33,20 @@ class InactivePlaylistIdsNotifier extends AsyncNotifier<Set<int>> {
       inactiveIds.add(playlistId);
     }
 
-    await repository.setPlaylistActive(playlistId, active);
     state = AsyncData(inactiveIds);
+    // The activity switch changes exactly this playlist's catalogue scopes;
+    // unrelated warm entries stay intact.
+    ref.read(playlistCatalogWarmCacheProvider).invalidateForPlaylist(
+      playlistId,
+    );
+    try {
+      await repository.setPlaylistActive(playlistId, active);
+    } catch (error, stackTrace) {
+      // Keep the optimistic UI honest if persistence fails.
+      state = AsyncError(error, stackTrace);
+      state = AsyncData(previousInactiveIds);
+      rethrow;
+    }
   }
 
   Future<void> removePlaylist(int playlistId) async {
@@ -41,7 +55,10 @@ class InactivePlaylistIdsNotifier extends AsyncNotifier<Set<int>> {
       ...(state.valueOrNull ?? await repository.getInactivePlaylistIds()),
     };
     inactiveIds.remove(playlistId);
-    await repository.setPlaylistActive(playlistId, true);
     state = AsyncData(inactiveIds);
+    ref.read(playlistCatalogWarmCacheProvider).invalidateForPlaylist(
+      playlistId,
+    );
+    await repository.setPlaylistActive(playlistId, true);
   }
 }

@@ -5,7 +5,10 @@ import 'package:m3uxtream_player/core/repository/playlist_repository.dart';
 import 'package:m3uxtream_player/core/services/playlist_sync_service.dart';
 
 final playlistRepositoryProvider = Provider<PlaylistRepository>((ref) {
-  return PlaylistRepository(ref.watch(databaseProvider));
+  return PlaylistRepository(
+    ref.watch(databaseProvider),
+    lifecycleGate: ref.watch(appLifecycleGateProvider),
+  );
 });
 
 final playlistSyncServiceProvider = Provider<PlaylistSyncService>((ref) {

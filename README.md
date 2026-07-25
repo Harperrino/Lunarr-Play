@@ -40,7 +40,7 @@ SmartScreen warning because the application is not currently code-signed.
 
 ## Current Status
 
-The current release candidate is **LUNARR One 0.9.0 RC1**
+The current release candidate is **Lunarr Player 0.9.0 RC1**
 (`v0.9.0-rc.1`).
 
 Windows desktop is the currently supported platform. An iOS version is planned.
@@ -79,4 +79,4 @@ flutter build windows --release
 
 ## License
 
-LUNARR One is available under the [MIT License](LICENSE).
+Lunarr Player is available under the [MIT License](LICENSE).

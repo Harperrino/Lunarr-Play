@@ -55,14 +55,19 @@ class CategorySearchNavigationController {
   /// Opens a live search result through the same selected-channel and player
   /// path as the existing live list, exactly once.
   Future<void> openChannel(ChannelSearchResult result) async {
+    final channel = await _ref
+        .read(playlistRepositoryProvider)
+        .getChannelById(result.channelId);
+    if (channel == null) return;
+
     _ref.read(playbackPrepControllerProvider.notifier).clearSelection();
     _ref.read(selectedSeriesChannelProvider.notifier).state = null;
     _ref.read(selectedPlaylistIdProvider.notifier).state = result.playlistId;
     _ref.read(selectedGroupFilterProvider.notifier).state = result.categoryName;
-    _ref.read(selectedChannelProvider.notifier).state = result.channel;
+    _ref.read(selectedChannelProvider.notifier).state = channel;
     await _ref
         .read(playerNotifierProvider.notifier)
-        .openStream(result.channel.streamUrl);
+        .openStream(channel.streamUrl);
     _ref.read(activeSidebarIndexProvider.notifier).state = shellLiveTabIndex;
   }
 }

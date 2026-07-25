@@ -191,7 +191,7 @@ final epgGridEntriesStreamProvider = StreamProvider.autoDispose<List<EpgEntry>>(
       return Stream.value(const []);
     }
 
-    ref.watch(epgSyncNotifierProvider);
+    ref.watch(epgCompletionRevisionProvider);
 
     final knownIds = ref.watch(knownEpgChannelIdsProvider).valueOrNull;
     if (knownIds == null) {

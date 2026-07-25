@@ -20,6 +20,7 @@ migrate_working_dir/
 # Local AI/editor tooling
 .codex/
 .agents/
+.codebase-memory/
 
 # Private project memory / handoff notes
 opencode.json

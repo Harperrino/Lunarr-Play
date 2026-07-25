@@ -24,7 +24,10 @@ DateTime epgGridWindowEndAroundNow([DateTime? now]) {
 }
 
 final epgRepositoryProvider = Provider<EpgRepository>((ref) {
-  return EpgRepository(ref.watch(databaseProvider));
+  return EpgRepository(
+    ref.watch(databaseProvider),
+    lifecycleGate: ref.watch(appLifecycleGateProvider),
+  );
 });
 
 final epgSyncServiceProvider = Provider<EpgSyncService>((ref) {

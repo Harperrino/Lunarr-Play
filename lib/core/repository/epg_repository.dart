@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/core/parsers/epg_parser.dart';
+import 'package:m3uxtream_player/core/services/app_lifecycle_gate.dart';
 
 /// SQLite [Variable] limit — chunk large `IN (...)` lists for grid queries.
 const int epgChannelIdQueryChunkSize = 400;
@@ -12,8 +13,9 @@ const int epgChannelIdQueryChunkSize = 400;
 /// and lifecycle operations (caching, purging) for EPG program entries in Drift.
 class EpgRepository {
   final AppDatabase _db;
+  final AppLifecycleGate? lifecycleGate;
 
-  EpgRepository(this._db);
+  EpgRepository(this._db, {this.lifecycleGate});
 
   Iterable<List<String>> _chunkChannelIds(List<String> channelIds) sync* {
     for (var i = 0; i < channelIds.length; i += epgChannelIdQueryChunkSize) {
@@ -307,6 +309,7 @@ ORDER BY start_time ASC
   /// Removes cached channel catalogue rows for the given channel IDs before a re-sync.
   Future<void> clearChannelCatalogForChannelIds(List<String> channelIds) async {
     if (channelIds.isEmpty) return;
+    _ensureWritable();
 
     try {
       await _db.transaction(() async {
@@ -331,6 +334,7 @@ ORDER BY start_time ASC
     required List<ParsedEpgChannel> channels,
   }) async {
     if (channels.isEmpty) return;
+    _ensureWritable();
 
     try {
       final uniqueChannels = <String, ParsedEpgChannel>{};
@@ -391,6 +395,7 @@ ORDER BY start_time ASC
   /// Removes all cached entries for the given channel IDs before a re-sync.
   Future<void> clearEntriesForChannelIds(List<String> channelIds) async {
     if (channelIds.isEmpty) return;
+    _ensureWritable();
 
     final stopwatch = Stopwatch()..start();
     AppLogger.info(
@@ -424,6 +429,7 @@ ORDER BY start_time ASC
 
   /// Automatically purges expired EPG entries from SQLite.
   Future<void> purgeOutdatedEpgData() async {
+    _ensureWritable();
     final stopwatch = Stopwatch()..start();
     AppLogger.info(
       'EpgRepository: Initiating database purge of outdated EPG entries...',
@@ -458,6 +464,7 @@ ORDER BY start_time ASC
       );
       return;
     }
+    _ensureWritable();
 
     final stopwatch = Stopwatch()..start();
     AppLogger.info(
@@ -502,5 +509,9 @@ ORDER BY start_time ASC
       );
       rethrow;
     }
+  }
+
+  void _ensureWritable() {
+    lifecycleGate?.ensureWritable();
   }
 }

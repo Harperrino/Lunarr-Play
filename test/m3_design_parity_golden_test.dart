@@ -15,6 +15,7 @@ import 'package:m3uxtream_player/features/channels/providers/channel_providers.d
 import 'package:m3uxtream_player/features/favorites/widgets/favorite_channel_list.dart';
 import 'package:m3uxtream_player/features/channels/widgets/live_category_sidebar.dart';
 import 'package:m3uxtream_player/features/playlists/providers/pinned_groups_providers.dart';
+import 'package:m3uxtream_player/features/playlists/providers/playlist_catalog_providers.dart';
 import 'package:m3uxtream_player/shared/theme/app_status_colors.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
@@ -669,6 +670,9 @@ Widget _d10RealConsumersScene() => _themedApp(
                         ]),
                         selectedGroupFilterProvider.overrideWith(
                           (ref) => 'Documentary',
+                        ),
+                        liveCategoryEntriesProvider.overrideWithValue(
+                          const <PlaylistCatalogCategory>[],
                         ),
                         pinnedGroupsProvider.overrideWith(
                           _D10PinnedGroupsNotifier.new,

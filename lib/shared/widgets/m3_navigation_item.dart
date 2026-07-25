@@ -24,6 +24,7 @@ class M3NavigationItem extends StatefulWidget {
     super.key,
     required this.label,
     required this.onPressed,
+    this.supportingText,
     this.icon,
     this.leading,
     this.trailing,
@@ -44,6 +45,7 @@ class M3NavigationItem extends StatefulWidget {
   }) : assert(icon != null || leading != null);
 
   final String label;
+  final String? supportingText;
   final VoidCallback? onPressed;
   final IconData? icon;
   final Widget? leading;
@@ -266,18 +268,56 @@ class _M3NavigationItemState extends State<M3NavigationItem> {
                             if (widget.expanded) ...[
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Text(
-                                  widget.label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.labelLarge
-                                      ?.copyWith(
-                                        color: foreground,
-                                        fontWeight: widget.selected
-                                            ? FontWeight.w700
-                                            : FontWeight.w500,
+                                child: widget.supportingText == null
+                                    ? Text(
+                                        widget.label,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelLarge
+                                            ?.copyWith(
+                                              color: foreground,
+                                              fontWeight: widget.selected
+                                                  ? FontWeight.w700
+                                                  : FontWeight.w500,
+                                            ),
+                                      )
+                                    : Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            widget.label,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelMedium
+                                                ?.copyWith(
+                                                  color: foreground,
+                                                  fontWeight: widget.selected
+                                                      ? FontWeight.w700
+                                                      : FontWeight.w500,
+                                                ),
+                                          ),
+                                          Text(
+                                            widget.supportingText!,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelSmall
+                                                ?.copyWith(
+                                                  color: foreground.withValues(
+                                                    alpha: 0.72,
+                                                  ),
+                                                ),
+                                          ),
+                                        ],
                                       ),
-                                ),
                               ),
                               if (trailing != null) ...[
                                 const SizedBox(width: 8),

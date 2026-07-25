@@ -7,14 +7,23 @@ import 'package:m3uxtream_player/core/services/channel_group_filter.dart';
 import 'package:m3uxtream_player/core/services/series_episode_service.dart';
 import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/group_visibility_providers.dart';
-import 'package:m3uxtream_player/features/playlists/providers/pinned_groups_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
+import 'package:m3uxtream_player/features/playlists/providers/playlist_catalog_providers.dart';
 import 'package:m3uxtream_player/features/search/providers/search_providers.dart';
 
 /// Active series genre/group filter.
 final StateProvider<String> selectedSeriesGroupFilterProvider =
     StateProvider<String>((ref) {
       ref.listen<int?>(selectedPlaylistIdProvider, (previous, next) {
+        if (previous != next) {
+          ref.read(selectedSeriesGroupFilterProvider.notifier).state =
+              kAllGroupsFilter;
+        }
+      });
+      ref.listen<PlaylistCatalogScope?>(playlistCatalogScopeProvider, (
+        previous,
+        next,
+      ) {
         if (previous != next) {
           ref.read(selectedSeriesGroupFilterProvider.notifier).state =
               kAllGroupsFilter;
@@ -31,24 +40,37 @@ final StateProvider<Channel?> selectedSeriesChannelProvider =
           ref.read(selectedSeriesChannelProvider.notifier).state = null;
         }
       });
+      ref.listen<PlaylistCatalogScope?>(playlistCatalogScopeProvider, (
+        previous,
+        next,
+      ) {
+        if (previous != next && next?.isAllActive == true) {
+          ref.read(selectedSeriesChannelProvider.notifier).state = null;
+        }
+      });
       return null;
     });
 
 /// Distinct genres from series entries in the active playlist.
 final seriesGroupsProvider = Provider.autoDispose<List<String>>((ref) {
-  final channelsAsync = ref.watch(seriesChannelsStreamProvider);
-  final hidden = ref.watch(hiddenGroupsProvider).valueOrNull ?? {};
-  final pinned =
-      ref.watch(pinnedGroupsProvider).valueOrNull ?? const <String>[];
-  return channelsAsync.when(
-    data: (channels) => prioritizePinnedGroups(
-      visibleGroups(distinctSortedGroups(channels), hidden),
-      pinned,
-    ),
-    loading: () => const [],
-    error: (_, _) => const [],
-  );
+  return <String>{
+    for (final entry in ref.watch(seriesCategoryEntriesProvider))
+      entry.groupName,
+  }.toList();
 });
+
+final seriesCategoryEntriesProvider =
+    Provider.autoDispose<List<PlaylistCatalogCategory>>((ref) {
+      final scope = ref.watch(effectivePlaylistCatalogScopeProvider);
+      return ref.watch(
+        playlistCatalogCategoryProvider(
+          PlaylistCatalogQuery(
+            scope: scope,
+            mediaType: PlaylistCatalogMediaType.series,
+          ),
+        ),
+      );
+    });
 
 /// Series catalogue after genre filter.
 final filteredSeriesChannelsProvider = Provider.autoDispose<List<Channel>>((
@@ -56,12 +78,19 @@ final filteredSeriesChannelsProvider = Provider.autoDispose<List<Channel>>((
 ) {
   final channels =
       ref.watch(seriesChannelsStreamProvider).valueOrNull ?? const [];
-  final hidden = ref.watch(hiddenGroupsProvider).valueOrNull ?? const {};
+  final scope = ref.watch(effectivePlaylistCatalogScopeProvider);
+  final ids = ref.watch(playlistCatalogPlaylistIdsProvider(scope));
+  final hiddenByPlaylist = <int, Set<String>>{
+    for (final playlistId in ids)
+      playlistId:
+          ref.watch(hiddenGroupsForPlaylistProvider(playlistId)).valueOrNull ??
+          const <String>{},
+  };
   final search = ref.watch(debouncedGlobalSearchQueryProvider);
-  return filterChannels(
+  return filterPlaylistCatalogChannels(
     channels: channels,
     groupFilter: ref.watch(selectedSeriesGroupFilterProvider),
-    hiddenGroups: hidden,
+    hiddenGroupsByPlaylist: hiddenByPlaylist,
     searchQuery: search,
   );
 });

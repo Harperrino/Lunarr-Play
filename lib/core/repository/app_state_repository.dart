@@ -1,7 +1,9 @@
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/series_resume_state.dart';
 import 'package:m3uxtream_player/core/models/channel_sort_mode.dart';
+import 'package:m3uxtream_player/core/models/epg_refresh_interval.dart';
 import 'package:m3uxtream_player/core/repository/app_state_stores.dart';
+import 'package:m3uxtream_player/core/services/app_lifecycle_gate.dart';
 
 export 'package:m3uxtream_player/core/models/series_resume_state.dart';
 
@@ -11,15 +13,17 @@ export 'package:m3uxtream_player/core/models/series_resume_state.dart';
 /// behavior should be added to the appropriate store rather than growing this
 /// facade with database logic.
 class AppStateRepository {
-  AppStateRepository(AppDatabase database)
-    : _values = AppStateValueStore(database) {
+  AppStateRepository(AppDatabase database, {AppLifecycleGate? lifecycleGate})
+    : _values = AppStateValueStore(database, lifecycleGate: lifecycleGate) {
     _appearance = AppearanceStateStore(_values);
     _playback = PlaybackStateStore(_values);
     _diagnostics = DiagnosticsStateStore(_values);
     _playlistVisibility = PlaylistVisibilityStateStore(_values);
     _epgReminder = EpgReminderStateStore(_values);
+    _epgRefreshInterval = EpgRefreshIntervalStateStore(_values);
     _seriesResume = SeriesResumeStateStore(_values);
     _catalogue = CatalogueStateStore(_values);
+    _layout = LayoutStateStore(_values);
   }
 
   final AppStateValueStore _values;
@@ -28,8 +32,10 @@ class AppStateRepository {
   late final DiagnosticsStateStore _diagnostics;
   late final PlaylistVisibilityStateStore _playlistVisibility;
   late final EpgReminderStateStore _epgReminder;
+  late final EpgRefreshIntervalStateStore _epgRefreshInterval;
   late final SeriesResumeStateStore _seriesResume;
   late final CatalogueStateStore _catalogue;
+  late final LayoutStateStore _layout;
 
   static String epgReminderDismissedKey(int playlistId) =>
       AppStateKeys.epgReminderDismissed(playlistId);
@@ -39,6 +45,8 @@ class AppStateRepository {
       AppStateKeys.hiddenGroups(playlistId);
   static String pinnedGroupsKey(int playlistId) =>
       AppStateKeys.pinnedGroups(playlistId);
+  static String epgRefreshIntervalKey(int playlistId) =>
+      AppStateKeys.epgRefreshInterval(playlistId);
 
   static const String playerBufferSecondsKey = AppStateKeys.playerBufferSeconds;
   static const String vodPreBufferEnabledKey = AppStateKeys.vodPreBufferEnabled;
@@ -56,6 +64,7 @@ class AppStateRepository {
   static const String appearanceAccentHueKey = AppStateKeys.appearanceAccentHue;
   static const String appearanceSurfaceToneKey =
       AppStateKeys.appearanceSurfaceTone;
+  static const String categoryPaneWidthKey = AppStateKeys.categoryPaneWidth;
 
   Future<double> getAppearanceAccentHue({double defaultHue = 170}) =>
       _appearance.getAccentHue(defaultHue: defaultHue);
@@ -119,6 +128,15 @@ class AppStateRepository {
       _catalogue.getChannelSortMode(playlistId);
   Future<void> setChannelSortMode(int playlistId, ChannelSortMode mode) =>
       _catalogue.setChannelSortMode(playlistId, mode);
+  Future<ChannelSortMode> getAllActiveChannelSortMode() =>
+      _catalogue.getAllActiveChannelSortMode();
+  Future<void> setAllActiveChannelSortMode(ChannelSortMode mode) =>
+      _catalogue.setAllActiveChannelSortMode(mode);
+
+  Future<double> getCategoryPaneWidth({double defaultWidth = 232}) =>
+      _layout.getCategoryPaneWidth(defaultWidth: defaultWidth);
+  Future<void> setCategoryPaneWidth(double width) =>
+      _layout.setCategoryPaneWidth(width);
 
   Future<bool> isEpgReminderDismissed(int playlistId) =>
       _epgReminder.isDismissed(playlistId);
@@ -126,6 +144,15 @@ class AppStateRepository {
       _epgReminder.setDismissed(playlistId, dismissed);
   Future<void> clearEpgReminderDismissed(int playlistId) =>
       _epgReminder.setDismissed(playlistId, false);
+
+  Future<EpgRefreshInterval> getEpgRefreshInterval(int playlistId) =>
+      _epgRefreshInterval.getInterval(playlistId);
+  Future<void> setEpgRefreshInterval(
+    int playlistId,
+    EpgRefreshInterval interval,
+  ) => _epgRefreshInterval.setInterval(playlistId, interval);
+  Future<void> clearEpgRefreshInterval(int playlistId) =>
+      _epgRefreshInterval.clearInterval(playlistId);
 
   Future<SeriesResumeState?> getSeriesResume(
     int playlistId,

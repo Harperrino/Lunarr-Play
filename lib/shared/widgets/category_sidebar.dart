@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:m3uxtream_player/core/constants/filter_constants.dart';
 import 'package:m3uxtream_player/core/services/live_layout_geometry.dart';
+import 'package:m3uxtream_player/core/models/playlist_catalog_scope.dart';
 import 'package:m3uxtream_player/shared/theme/app_motion.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
@@ -22,6 +23,8 @@ class CategorySidebar extends StatefulWidget {
     this.title = 'Categories',
     this.width = LiveLayoutMetrics.categoryPanelWidth,
     this.headerActions,
+    this.categoryEntries,
+    this.onCategoryPinChanged,
   });
 
   final List<String> groups;
@@ -33,6 +36,9 @@ class CategorySidebar extends StatefulWidget {
   final String title;
   final double width;
   final Widget? headerActions;
+  final List<PlaylistCatalogCategory>? categoryEntries;
+  final void Function(PlaylistCatalogCategory category, bool pinned)?
+  onCategoryPinChanged;
 
   @override
   State<CategorySidebar> createState() => _CategorySidebarState();
@@ -49,9 +55,12 @@ class _CategorySidebarState extends State<CategorySidebar> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.groups.isEmpty) return const SizedBox.shrink();
+    if (widget.groups.isEmpty &&
+        (widget.categoryEntries == null || widget.categoryEntries!.isEmpty)) {
+      return const SizedBox.shrink();
+    }
 
-    final entries = [kAllGroupsFilter, ...widget.groups];
+    final entries = widget.categoryEntries;
     final colors = Theme.of(context).colorScheme;
 
     return SizedBox(
@@ -106,16 +115,26 @@ class _CategorySidebarState extends State<CategorySidebar> {
                 child: ListView.separated(
                   controller: _scrollController,
                   primary: false,
-                  itemCount: entries.length,
+                  itemCount: (entries?.length ?? widget.groups.length) + 1,
                   separatorBuilder: (_, _) => const SizedBox(height: 6),
                   itemBuilder: (context, index) {
-                    final group = entries[index];
-                    final label = group == kAllGroupsFilter ? 'All' : group;
+                    final category = entries == null || index == 0
+                        ? null
+                        : entries[index - 1];
+                    final group =
+                        category?.filterKey ??
+                        (index == 0
+                            ? kAllGroupsFilter
+                            : widget.groups[index - 1]);
+                    final label =
+                        category?.groupName ??
+                        (group == kAllGroupsFilter ? 'All' : group);
                     final isSelected = widget.selectedGroup == group;
                     final isPinned =
-                        widget.showPinIndicators &&
-                        group != kAllGroupsFilter &&
-                        widget.pinnedGroups.contains(group);
+                        category?.isPinned ??
+                        (widget.showPinIndicators &&
+                            group != kAllGroupsFilter &&
+                            widget.pinnedGroups.contains(group));
                     final accent = group == kAllGroupsFilter
                         ? colors.primary
                         : GroupAccent.forGroup(group);
@@ -126,11 +145,16 @@ class _CategorySidebarState extends State<CategorySidebar> {
                       isAll: group == kAllGroupsFilter,
                       isSelected: isSelected,
                       isPinned: isPinned,
+                      supportingText: category?.secondaryLabel,
                       showPinIndicator: widget.showPinIndicators,
                       accent: accent,
                       onTap: () => widget.onSelected(group),
                       onPinChanged: group == kAllGroupsFilter
                           ? null
+                          : category != null &&
+                                widget.onCategoryPinChanged != null
+                          ? (groupName, pinned) =>
+                                widget.onCategoryPinChanged!(category, pinned)
                           : widget.onPinChanged,
                     );
                   },
@@ -155,6 +179,7 @@ class _CategoryTile extends StatelessWidget {
     required this.accent,
     required this.onTap,
     this.onPinChanged,
+    this.supportingText,
   });
 
   final String groupName;
@@ -163,6 +188,7 @@ class _CategoryTile extends StatelessWidget {
   final bool isSelected;
   final bool isPinned;
   final bool showPinIndicator;
+  final String? supportingText;
   final Color accent;
   final VoidCallback onTap;
   final void Function(String groupName, bool pinned)? onPinChanged;
@@ -173,6 +199,7 @@ class _CategoryTile extends StatelessWidget {
     final canPin = onPinChanged != null;
     final navigationItem = M3NavigationItem(
       label: label,
+      supportingText: supportingText,
       leading: _CategoryLeadingIcon(
         isAll: isAll,
         selected: isSelected,

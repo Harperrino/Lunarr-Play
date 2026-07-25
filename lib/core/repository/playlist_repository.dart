@@ -1,7 +1,10 @@
 import 'package:drift/drift.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
+import 'package:m3uxtream_player/core/models/search_catalog_entry.dart';
 import 'package:m3uxtream_player/core/parsers/m3u_parser.dart';
+import 'package:m3uxtream_player/core/search/search_index_repository.dart';
+import 'package:m3uxtream_player/core/services/app_lifecycle_gate.dart';
 
 typedef ChannelFavoriteIdentity = ({
   String channelType,
@@ -62,8 +65,13 @@ ChannelWatchLaterIdentity channelWatchLaterIdentity({
 /// for playlists and their associated channels inside Drift SQLite database.
 class PlaylistRepository {
   final AppDatabase _db;
+  final AppLifecycleGate? lifecycleGate;
+  late final SearchIndexRepository _searchIndex = SearchIndexRepository(
+    _db,
+    lifecycleGate: lifecycleGate,
+  );
 
-  PlaylistRepository(this._db);
+  PlaylistRepository(this._db, {this.lifecycleGate});
 
   /// Synchronizes parsed channels for a given playlist inside the database.
   /// Wraps all operations inside a single SQLite transaction and inserts items
@@ -71,7 +79,20 @@ class PlaylistRepository {
   Future<void> syncM3uChannels({
     required int playlistId,
     required List<ParsedChannel> parsedChannels,
+  }) {
+    return _runTracked(
+      () => _syncM3uChannels(
+        playlistId: playlistId,
+        parsedChannels: parsedChannels,
+      ),
+    );
+  }
+
+  Future<void> _syncM3uChannels({
+    required int playlistId,
+    required List<ParsedChannel> parsedChannels,
   }) async {
+    _ensureWritable();
     final stopwatch = Stopwatch()..start();
     AppLogger.info(
       'PlaylistRepository: Starting database sync of ${parsedChannels.length} channels for Playlist ID: $playlistId',
@@ -167,6 +188,11 @@ class PlaylistRepository {
           });
         }
 
+        // Keep the channel read model and its persistent search documents in
+        // the same transaction. A failed index update therefore rolls back
+        // the channel replacement as well.
+        await _searchIndex.rebuildPlaylistInTransaction(playlistId);
+
         final syncedAt = DateTime.now();
         final playlistUpdateQuery = _db.update(_db.playlists)
           ..where((tbl) => tbl.id.equals(playlistId));
@@ -191,7 +217,12 @@ class PlaylistRepository {
   }
 
   /// Atomically toggles a persisted channel favorite and returns its new value.
-  Future<bool> toggleChannelFavorite(int channelId) async {
+  Future<bool> toggleChannelFavorite(int channelId) {
+    return _runTracked(() => _toggleChannelFavorite(channelId));
+  }
+
+  Future<bool> _toggleChannelFavorite(int channelId) async {
+    _ensureWritable();
     try {
       return await _db.transaction(() async {
         final channel = await (_db.select(
@@ -223,7 +254,12 @@ class PlaylistRepository {
   }
 
   /// Atomically toggles the manual Watch Later state and returns its new value.
-  Future<bool> toggleChannelWatchLater(int channelId) async {
+  Future<bool> toggleChannelWatchLater(int channelId) {
+    return _runTracked(() => _toggleChannelWatchLater(channelId));
+  }
+
+  Future<bool> _toggleChannelWatchLater(int channelId) async {
+    _ensureWritable();
     try {
       return await _db.transaction(() async {
         final channel = await (_db.select(
@@ -255,7 +291,12 @@ class PlaylistRepository {
   }
 
   /// Inserts a new playlist profile inside Drift SQLite and returns the generated row ID.
-  Future<int> insertPlaylist(PlaylistsCompanion playlist) async {
+  Future<int> insertPlaylist(PlaylistsCompanion playlist) {
+    return _runTracked(() => _insertPlaylist(playlist));
+  }
+
+  Future<int> _insertPlaylist(PlaylistsCompanion playlist) async {
+    _ensureWritable();
     try {
       final id = await _db.into(_db.playlists).insert(playlist);
       AppLogger.info(
@@ -276,7 +317,17 @@ class PlaylistRepository {
   Future<void> updatePlaylist({
     required int playlistId,
     required PlaylistsCompanion playlist,
+  }) {
+    return _runTracked(
+      () => _updatePlaylist(playlistId: playlistId, playlist: playlist),
+    );
+  }
+
+  Future<void> _updatePlaylist({
+    required int playlistId,
+    required PlaylistsCompanion playlist,
   }) async {
+    _ensureWritable();
     try {
       final query = _db.update(_db.playlists)
         ..where((tbl) => tbl.id.equals(playlistId));
@@ -353,6 +404,54 @@ class PlaylistRepository {
         .watch();
   }
 
+  /// Reactive catalogue query for one scope. The playlist predicate is built
+  /// before Drift opens the stream, which keeps All-active views from loading
+  /// every playlist and filtering the result in Dart.
+  ///
+  /// The SQL already returns the final catalogue order so provider-default
+  /// views need no second full Dart sort:
+  /// 1. the caller's playlist order (safe CASE over checked int ids),
+  /// 2. the effective provider order (`provider_order == 0` falls back to the
+  ///    channel id, matching [effectiveChannelProviderOrder]),
+  /// 3. name and database id as deterministic tie-breakers.
+  Stream<List<Channel>> watchChannelsByPlaylistIdsAndType(
+    Iterable<int> playlistIds,
+    String channelType,
+  ) {
+    final orderedIds = playlistIds.toList();
+    if (orderedIds.isEmpty) return Stream.value(const <Channel>[]);
+
+    final playlistOrderCase = StringBuffer('CASE playlist_id');
+    for (var index = 0; index < orderedIds.length; index++) {
+      // Playlist ids and positions are checked integers; interpolating them
+      // is injection-safe and keeps the CASE free of unvalidated strings.
+      playlistOrderCase.write(' WHEN ${orderedIds[index]} THEN $index');
+    }
+    playlistOrderCase.write(' ELSE ${orderedIds.length} END');
+
+    const effectiveProviderOrder =
+        'CASE WHEN provider_order = 0 THEN id ELSE provider_order END';
+
+    return (_db.select(_db.channels)
+          ..where(
+            (tbl) =>
+                tbl.playlistId.isIn(orderedIds.toSet()) &
+                tbl.channelType.equals(channelType),
+          )
+          ..orderBy([
+            (tbl) => OrderingTerm.asc(
+              CustomExpression<int>(playlistOrderCase.toString()),
+            ),
+            (tbl) => OrderingTerm.asc(
+              const CustomExpression<int>(effectiveProviderOrder),
+            ),
+            (tbl) =>
+                OrderingTerm.asc(const CustomExpression<String>('LOWER(name)')),
+            (tbl) => OrderingTerm.asc(tbl.id),
+          ]))
+        .watch();
+  }
+
   /// One reactive catalogue stream used by global search across playlists.
   /// Playlist activity and hidden-category state are applied above this
   /// boundary, so search never opens one query per playlist or result.
@@ -363,6 +462,65 @@ class PlaylistRepository {
           (tbl) => OrderingTerm.asc(tbl.id),
         ]))
         .watch();
+  }
+
+  /// Reactive, projection-only catalogue for the global search overlay.
+  ///
+  /// The query is bounded to active playlists before it reaches SQLite and
+  /// selects only the fields needed for matching and presentation. An empty
+  /// playlist set deliberately avoids opening a database stream.
+  Stream<List<SearchCatalogEntry>> watchSearchCatalog(
+    Iterable<int> activePlaylistIds,
+  ) {
+    final ids = activePlaylistIds.toSet();
+    if (ids.isEmpty) return Stream.value(const []);
+
+    final query = _db.selectOnly(_db.channels)
+      ..addColumns([
+        _db.channels.id,
+        _db.channels.playlistId,
+        _db.channels.channelType,
+        _db.channels.name,
+        _db.channels.logo,
+        _db.channels.groupName,
+        _db.channels.tvgId,
+        _db.channels.channelNumber,
+        _db.channels.streamId,
+      ])
+      ..where(_db.channels.playlistId.isIn(ids));
+
+    return query
+        .map(
+          (row) => SearchCatalogEntry(
+            channelId: row.read(_db.channels.id)!,
+            playlistId: row.read(_db.channels.playlistId)!,
+            type: row.read(_db.channels.channelType)!,
+            name: row.read(_db.channels.name)!,
+            logo: row.read(_db.channels.logo),
+            category: row.read(_db.channels.groupName),
+            epgChannelId: row.read(_db.channels.tvgId),
+            channelNumber: row.read(_db.channels.channelNumber),
+            streamId: row.read(_db.channels.streamId),
+          ),
+        )
+        .watch();
+  }
+
+  /// Loads the complete channel row only for an explicit navigation action.
+  Future<Channel?> getChannelById(int channelId) {
+    return (_db.select(
+      _db.channels,
+    )..where((tbl) => tbl.id.equals(channelId))).getSingleOrNull();
+  }
+
+  /// Short-lived reactive stream used to reconcile one favorite mutation.
+  Stream<Channel> watchChannelById(int channelId) {
+    return (_db.select(_db.channels)..where((tbl) => tbl.id.equals(channelId)))
+        .watch()
+        .asyncExpand((channels) {
+          if (channels.isEmpty) return const Stream<Channel>.empty();
+          return Stream.value(channels.single);
+        });
   }
 
   /// Reactive manual Watch Later stream for VOD movies and series titles.
@@ -380,7 +538,12 @@ class PlaylistRepository {
   }
 
   /// Updates the EPG last-synced timestamp for a playlist.
-  Future<void> updateEpgLastSyncedAt(int playlistId, DateTime time) async {
+  Future<void> updateEpgLastSyncedAt(int playlistId, DateTime time) {
+    return _runTracked(() => _updateEpgLastSyncedAt(playlistId, time));
+  }
+
+  Future<void> _updateEpgLastSyncedAt(int playlistId, DateTime time) async {
+    _ensureWritable();
     try {
       final updateQuery = _db.update(_db.playlists)
         ..where((tbl) => tbl.id.equals(playlistId));
@@ -399,10 +562,14 @@ class PlaylistRepository {
   }
 
   /// Sets EPG URL from M3U header when present — never overwrites with empty values.
-  Future<void> setEpgUrlFromM3uHeader(int playlistId, String? epgUrl) async {
+  Future<void> setEpgUrlFromM3uHeader(int playlistId, String? epgUrl) {
     final trimmed = epgUrl?.trim();
-    if (trimmed == null || trimmed.isEmpty) return;
+    if (trimmed == null || trimmed.isEmpty) return Future.value();
+    return _runTracked(() => _setEpgUrlFromM3uHeader(playlistId, trimmed));
+  }
 
+  Future<void> _setEpgUrlFromM3uHeader(int playlistId, String trimmed) async {
+    _ensureWritable();
     try {
       final updateQuery = _db.update(_db.playlists)
         ..where((tbl) => tbl.id.equals(playlistId));
@@ -420,25 +587,31 @@ class PlaylistRepository {
     }
   }
 
-  /// Updates the EPG URL for an Xtream playlist (manual configuration).
-  Future<void> updateEpgUrl(int playlistId, String? epgUrl) async {
+  /// Updates the user-controlled EPG override without touching automatic
+  /// provider/M3U-header metadata.
+  Future<void> updateEpgUrlOverride(int playlistId, String? epgUrl) {
+    return _runTracked(() => _updateEpgUrlOverride(playlistId, epgUrl));
+  }
+
+  Future<void> _updateEpgUrlOverride(int playlistId, String? epgUrl) async {
+    _ensureWritable();
     try {
       final trimmed = epgUrl?.trim();
       final updateQuery = _db.update(_db.playlists)
         ..where((tbl) => tbl.id.equals(playlistId));
       await updateQuery.write(
         PlaylistsCompanion(
-          epgUrl: trimmed == null || trimmed.isEmpty
+          epgUrlOverride: trimmed == null || trimmed.isEmpty
               ? const Value(null)
               : Value(trimmed),
         ),
       );
       AppLogger.info(
-        'PlaylistRepository: Updated epgUrl for playlist ID: $playlistId.',
+        'PlaylistRepository: Updated epgUrlOverride for playlist ID: $playlistId.',
       );
     } catch (e, stackTrace) {
       AppLogger.error(
-        'PlaylistRepository: Failed updating epgUrl for playlist ID: $playlistId!',
+        'PlaylistRepository: Failed updating epgUrlOverride for playlist ID: $playlistId!',
         e,
         stackTrace,
       );
@@ -446,9 +619,19 @@ class PlaylistRepository {
     }
   }
 
+  /// Compatibility alias for older callers. Manual EPG input is now stored
+  /// in the explicit override column.
+  Future<void> updateEpgUrl(int playlistId, String? epgUrl) =>
+      updateEpgUrlOverride(playlistId, epgUrl);
+
   /// Deletes a playlist by ID. Referencing channel entries are removed automatically
   /// by SQLite via cascade rules defined in Drift schema.
-  Future<void> deletePlaylist(int playlistId) async {
+  Future<void> deletePlaylist(int playlistId) {
+    return _runTracked(() => _deletePlaylist(playlistId));
+  }
+
+  Future<void> _deletePlaylist(int playlistId) async {
+    _ensureWritable();
     try {
       final count = await (_db.delete(
         _db.playlists,
@@ -465,4 +648,14 @@ class PlaylistRepository {
       rethrow;
     }
   }
+
+  void _ensureWritable() {
+    lifecycleGate?.ensureWritable();
+  }
+
+  /// Registers every public write at the lifecycle gate so shutdown first
+  /// rejects new work and then drains the running persistence operations
+  /// before the SQLite connection may close.
+  Future<T> _runTracked<T>(Future<T> Function() operation) =>
+      lifecycleGate?.runTracked(operation) ?? operation();
 }

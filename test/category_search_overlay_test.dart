@@ -5,10 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/app/providers/fullscreen_providers.dart';
 import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
 import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
-import 'package:m3uxtream_player/core/database/app_database.dart';
+import 'package:m3uxtream_player/core/models/search_catalog_entry.dart';
+import 'package:m3uxtream_player/core/search/search_models.dart';
 import 'package:m3uxtream_player/features/search/models/category_search_result.dart';
 import 'package:m3uxtream_player/features/search/models/channel_search_result.dart';
 import 'package:m3uxtream_player/features/search/models/global_search_results.dart';
+import 'package:m3uxtream_player/features/search/models/search_overlay_filter.dart';
 import 'package:m3uxtream_player/features/search/providers/category_search_providers.dart';
 import 'package:m3uxtream_player/features/search/providers/search_providers.dart';
 import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
@@ -44,29 +46,38 @@ GlobalSearchResults _results() => const GlobalSearchResults(
   ],
 );
 
-ProviderContainer _container() => ProviderContainer(
-  overrides: [globalSearchResultsProvider.overrideWithValue(_results())],
+ProviderContainer _container({
+  GlobalSearchResults? results,
+  AsyncValue<GlobalSearchResults>? resultState,
+}) => ProviderContainer(
+  overrides: [
+    globalSearchResultsProvider.overrideWithValue(results ?? _results()),
+    globalSearchResultsAsyncProvider.overrideWith((ref) async {
+      return results ?? _results();
+    }),
+    searchIndexBuildStateProvider.overrideWith(
+      (ref) => Stream.value(const SearchIndexBuildState.empty()),
+    ),
+    if (resultState != null)
+      searchResultsAsyncProvider.overrideWithValue(resultState),
+  ],
 );
 
 ProviderContainer _channelContainer() {
-  final channel = Channel(
-    id: 42,
-    playlistId: 7,
-    name: 'News HD',
-    streamUrl: 'https://example.invalid/news.m3u8',
-    providerOrder: 0,
-    groupName: 'News',
-    isFavorite: false,
-    isWatchLater: false,
-    channelType: 'live',
-  );
   return ProviderContainer(
     overrides: [
       globalSearchResultsProvider.overrideWithValue(
         GlobalSearchResults(
           channels: [
             ChannelSearchResult(
-              channel: channel,
+              entry: const SearchCatalogEntry(
+                channelId: 42,
+                playlistId: 7,
+                type: 'live',
+                name: 'News HD',
+                category: 'News',
+                epgChannelId: 'epg-news',
+              ),
               playlistId: 7,
               playlistName: 'Main playlist',
               categoryName: 'News',
@@ -75,6 +86,30 @@ ProviderContainer _channelContainer() {
           ],
           categories: const [],
         ),
+      ),
+      globalSearchResultsAsyncProvider.overrideWith((ref) async {
+        return GlobalSearchResults(
+          channels: [
+            ChannelSearchResult(
+              entry: const SearchCatalogEntry(
+                channelId: 42,
+                playlistId: 7,
+                type: 'live',
+                name: 'News HD',
+                category: 'News',
+                epgChannelId: 'epg-news',
+              ),
+              playlistId: 7,
+              playlistName: 'Main playlist',
+              categoryName: 'News',
+              resolvedEpgChannelId: 'epg-news',
+            ),
+          ],
+          categories: const [],
+        );
+      }),
+      searchIndexBuildStateProvider.overrideWith(
+        (ref) => Stream.value(const SearchIndexBuildState.empty()),
       ),
       searchEpgLinesProvider.overrideWith(
         (ref) => Stream.value({42: const SearchEpgLine.current('Tagesschau')}),
@@ -92,17 +127,102 @@ Future<void> _pumpSearch(
       container: container,
       child: MaterialApp(
         theme: AppTheme.darkTheme,
-        home: const Scaffold(
-          body: SizedBox(width: 640, child: GlobalSearchField()),
+        home: Scaffold(
+          body: Stack(
+            children: [
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {},
+                child: const SizedBox.expand(),
+              ),
+              const Align(
+                alignment: Alignment.topCenter,
+                child: SizedBox(width: 640, child: GlobalSearchField()),
+              ),
+            ],
+          ),
         ),
       ),
     ),
   );
   await tester.enterText(find.byType(EditableText), 'News');
-  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 140));
 }
 
 void main() {
+  testWidgets('filter tabs keep the overlay open and show an empty state', (
+    tester,
+  ) async {
+    final container = _container(
+      results: const GlobalSearchResults(channels: [], categories: []),
+      resultState: const AsyncData(
+        GlobalSearchResults(channels: [], categories: []),
+      ),
+    );
+    addTearDown(container.dispose);
+    await _pumpSearch(tester, container);
+
+    await tester.tap(find.text('Channel'));
+    await tester.pump();
+
+    expect(
+      container.read(searchOverlayFilterProvider),
+      SearchOverlayFilter.channels,
+    );
+    expect(container.read(searchOverlaySessionProvider).isOpen, isTrue);
+    expect(
+      find.byKey(const ValueKey('global-search-empty-state')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('loading and error states stay mounted inside the overlay', (
+    tester,
+  ) async {
+    final loadingContainer = _container(
+      results: const GlobalSearchResults(channels: [], categories: []),
+      resultState: const AsyncLoading<GlobalSearchResults>(),
+    );
+    addTearDown(loadingContainer.dispose);
+    await _pumpSearch(tester, loadingContainer);
+    expect(
+      find.byKey(const ValueKey('global-search-loading-state')),
+      findsOneWidget,
+    );
+
+    final errorContainer = _container(
+      results: const GlobalSearchResults(channels: [], categories: []),
+      resultState: AsyncValue.error(
+        StateError('search unavailable'),
+        StackTrace.current,
+      ),
+    );
+    addTearDown(errorContainer.dispose);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await _pumpSearch(tester, errorContainer);
+    expect(
+      find.byKey(const ValueKey('global-search-error-state')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('outside tap and clear close the overlay', (tester) async {
+    final container = _container();
+    addTearDown(container.dispose);
+    await _pumpSearch(tester, container);
+
+    await tester.tapAt(const Offset(700, 550));
+    await tester.pump();
+    expect(container.read(searchOverlaySessionProvider).isOpen, isFalse);
+    expect(container.read(globalSearchQueryProvider), 'News');
+
+    await tester.tap(find.byTooltip('Clear search'));
+    await tester.pump();
+    expect(container.read(globalSearchQueryProvider), isEmpty);
+    expect(container.read(searchOverlaySessionProvider).isOpen, isFalse);
+  });
+
   testWidgets('shows category hits below the focused search field', (
     tester,
   ) async {

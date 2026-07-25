@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:m3uxtream_player/core/models/epg_sync_job.dart';
 import 'package:m3uxtream_player/app/providers/core_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
@@ -47,8 +48,9 @@ void listenEpgReminderOrchestration(WidgetRef ref) {
     }
   });
 
-  ref.listen(epgSyncNotifierProvider, (previous, next) async {
-    if (previous?.isLoading != true || !next.hasValue || next.hasError) return;
+  ref.listen(epgSyncEventsProvider, (previous, next) async {
+    final job = next.valueOrNull;
+    if (job == null || job.status != EpgSyncStatus.succeeded) return;
 
     final reminderId = ref.read(epgUpdateReminderProvider);
     if (reminderId != null) {

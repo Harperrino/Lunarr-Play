@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
+import 'package:m3uxtream_player/core/models/search_catalog_entry.dart';
 import 'package:m3uxtream_player/core/repository/epg_repository.dart';
 import 'package:m3uxtream_player/features/epg/providers/epg_providers.dart';
 import 'package:m3uxtream_player/features/search/models/channel_search_result.dart';
@@ -28,16 +29,12 @@ class _CountingEpgRepository extends EpgRepository {
 
 ChannelSearchResult _result(int id, String epgId) {
   return ChannelSearchResult(
-    channel: Channel(
-      id: id,
+    entry: SearchCatalogEntry(
+      channelId: id,
       playlistId: 1,
+      type: 'live',
       name: 'Channel $id',
-      streamUrl: 'https://example.invalid/$id',
-      providerOrder: id,
-      tvgId: epgId,
-      isFavorite: false,
-      isWatchLater: false,
-      channelType: 'live',
+      epgChannelId: epgId,
     ),
     playlistId: 1,
     playlistName: 'Main',

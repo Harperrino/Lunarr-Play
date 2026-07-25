@@ -13,6 +13,7 @@ import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/services/live_composition_geometry.dart';
 import 'package:m3uxtream_player/core/services/live_layout_geometry.dart';
 import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/features/channels/providers/category_pane_width_providers.dart';
 import 'package:m3uxtream_player/features/channels/widgets/channel_list_panel.dart';
 import 'package:m3uxtream_player/features/channels/widgets/live_category_sidebar.dart';
 import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
@@ -44,6 +45,11 @@ class _TestPlaylistSyncNotifier extends PlaylistSyncNotifier {
 class _TestEpgSyncNotifier extends EpgSyncNotifier {
   @override
   Future<void> build() async {}
+}
+
+class _TestCategoryPaneWidthNotifier extends CategoryPaneWidthNotifier {
+  @override
+  Future<double> build() async => categoryPaneDefaultWidth;
 }
 
 class _TestInactivePlaylistIdsNotifier extends InactivePlaylistIdsNotifier {
@@ -95,6 +101,9 @@ void main() {
           (ref) => throw StateError(
             'Live shell composition tests must not open the database',
           ),
+        ),
+        categoryPaneWidthProvider.overrideWith(
+          _TestCategoryPaneWidthNotifier.new,
         ),
         playlistsStreamProvider.overrideWith(
           (ref) => Stream.value(const <Playlist>[]),

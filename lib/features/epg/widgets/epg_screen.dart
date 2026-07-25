@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
+import 'package:m3uxtream_player/core/models/playlist_epg.dart';
 import 'package:m3uxtream_player/features/epg/providers/epg_grid_providers.dart';
 import 'package:m3uxtream_player/features/epg/providers/epg_providers.dart';
 import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
@@ -22,7 +25,6 @@ class EpgScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final epgSyncAsync = ref.watch(epgSyncNotifierProvider);
     final entriesAsync = ref.watch(epgGridEntriesStreamProvider);
     final catalogAsync = ref.watch(knownEpgChannelIdsProvider);
     final rows = ref.watch(epgGridRowsProvider);
@@ -31,6 +33,10 @@ class EpgScreen extends ConsumerWidget {
     final totalLiveCount =
         ref.watch(liveChannelsStreamProvider).valueOrNull?.length ?? 0;
     final selectedPlaylistId = ref.watch(selectedPlaylistIdProvider);
+    final epgJobs = ref.watch(epgSyncJobsProvider).valueOrNull ?? const {};
+    final selectedEpgJob = selectedPlaylistId == null
+        ? null
+        : epgJobs[selectedPlaylistId];
     final playlists =
         ref.watch(playlistsStreamProvider).valueOrNull ?? const [];
 
@@ -44,10 +50,10 @@ class EpgScreen extends ConsumerWidget {
       }
     }
 
-    final hasEpgUrl = activePlaylist?.epgUrl?.trim().isNotEmpty ?? false;
+    final hasEpgUrl = activePlaylist?.effectiveEpgUrl != null;
     final hasVisibleProgrammes = epgGridHasVisibleProgrammes(rows);
     final hasMatchedChannels = epgGridHasMatchedChannels(rows);
-    final isManualSync = epgSyncAsync.isLoading;
+    final isManualSync = selectedEpgJob?.isActive ?? false;
     final isInitialCatalogLoad =
         catalogAsync.isLoading && !catalogAsync.hasValue;
     final isEntriesLoading = entriesAsync.isLoading && !entriesAsync.hasValue;
@@ -144,9 +150,12 @@ class EpgScreen extends ConsumerWidget {
             ? 'EPG aktualisieren'
             : null,
         onAction: hasEpgUrl && selectedPlaylistId != null
-            ? () => ref
-                  .read(epgSyncNotifierProvider.notifier)
-                  .sync(selectedPlaylistId)
+            ? () => unawaited(
+                ref
+                    .read(epgSyncControllerProvider)
+                    .enqueue(selectedPlaylistId)
+                    .catchError((_) {}),
+              )
             : null,
       );
     }

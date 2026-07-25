@@ -175,7 +175,7 @@ void main() {
 
       expect(stage.top - header.bottom, closeTo(expectedGap, 0.01));
       expect(stage.width / stage.height, closeTo(16 / 9, 0.001));
-      expect(transport.top - stage.bottom, greaterThanOrEqualTo(expectedGap));
+      expect(transport.top - stage.bottom, closeTo(expectedGap, 0.01));
       expect(stage.bottom, lessThanOrEqualTo(transport.top));
       expect(tester.takeException(), isNull);
     }

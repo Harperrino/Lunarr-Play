@@ -2,6 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/app/providers/core_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 
+/// Playlist-specific pinned-category read boundary for All-active catalogs.
+final pinnedGroupsForPlaylistProvider = FutureProvider.autoDispose
+    .family<List<String>, int>((ref, playlistId) {
+      return ref.read(appStateRepositoryProvider).getPinnedGroups(playlistId);
+    });
+
 /// Pinned category names for the active playlist (persisted in AppStates).
 ///
 /// The list order is the display order used for pinned groups.
@@ -31,6 +37,7 @@ class PinnedGroupsNotifier extends AsyncNotifier<List<String>> {
     if (ref.read(selectedPlaylistIdProvider) == playlistId) {
       state = AsyncData(pinned);
     }
+    ref.invalidate(pinnedGroupsForPlaylistProvider(playlistId));
   }
 
   Future<void> toggleGroup(

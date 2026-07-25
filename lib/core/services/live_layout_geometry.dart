@@ -9,6 +9,7 @@ class LiveLayoutMetrics {
   static const headerBlockHeight = LiveCompositionMetrics.headerBlockHeight;
   static const headerCommandAreaHeight = headerBlockHeight;
   static const headerCommandAreaScaledHeight = 72.0;
+  static const searchFieldHeight = 48.0;
   static const headerTitleSearchGap = 12.0;
   static const headerBottomGap = LiveCompositionMetrics.headerBottomGap;
   static const columnGap = LiveCompositionMetrics.panelGap;
@@ -207,7 +208,7 @@ class LiveHeaderLayoutMetrics {
     final height = isStacked
         ? textBlockHeight +
               LiveLayoutMetrics.headerTitleSearchGap +
-              LiveLayoutMetrics.headerCommandAreaHeight
+              LiveLayoutMetrics.searchFieldHeight
         : math.max(inlineHeight, textBlockHeight);
 
     return LiveHeaderLayoutMetrics._(

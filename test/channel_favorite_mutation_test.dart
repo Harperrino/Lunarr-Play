@@ -21,16 +21,19 @@ void main() {
   test(
     'keeps favorite mutations independent and reconciles through Drift',
     () async {
-      final stream = StreamController<List<Channel>>();
+      final firstStream = StreamController<Channel>();
+      final secondStream = StreamController<Channel>();
       final firstCall = Completer<bool>();
       final secondCall = Completer<bool>();
       final controller = ChannelFavoriteController(
         (channelId) => channelId == 1 ? firstCall.future : secondCall.future,
-        channelStream: stream.stream,
+        watchChannelById: (channelId) =>
+            channelId == 1 ? firstStream.stream : secondStream.stream,
       );
       addTearDown(() async {
         controller.dispose();
-        await stream.close();
+        await firstStream.close();
+        await secondStream.close();
       });
 
       final firstToggle = controller.toggle(1, currentFavorite: false);
@@ -46,7 +49,8 @@ void main() {
       expect(controller.state.isBusy(1), isTrue);
       expect(controller.state.isBusy(2), isTrue);
 
-      stream.add([_channel(1, true), _channel(2, false)]);
+      firstStream.add(_channel(1, true));
+      secondStream.add(_channel(2, false));
       await Future<void>.delayed(Duration.zero);
 
       expect(controller.state.isLoading, isFalse);
@@ -57,14 +61,11 @@ void main() {
   test(
     'rolls back only the failed channel and keeps the error for the snackbar',
     () async {
-      final stream = StreamController<List<Channel>>();
       final controller = ChannelFavoriteController(
         (_) async => throw StateError('write failed'),
-        channelStream: stream.stream,
       );
       addTearDown(() async {
         controller.dispose();
-        await stream.close();
       });
 
       final toggle = controller.toggle(1, currentFavorite: false);

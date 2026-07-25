@@ -6,6 +6,8 @@ import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/core/models/series_resume_state.dart';
 import 'package:m3uxtream_player/core/models/channel_sort_mode.dart';
+import 'package:m3uxtream_player/core/models/epg_refresh_interval.dart';
+import 'package:m3uxtream_player/core/services/app_lifecycle_gate.dart';
 
 class AppStateKeys {
   const AppStateKeys._();
@@ -18,6 +20,9 @@ class AppStateKeys {
   static String pinnedGroups(int playlistId) => 'pinned_groups_$playlistId';
   static String channelSortMode(int playlistId) =>
       'channel_sort_mode_$playlistId';
+  static const allActiveChannelSortMode = 'all_active_channel_sort_mode';
+  static String epgRefreshInterval(int playlistId) =>
+      'epg_refresh_interval_$playlistId';
 
   static const playerBufferSeconds = 'player_buffer_seconds';
   static const vodPreBufferEnabled = 'vod_pre_buffer_enabled';
@@ -31,13 +36,15 @@ class AppStateKeys {
   static const inactivePlaylistIds = 'inactive_playlist_ids';
   static const appearanceAccentHue = 'appearanceAccentHue';
   static const appearanceSurfaceTone = 'appearanceSurfaceTone';
+  static const categoryPaneWidth = 'category_pane_width';
 }
 
 /// Shared key-value adapter for the feature-specific app-state stores.
 class AppStateValueStore {
-  AppStateValueStore(this._db);
+  AppStateValueStore(this._db, {this.lifecycleGate});
 
   final AppDatabase _db;
+  final AppLifecycleGate? lifecycleGate;
 
   Future<String?> read(String key) async {
     final row = await (_db.select(
@@ -47,17 +54,21 @@ class AppStateValueStore {
   }
 
   Future<void> write(String key, String value) async {
-    await _db
+    lifecycleGate?.ensureWritable();
+    final operation = _db
         .into(_db.appStates)
         .insertOnConflictUpdate(
           AppStatesCompanion.insert(key: key, value: Value(value)),
         );
+    await (lifecycleGate?.track(operation) ?? operation);
   }
 
   Future<void> delete(String key) async {
-    await (_db.delete(
+    lifecycleGate?.ensureWritable();
+    final operation = (_db.delete(
       _db.appStates,
     )..where((table) => table.key.equals(key))).go();
+    await (lifecycleGate?.track(operation) ?? operation);
   }
 }
 
@@ -426,6 +437,68 @@ class CatalogueStateStore {
       rethrow;
     }
   }
+
+  Future<ChannelSortMode> getAllActiveChannelSortMode() async {
+    try {
+      return channelSortModeFromStorage(
+        await _values.read(AppStateKeys.allActiveChannelSortMode),
+      );
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'Failed reading All-active channel sort mode',
+        error,
+        stackTrace,
+      );
+      return ChannelSortMode.providerDefault;
+    }
+  }
+
+  Future<void> setAllActiveChannelSortMode(ChannelSortMode mode) async {
+    try {
+      await _values.write(
+        AppStateKeys.allActiveChannelSortMode,
+        mode.storageValue,
+      );
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'Failed writing All-active channel sort mode',
+        error,
+        stackTrace,
+      );
+      rethrow;
+    }
+  }
+}
+
+class LayoutStateStore {
+  LayoutStateStore(this._values);
+
+  final AppStateValueStore _values;
+
+  Future<double> getCategoryPaneWidth({double defaultWidth = 232}) async {
+    try {
+      final parsed = double.tryParse(
+        await _values.read(AppStateKeys.categoryPaneWidth) ?? '',
+      );
+      return (parsed ?? defaultWidth).clamp(200, 420).toDouble();
+    } catch (error, stackTrace) {
+      AppLogger.error('Failed reading category pane width', error, stackTrace);
+      return defaultWidth;
+    }
+  }
+
+  Future<void> setCategoryPaneWidth(double width) async {
+    final bounded = width.clamp(200, 420).toDouble();
+    try {
+      await _values.write(
+        AppStateKeys.categoryPaneWidth,
+        bounded.toStringAsFixed(1),
+      );
+    } catch (error, stackTrace) {
+      AppLogger.error('Failed writing category pane width', error, stackTrace);
+      rethrow;
+    }
+  }
 }
 
 class EpgReminderStateStore {
@@ -445,6 +518,55 @@ class EpgReminderStateStore {
     AppLogger.info(
       'AppStateRepository: EPG reminder dismiss for playlist $playlistId → $dismissed.',
     );
+  }
+}
+
+class EpgRefreshIntervalStateStore {
+  EpgRefreshIntervalStateStore(this._values);
+  final AppStateValueStore _values;
+
+  Future<EpgRefreshInterval> getInterval(int playlistId) async {
+    try {
+      return EpgRefreshInterval.fromStorage(
+        await _values.read(AppStateKeys.epgRefreshInterval(playlistId)),
+      );
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'Failed reading EPG refresh interval for playlist $playlistId',
+        error,
+        stackTrace,
+      );
+      return EpgRefreshInterval.manual;
+    }
+  }
+
+  Future<void> setInterval(int playlistId, EpgRefreshInterval interval) async {
+    try {
+      await _values.write(
+        AppStateKeys.epgRefreshInterval(playlistId),
+        interval.storageValue,
+      );
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'Failed writing EPG refresh interval for playlist $playlistId',
+        error,
+        stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  Future<void> clearInterval(int playlistId) async {
+    try {
+      await _values.delete(AppStateKeys.epgRefreshInterval(playlistId));
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'Failed clearing EPG refresh interval for playlist $playlistId',
+        error,
+        stackTrace,
+      );
+      rethrow;
+    }
   }
 }
 

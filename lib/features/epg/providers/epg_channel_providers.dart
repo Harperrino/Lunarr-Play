@@ -3,30 +3,103 @@ import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
 import 'package:m3uxtream_player/features/epg/providers/epg_providers.dart';
 import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
+import 'package:m3uxtream_player/features/epg/providers/visible_live_channel_registry.dart';
 
-/// Match status for a playlist channel (scoped via [channelsStreamProvider]).
-final epgMatchStatusProvider = Provider.autoDispose.family<EpgMatchStatus, int>(
-  (ref, channelDbId) {
-    ref.watch(epgSyncNotifierProvider);
-    final match = ref.watch(epgChannelMatchesProvider)[channelDbId];
-    return match?.matchStatus ?? EpgMatchStatus.noMatch;
-  },
-);
+/// True once the EPG catalogue inputs have delivered at least one value, so
+/// visible rows show a neutral loading state instead of flashing "Kein EPG"
+/// while the matching index is still warming up.
+final epgMatchingInputsReadyProvider = Provider.autoDispose<bool>((ref) {
+  return ref.watch(knownEpgChannelIdsProvider).hasValue &&
+      ref.watch(epgChannelDisplayNamesProvider).hasValue;
+});
 
-/// Currently airing EPG programme for a playlist channel, or null.
-final currentProgramForChannelProvider = FutureProvider.autoDispose
-    .family<EpgEntry?, int>((ref, channelDbId) async {
-      ref.watch(epgSyncNotifierProvider);
+/// Matches only the actually built Live rows (max 64) against the shared
+/// matching index. This provider deliberately never watches
+/// [liveChannelsStreamProvider] or the global catalogue match map: the Live
+/// tab must not pay a whole-catalogue match for its first frame.
+final visibleLiveEpgMatchesProvider =
+    Provider.autoDispose<AsyncValue<Map<int, EpgChannelMatchResult>>>((ref) {
+      ref.watch(epgCompletionRevisionProvider);
+      final candidates =
+          ref.watch(visibleLiveChannelCandidatesProvider).valueOrNull;
+      if (candidates == null) {
+        return const AsyncValue.loading();
+      }
+      if (candidates.isEmpty) {
+        return const AsyncValue.data(<int, EpgChannelMatchResult>{});
+      }
+      if (!ref.watch(epgMatchingInputsReadyProvider)) {
+        return const AsyncValue.loading();
+      }
+      final index = ref.watch(epgMatchingIndexProvider);
+      return AsyncValue.data({
+        for (final candidate in candidates)
+          candidate.channelId: index.matchProjection(
+            name: candidate.name,
+            tvgId: candidate.tvgId,
+          ),
+      });
+    });
 
-      final match = ref.watch(epgChannelMatchesProvider)[channelDbId];
-      if (match == null || match.matchStatus != EpgMatchStatus.matched) {
-        return null;
+/// One bounded bulk query for the actually built Live rows. Sender tiles read
+/// the resulting map synchronously; they never create one SQLite query each.
+///
+/// The query set comes exclusively from [visibleLiveEpgMatchesProvider]
+/// (bounded to 64 rows by the registry). An empty set — or a set without any
+/// EPG match — deliberately avoids opening a SQL subscription, and one
+/// distinct visible set keeps exactly one bulk subscription. While the
+/// registry, the match or this stream is still working, rows simply keep a
+/// neutral loading state; an EPG error never moves the list into loading or
+/// error.
+final currentProgramsForVisibleChannelsProvider =
+    StreamProvider.autoDispose<Map<int, EpgEntry?>>((ref) {
+      ref.watch(epgCompletionRevisionProvider);
+      final matches = ref.watch(visibleLiveEpgMatchesProvider).valueOrNull;
+      if (matches == null) {
+        // Matching is still warming up; stay in loading so rows render a
+        // neutral EPG state instead of a wrong "Kein EPG".
+        return const Stream<Map<int, EpgEntry?>>.empty();
+      }
+      if (matches.isEmpty) {
+        return Stream.value(const <int, EpgEntry?>{});
       }
 
-      final resolvedId = match.resolvedEpgChannelId;
-      if (resolvedId == null) return null;
+      final resolvedByChannel = <int, String>{
+        for (final entry in matches.entries)
+          if (entry.value.matchStatus == EpgMatchStatus.matched &&
+              entry.value.resolvedEpgChannelId != null)
+            entry.key: entry.value.resolvedEpgChannelId!,
+      };
 
+      if (resolvedByChannel.isEmpty) {
+        return Stream.value({for (final channelId in matches.keys) channelId: null});
+      }
+
+      var active = true;
+      ref.onDispose(() => active = false);
+      final now = DateTime.now();
       return ref
           .read(epgRepositoryProvider)
-          .getCurrentProgram(resolvedId, DateTime.now());
+          .watchEntriesInRangeForChannelIds(
+            resolvedByChannel.values.toSet().toList(growable: false),
+            now.subtract(const Duration(minutes: 1)),
+            now.add(const Duration(minutes: 1)),
+          )
+          .map((entries) {
+            if (!active) return const <int, EpgEntry?>{};
+            final currentByEpgId = <String, EpgEntry>{};
+            for (final entry in entries) {
+              if (!entry.startTime.isAfter(now) && entry.endTime.isAfter(now)) {
+                currentByEpgId.putIfAbsent(entry.channelId, () => entry);
+              }
+            }
+            return {
+              for (final channelId in matches.keys)
+                channelId: currentByEpgId[resolvedByChannel[channelId]],
+            };
+          });
     });
+
+/// Descriptive alias used by catalog widgets and tests.
+final currentProgramByChannelProvider =
+    currentProgramsForVisibleChannelsProvider;

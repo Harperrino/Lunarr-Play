@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/app/shell/shell_sidebar.dart';
 import 'package:m3uxtream_player/app/shell/shell_command_area.dart';
 import 'package:m3uxtream_player/core/services/live_composition_geometry.dart';
 import 'package:m3uxtream_player/core/services/live_layout_geometry.dart';
+import 'package:m3uxtream_player/features/channels/providers/category_pane_width_providers.dart';
 import 'package:m3uxtream_player/features/channels/widgets/channel_list_panel.dart';
 import 'package:m3uxtream_player/features/channels/widgets/live_category_sidebar.dart';
 import 'package:m3uxtream_player/features/player/widgets/player_panel.dart';
@@ -14,7 +17,7 @@ import 'package:m3uxtream_player/shared/widgets/m3_pane_edge_handle.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_pane_toggle_button.dart';
 
 /// Live tab shell â€” keeps a single [PlayerPanel] mounted; chrome layers around it.
-class LiveTabShell extends StatefulWidget {
+class LiveTabShell extends ConsumerStatefulWidget {
   const LiveTabShell({
     super.key,
     required this.immersive,
@@ -46,12 +49,13 @@ class LiveTabShell extends StatefulWidget {
   final VoidCallback? onToggleFullscreen;
 
   @override
-  State<LiveTabShell> createState() => _LiveTabShellState();
+  ConsumerState<LiveTabShell> createState() => _LiveTabShellState();
 }
 
-class _LiveTabShellState extends State<LiveTabShell> {
+class _LiveTabShellState extends ConsumerState<LiveTabShell> {
   bool _channelListExpanded = true;
   bool _categoryPanelExpanded = true;
+  double? _categoryWidthDraft;
   final FocusNode _channelListToggleFocusNode = FocusNode(
     debugLabel: 'LiveChannelListToggle',
   );
@@ -78,11 +82,19 @@ class _LiveTabShellState extends State<LiveTabShell> {
           constraints,
           headerPlacement: headerPlacement,
         );
+        final storedCategoryWidth =
+            ref.watch(categoryPaneWidthProvider).valueOrNull ??
+            categoryPaneDefaultWidth;
+        final categoryWidth = _effectiveCategoryWidth(
+          contentBounds: contentBounds,
+          requestedWidth: _categoryWidthDraft ?? storedCategoryWidth,
+        );
         final composition = LiveCompositionGeometry.calculate(
           contentBounds: contentBounds,
           immersive: widget.immersive,
           channelListExpanded: _channelListExpanded,
           categoryPanelExpanded: _categoryPanelExpanded,
+          requestedCategoryWidth: categoryWidth,
         );
 
         return Stack(
@@ -107,8 +119,15 @@ class _LiveTabShellState extends State<LiveTabShell> {
                 context: context,
                 composition: composition,
                 headerPlacement: headerPlacement,
+                categoryWidth: categoryWidth,
               ),
-            if (!widget.immersive) ..._paneEdgeHandles(context, composition),
+            if (!widget.immersive)
+              ..._paneEdgeHandles(
+                context,
+                composition,
+                contentBounds: contentBounds,
+                categoryWidth: categoryWidth,
+              ),
           ],
         );
       },
@@ -119,6 +138,7 @@ class _LiveTabShellState extends State<LiveTabShell> {
     required BuildContext context,
     required LiveCompositionLayout composition,
     required LiveHeaderPlacementMetrics headerPlacement,
+    required double categoryWidth,
   }) {
     final sidebarWidth = LiveLayoutMetrics.sidebarWidthFor(
       expanded: widget.sidebarExpanded,
@@ -178,7 +198,7 @@ class _LiveTabShellState extends State<LiveTabShell> {
         ),
       if (composition.mode == LiveCompositionMode.expanded ||
           composition.mode == LiveCompositionMode.wide)
-        _animatedCategoryPanel(composition),
+        _animatedCategoryPanel(composition, categoryWidth: categoryWidth),
     ];
   }
 
@@ -226,8 +246,10 @@ class _LiveTabShellState extends State<LiveTabShell> {
 
   List<Widget> _paneEdgeHandles(
     BuildContext context,
-    LiveCompositionLayout composition,
-  ) {
+    LiveCompositionLayout composition, {
+    required Rect contentBounds,
+    required double categoryWidth,
+  }) {
     final channelRect = composition.channelListRect;
     final handles = <Widget>[];
     final categoryIsEmbedded =
@@ -244,6 +266,26 @@ class _LiveTabShellState extends State<LiveTabShell> {
       final categorySeamX = categoryRect == null
           ? embeddedChannelRect.left
           : (categoryRect.right + embeddedChannelRect.left) / 2;
+      handles.add(
+        _animatedResizeEdge(
+          key: const ValueKey('live-category-resize-edge'),
+          left: categorySeamX - M3PaneResizeEdge.hitWidth / 2,
+          top: embeddedChannelRect.top,
+          height: embeddedChannelRect.height,
+          onHorizontalDragUpdate: (delta) => _resizeCategory(
+            delta,
+            contentBounds: contentBounds,
+            categoryWidth: categoryWidth,
+          ),
+          onDragEnd: _persistCategoryDraft,
+          onDoubleTap: _resetCategoryWidth,
+          onResizeByKeyboard: (delta) => _resizeCategoryBy(
+            delta,
+            contentBounds: contentBounds,
+            categoryWidth: categoryWidth,
+          ),
+        ),
+      );
       handles.add(
         _animatedEdgeHandle(
           key: const ValueKey('live-category-edge-handle'),
@@ -297,6 +339,10 @@ class _LiveTabShellState extends State<LiveTabShell> {
     required bool expanded,
     required VoidCallback onPressed,
     required FocusNode focusNode,
+    ValueChanged<double>? onHorizontalDragUpdate,
+    VoidCallback? onDragEnd,
+    VoidCallback? onDoubleTap,
+    ValueChanged<double>? onResizeByKeyboard,
   }) {
     return AnimatedPositioned(
       key: key,
@@ -311,6 +357,37 @@ class _LiveTabShellState extends State<LiveTabShell> {
         expanded: expanded,
         onPressed: onPressed,
         focusNode: focusNode,
+        onHorizontalDragUpdate: onHorizontalDragUpdate,
+        onDragEnd: onDragEnd,
+        onDoubleTap: onDoubleTap,
+        onResizeByKeyboard: onResizeByKeyboard,
+      ),
+    );
+  }
+
+  Widget _animatedResizeEdge({
+    required Key key,
+    required double left,
+    required double top,
+    required double height,
+    required ValueChanged<double> onHorizontalDragUpdate,
+    required VoidCallback onDragEnd,
+    required VoidCallback onDoubleTap,
+    ValueChanged<double>? onResizeByKeyboard,
+  }) {
+    return AnimatedPositioned(
+      key: key,
+      duration: LiveTabShell.layoutTransitionDuration,
+      curve: Curves.easeOutCubic,
+      left: left,
+      top: top,
+      width: M3PaneResizeEdge.hitWidth,
+      height: height,
+      child: M3PaneResizeEdge(
+        onHorizontalDragUpdate: onHorizontalDragUpdate,
+        onDragEnd: onDragEnd,
+        onDoubleTap: onDoubleTap,
+        onResizeByKeyboard: onResizeByKeyboard,
       ),
     );
   }
@@ -327,7 +404,10 @@ class _LiveTabShellState extends State<LiveTabShell> {
     );
   }
 
-  static Widget _animatedCategoryPanel(LiveCompositionLayout composition) {
+  static Widget _animatedCategoryPanel(
+    LiveCompositionLayout composition, {
+    required double categoryWidth,
+  }) {
     final channelRect = composition.channelListRect!;
     final expandedRect = composition.categoryRect;
     final rect =
@@ -335,7 +415,7 @@ class _LiveTabShellState extends State<LiveTabShell> {
         Rect.fromLTWH(
           channelRect.left,
           channelRect.top,
-          LiveCompositionMetrics.categoryPanelWidth,
+          categoryWidth,
           channelRect.height,
         );
     return AnimatedPositioned(
@@ -346,7 +426,10 @@ class _LiveTabShellState extends State<LiveTabShell> {
       top: rect.top,
       width: rect.width,
       height: rect.height,
-      child: _CategoryPaneTransition(expanded: expandedRect != null),
+      child: _CategoryPaneTransition(
+        expanded: expandedRect != null,
+        width: categoryWidth,
+      ),
     );
   }
 
@@ -356,6 +439,71 @@ class _LiveTabShellState extends State<LiveTabShell> {
 
   void _toggleCategoryPanel() {
     setState(() => _categoryPanelExpanded = !_categoryPanelExpanded);
+  }
+
+  double _effectiveCategoryWidth({
+    required Rect contentBounds,
+    required double requestedWidth,
+  }) {
+    final mode = LiveCompositionGeometry.modeForWidth(contentBounds.width);
+    final channelWidth = switch (mode) {
+      LiveCompositionMode.wide => LiveCompositionMetrics.senderWideWidth,
+      LiveCompositionMode.expanded =>
+        LiveCompositionMetrics.senderExpandedWidth,
+      _ => LiveCompositionMetrics.channelRailWidth,
+    };
+    return clampCategoryPaneWidth(
+      requestedWidth: requestedWidth,
+      contentWidth: contentBounds.width,
+      channelWidth: _channelListExpanded
+          ? channelWidth
+          : LiveCompositionMetrics.channelRailWidth,
+    );
+  }
+
+  void _resizeCategory(
+    double delta, {
+    required Rect contentBounds,
+    required double categoryWidth,
+  }) {
+    final next = _effectiveCategoryWidth(
+      contentBounds: contentBounds,
+      requestedWidth: categoryWidth + delta,
+    );
+    if (next == categoryWidth) return;
+    setState(() => _categoryWidthDraft = next);
+  }
+
+  void _resizeCategoryBy(
+    double delta, {
+    required Rect contentBounds,
+    required double categoryWidth,
+  }) {
+    _resizeCategory(
+      delta,
+      contentBounds: contentBounds,
+      categoryWidth: categoryWidth,
+    );
+    _persistCategoryDraft();
+  }
+
+  void _persistCategoryDraft() {
+    final draft = _categoryWidthDraft;
+    if (draft == null) return;
+    setState(() => _categoryWidthDraft = null);
+    unawaited(
+      ref
+          .read(categoryPaneWidthProvider.notifier)
+          .setWidth(draft)
+          .catchError((_) {}),
+    );
+  }
+
+  void _resetCategoryWidth() {
+    setState(() => _categoryWidthDraft = null);
+    unawaited(
+      ref.read(categoryPaneWidthProvider.notifier).reset().catchError((_) {}),
+    );
   }
 
   Future<void> _openCompactChannelSheet(BuildContext context) async {
@@ -411,9 +559,10 @@ class _LiveTabShellState extends State<LiveTabShell> {
 /// its reveal clip. This avoids squeezed rows and the abrupt mount/unmount jump
 /// that previously disagreed with the moving neighbouring panes.
 class _CategoryPaneTransition extends StatefulWidget {
-  const _CategoryPaneTransition({required this.expanded});
+  const _CategoryPaneTransition({required this.expanded, required this.width});
 
   final bool expanded;
+  final double width;
 
   @override
   State<_CategoryPaneTransition> createState() =>
@@ -449,9 +598,7 @@ class _CategoryPaneTransitionState extends State<_CategoryPaneTransition>
         excluding: !widget.expanded,
         child: AnimatedBuilder(
           animation: _controller,
-          child: const LiveCategorySidebar(
-            width: LiveCompositionMetrics.categoryPanelWidth,
-          ),
+          child: LiveCategorySidebar(width: widget.width),
           builder: (context, child) => ClipRect(
             clipper: _HorizontalRevealClipper(_controller.value),
             child: Opacity(

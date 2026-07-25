@@ -1,6 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:drift/native.dart';
+import 'package:m3uxtream_player/core/database/app_database.dart';
+import 'package:m3uxtream_player/core/repository/app_state_repository.dart';
+import 'package:m3uxtream_player/features/channels/providers/category_pane_width_providers.dart';
 import 'package:m3uxtream_player/core/services/live_composition_geometry.dart';
 
 void main() {
@@ -94,6 +98,20 @@ void main() {
         );
       },
     );
+
+    test('accepts a requested category width while preserving pane gaps', () {
+      final layout = LiveCompositionGeometry.calculate(
+        contentBounds: const Rect.fromLTWH(0, 0, 1600, 720),
+        requestedCategoryWidth: 360,
+      );
+
+      expect(layout.categoryRect!.width, 360);
+      expect(
+        layout.channelListRect!.left,
+        layout.categoryRect!.right + LiveCompositionMetrics.panelGap,
+      );
+      _expectBoundedAndSeparated(layout, const Rect.fromLTWH(0, 0, 1600, 720));
+    });
 
     test(
       'expanded category closure removes its gap and expands the player',
@@ -225,6 +243,34 @@ void main() {
         }
       },
     );
+  });
+
+  test('category pane width is persisted and bounded independently', () async {
+    final database = AppDatabase.executor(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AppStateRepository(database);
+
+    expect(
+      clampCategoryPaneWidth(
+        requestedWidth: 120,
+        contentWidth: 1600,
+        channelWidth: 376,
+      ),
+      categoryPaneMinimumWidth,
+    );
+    expect(
+      clampCategoryPaneWidth(
+        requestedWidth: 600,
+        contentWidth: 1600,
+        channelWidth: 376,
+      ),
+      categoryPaneMaximumWidth,
+    );
+
+    await repository.setCategoryPaneWidth(318);
+    expect(await repository.getCategoryPaneWidth(), 318);
+    await repository.setCategoryPaneWidth(999);
+    expect(await repository.getCategoryPaneWidth(), categoryPaneMaximumWidth);
   });
 }
 
