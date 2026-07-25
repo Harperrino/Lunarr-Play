@@ -7,6 +7,7 @@ import 'package:m3uxtream_player/app/providers/fullscreen_providers.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/core/repository/app_state_repository.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
+import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
 import 'package:m3uxtream_player/features/xtream/providers/series_providers.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -36,6 +37,9 @@ class SeriesResumeSnapshot {
 }
 
 abstract class AppShutdownActions {
+  /// Stops new database jobs and drains/cancels background work. The default
+  /// keeps lightweight test doubles source compatible.
+  Future<void> prepareForShutdown() async {}
   Future<void> exitFullscreenIfNeeded();
   Future<SeriesResumeSnapshot?> captureSeriesResumeSnapshot();
   Future<void> stopPlayback();
@@ -82,6 +86,7 @@ class AppShutdownController {
       'dispose playback resources',
       _actions.disposePlaybackResources,
     );
+    await _runStep('drain database jobs', _actions.prepareForShutdown);
     await _runStep('close database', _actions.closeDatabase);
     await _runStep('destroy window', _actions.destroyWindow);
 
@@ -115,6 +120,32 @@ class RiverpodAppShutdownActions implements AppShutdownActions {
   RiverpodAppShutdownActions(this.ref);
 
   final Ref ref;
+
+  /// Fixed shutdown order for database-backed work:
+  /// 1. close the lifecycle gate (new operations are rejected),
+  /// 2. stop the auto-EPG coordinator and schedulers,
+  /// 3. drain the serial EPG queue,
+  /// 4. drain search-index and repository jobs,
+  /// 5. dispose the search/EPG services,
+  /// 6. only afterwards may [closeDatabase] close SQLite.
+  @override
+  Future<void> prepareForShutdown() async {
+    final gate = ref.read(appLifecycleGateProvider);
+    gate.beginShutdown();
+
+    // Stop schedulers before draining their shared queues so no new work is
+    // appended while the connection is being prepared for close.
+    await ref.read(epgAutoRefreshCoordinatorProvider).dispose();
+    final epgController = ref.read(epgSyncControllerProvider);
+    await epgController.drain();
+
+    final searchIndex = ref.read(searchIndexRepositoryProvider);
+    searchIndex.beginShutdown();
+    await searchIndex.drain();
+    await gate.drain();
+    await searchIndex.dispose();
+    await epgController.dispose();
+  }
 
   @override
   Future<void> exitFullscreenIfNeeded() async {

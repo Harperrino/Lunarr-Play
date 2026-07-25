@@ -23,9 +23,9 @@ Channel _channel(
 }
 
 void main() {
-  test('provider default follows imported provider order', () {
+  test('provider default follows imported order with an ID fallback', () {
     final channels = [
-      _channel(1, 'Zulu', providerOrder: 0),
+      _channel(10, 'Zulu', providerOrder: 0),
       _channel(2, 'Alpha', providerOrder: 1),
     ];
 
@@ -34,7 +34,7 @@ void main() {
         channels,
         ChannelSortMode.providerDefault,
       ).map((c) => c.name),
-      ['Zulu', 'Alpha'],
+      ['Alpha', 'Zulu'],
     );
     expect(channels.map((c) => c.name), ['Zulu', 'Alpha']);
   });

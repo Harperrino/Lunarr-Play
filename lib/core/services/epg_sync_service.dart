@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:isolate';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
+import 'package:m3uxtream_player/core/models/playlist_epg.dart';
 import 'package:m3uxtream_player/core/parsers/epg_parser.dart';
 import 'package:m3uxtream_player/core/repository/epg_repository.dart';
 import 'package:m3uxtream_player/core/repository/playlist_repository.dart';
@@ -13,14 +14,14 @@ class EpgSyncService {
 
   EpgSyncService(this._epgRepository, this._playlistRepository);
 
-  /// Synchronizes EPG for a playlist using its configured [Playlist.epgUrl].
+  /// Synchronizes EPG for a playlist using its effective override/automatic URL.
   Future<void> syncEpgForPlaylist(int playlistId) async {
     final playlist = await _playlistRepository.getPlaylistById(playlistId);
     if (playlist == null) {
       throw StateError('EpgSyncService: Playlist ID $playlistId not found.');
     }
 
-    final epgUrl = playlist.epgUrl?.trim();
+    final epgUrl = playlist.effectiveEpgUrl;
     if (epgUrl == null || epgUrl.isEmpty) {
       throw StateError(
         'EpgSyncService: Playlist "${playlist.name}" has no EPG URL configured.',

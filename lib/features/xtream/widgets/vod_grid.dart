@@ -87,6 +87,7 @@ class _VodGridState extends ConsumerState<VodGrid> {
   }
 
   void _playMovie(Channel channel) {
+    selectConcretePlaylistContext(ref, channel.playlistId);
     ref
         .read(playbackPrepControllerProvider.notifier)
         .selectTarget(

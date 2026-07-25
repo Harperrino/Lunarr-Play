@@ -60,6 +60,7 @@ class LiveCompositionGeometry {
     bool immersive = false,
     bool channelListExpanded = true,
     bool categoryPanelExpanded = true,
+    double requestedCategoryWidth = LiveCompositionMetrics.categoryPanelWidth,
   }) {
     final bounds = _normalized(contentBounds);
     final mode = modeForWidth(bounds.width);
@@ -86,12 +87,14 @@ class LiveCompositionGeometry {
         channelWidth: LiveCompositionMetrics.senderExpandedWidth,
         channelListExpanded: channelListExpanded,
         categoryPanelExpanded: categoryPanelExpanded,
+        requestedCategoryWidth: requestedCategoryWidth,
       ),
       LiveCompositionMode.wide => _threeColumn(
         bounds,
         channelWidth: LiveCompositionMetrics.senderWideWidth,
         channelListExpanded: channelListExpanded,
         categoryPanelExpanded: categoryPanelExpanded,
+        requestedCategoryWidth: requestedCategoryWidth,
       ),
     };
   }
@@ -163,12 +166,15 @@ class LiveCompositionGeometry {
     required double channelWidth,
     required bool channelListExpanded,
     required bool categoryPanelExpanded,
+    required double requestedCategoryWidth,
   }) {
     final effectiveChannelWidth = channelListExpanded
         ? channelWidth
         : LiveCompositionMetrics.channelRailWidth;
     final categoryWidth = categoryPanelExpanded
-        ? math.min(LiveCompositionMetrics.categoryPanelWidth, bounds.width)
+        ? math
+              .min(math.max(0.0, requestedCategoryWidth), bounds.width)
+              .toDouble()
         : 0.0;
     final afterCategory =
         bounds.left +

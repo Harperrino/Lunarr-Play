@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
-import 'package:m3uxtream_player/core/constants/app_identity.dart';
-import 'package:m3uxtream_player/shared/widgets/app_brand_mark.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface_state_layer.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_navigation_item.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_pane_toggle_button.dart';
@@ -116,8 +114,6 @@ class _SidebarHeader extends StatefulWidget {
 }
 
 class _SidebarHeaderState extends State<_SidebarHeader> {
-  static const double _toggleCorridorWidth = 72;
-
   final FocusNode _toggleFocusNode = FocusNode(
     debugLabel: 'ShellSidebarToggle',
   );
@@ -156,56 +152,17 @@ class _SidebarHeaderState extends State<_SidebarHeader> {
 
     return SizedBox(
       height: 48,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            right: _toggleCorridorWidth,
-            child: Center(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.center,
-                child: Semantics(
-                  header: true,
-                  label: AppIdentity.displayName,
-                  child: ExcludeSemantics(
-                    child: Row(
-                      key: const ValueKey('shell-sidebar-brand'),
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const AppBrandMark(
-                          key: ValueKey('shell-sidebar-brand-mark'),
-                          size: 28,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppIdentity.displayName,
-                          key: const ValueKey('shell-sidebar-brand-wordmark'),
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.6,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: M3PaneToggleButton(
-              paneLabel: 'Sidebar',
-              expanded: true,
-              onPressed: widget.onToggleExpanded,
-              focusNode: _toggleFocusNode,
-              expandedTooltip: 'Collapse sidebar',
-              focusOutlineKey: const ValueKey('shell-sidebar-focus-ring'),
-              focusOutlineStyle: AppFocusOutlineStyle.box,
-            ),
-          ),
-        ],
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: M3PaneToggleButton(
+          paneLabel: 'Sidebar',
+          expanded: true,
+          onPressed: widget.onToggleExpanded,
+          focusNode: _toggleFocusNode,
+          expandedTooltip: 'Collapse sidebar',
+          focusOutlineKey: const ValueKey('shell-sidebar-focus-ring'),
+          focusOutlineStyle: AppFocusOutlineStyle.box,
+        ),
       ),
     );
   }

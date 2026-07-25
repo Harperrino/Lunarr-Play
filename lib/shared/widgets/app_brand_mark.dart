@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Code-native presentation of the LUNARR One application mark.
+/// Code-native presentation of the Lunarr Player application mark.
 ///
 /// The mark deliberately resolves its accent from the active [ColorScheme] so
 /// it follows appearance changes without loading or recoloring an image asset.
@@ -37,7 +37,7 @@ class AppBrandMark extends StatelessWidget {
   }
 }
 
-/// Paints the LUNARR One crescent inside a compact display outline.
+/// Paints the Lunarr Player crescent inside a compact display outline.
 ///
 /// Keeping the painter public makes the color contract directly testable and
 /// allows future platform surfaces to reuse the same vector geometry.

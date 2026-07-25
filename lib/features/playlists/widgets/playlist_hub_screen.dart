@@ -1,13 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:m3uxtream_player/app/providers/core_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
-import 'package:m3uxtream_player/features/playlists/providers/group_visibility_providers.dart';
-import 'package:m3uxtream_player/features/playlists/providers/pinned_groups_providers.dart';
+import 'package:m3uxtream_player/core/models/epg_refresh_interval.dart';
+import 'package:m3uxtream_player/core/models/epg_sync_job.dart';
+import 'package:m3uxtream_player/core/models/playlist_epg.dart';
+import 'package:m3uxtream_player/core/services/database_health_controller.dart';
+import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
+import 'package:m3uxtream_player/features/playlists/controllers/playlist_management_controller.dart';
+import 'package:m3uxtream_player/features/playlists/providers/managed_playlist_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
+import 'package:m3uxtream_player/features/playlists/providers/playlist_form_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_hub_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
+import 'package:m3uxtream_player/features/playlists/providers/playlist_sync_providers.dart';
+import 'package:m3uxtream_player/features/playlists/widgets/playlist_management_dialogs.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
 import 'package:m3uxtream_player/shared/widgets/group_accent.dart';
@@ -27,24 +37,36 @@ class PlaylistHubScreen extends ConsumerWidget {
     final selectedId = ref.watch(selectedPlaylistIdProvider);
     final inactiveIds =
         ref.watch(inactivePlaylistIdsProvider).valueOrNull ?? const <int>{};
-    final channelsAsync = ref.watch(channelsStreamProvider);
-
+    final databaseUnavailable = ref.watch(databaseHealthProvider).isFatal;
     return playlistsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('Failed to load playlists: $err')),
       data: (playlists) {
         if (playlists.isEmpty) {
-          return const _EmptyPlaylists();
+          return _EmptyPlaylists(onAdd: () => showPlaylistAddDialog(context));
         }
 
         final activeId = selectedId != null && !inactiveIds.contains(selectedId)
             ? selectedId
             : firstActivePlaylistId(playlists, inactiveIds);
-        final activePlaylistId = activeId;
+        final managementId = managementPlaylistId(
+          playlists: playlists,
+          inactiveIds: inactiveIds,
+          managedId: ref.watch(managedPlaylistIdProvider),
+          selectedId: selectedId,
+        );
+        final channelsAsync = managementId == null
+            ? const AsyncData<List<Channel>>([])
+            : ref.watch(managedPlaylistChannelsProvider(managementId));
+        final hiddenAsync = managementId == null
+            ? const AsyncData<Set<String>>({})
+            : ref.watch(managedHiddenGroupsProvider(managementId));
+        final pinnedAsync = managementId == null
+            ? const AsyncData<List<String>>([])
+            : ref.watch(managedPinnedGroupsProvider(managementId));
         final selectedFilter = ref.watch(selectedPlaylistContentFilterProvider);
-        final hidden = ref.watch(hiddenGroupsProvider).valueOrNull ?? {};
-        final pinned =
-            ref.watch(pinnedGroupsProvider).valueOrNull ?? const <String>[];
+        final hidden = hiddenAsync.valueOrNull ?? <String>{};
+        final pinned = pinnedAsync.valueOrNull ?? const <String>[];
         final categoryData = buildPlaylistHubCategoryViewData(
           channels: channelsAsync.valueOrNull ?? const <Channel>[],
           contentFilter: selectedFilter,
@@ -63,19 +85,47 @@ class PlaylistHubScreen extends ConsumerWidget {
               accent: GroupAccent.forGroup(group),
               isVisible: isVisible,
               isPinned: categoryData.pinnedGroups.contains(group),
+              databaseUnavailable: databaseUnavailable,
               onVisibilityChanged: (visible) {
-                final playlistId = activePlaylistId;
+                final playlistId = managementId;
                 if (playlistId == null) return;
-                ref
-                    .read(hiddenGroupsProvider.notifier)
-                    .toggleGroup(playlistId, group, visible);
+                unawaited(
+                  ref
+                      .read(appStateRepositoryProvider)
+                      .getHiddenGroups(playlistId)
+                      .then((current) async {
+                        if (visible) {
+                          current.remove(group);
+                        } else {
+                          current.add(group);
+                        }
+                        await ref
+                            .read(appStateRepositoryProvider)
+                            .setHiddenGroups(playlistId, current);
+                        ref.invalidate(managedHiddenGroupsProvider(playlistId));
+                      }),
+                );
               },
               onPinChanged: (shouldPin) {
-                final playlistId = activePlaylistId;
+                final playlistId = managementId;
                 if (playlistId == null) return;
-                ref
-                    .read(pinnedGroupsProvider.notifier)
-                    .toggleGroup(playlistId, group, shouldPin);
+                unawaited(
+                  ref
+                      .read(appStateRepositoryProvider)
+                      .getPinnedGroups(playlistId)
+                      .then((current) async {
+                        if (shouldPin) {
+                          current.remove(group);
+                          current.add(group);
+                        } else {
+                          current.remove(group);
+                        }
+                        await ref
+                            .read(appStateRepositoryProvider)
+                            .setPinnedGroups(playlistId, current);
+                        ref.invalidate(managedPinnedGroupsProvider(playlistId));
+                      }),
+                );
               },
             ),
           );
@@ -92,11 +142,16 @@ class PlaylistHubScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _SectionTitle(
+                    _SectionTitle(
                       icon: Icons.playlist_play_rounded,
                       label: 'Playlists',
                       subtitle:
-                          'Switch the active source and keep one playlist in focus.',
+                          'Aktivieren, synchronisieren und separat verwalten.',
+                      action: FilledButton.icon(
+                        onPressed: () => showPlaylistAddDialog(context),
+                        icon: const Icon(Icons.add_rounded, size: 18),
+                        label: const Text('Playlist hinzufügen'),
+                      ),
                     ),
                     const SizedBox(height: 14),
                     Expanded(
@@ -107,33 +162,61 @@ class PlaylistHubScreen extends ConsumerWidget {
                           final playlist = playlists[index];
                           final isActive = playlist.id == activeId;
                           final isInactive = inactiveIds.contains(playlist.id);
+                          final epgJobs =
+                              ref.watch(epgSyncJobsProvider).valueOrNull ??
+                              const <int, EpgSyncJob>{};
+                          final syncState = ref.watch(
+                            playlistSyncStatusProvider(playlist.id),
+                          );
+                          final epgInterval = ref.watch(
+                            epgRefreshIntervalProvider(playlist.id),
+                          );
                           return _PlaylistTile(
                             playlist: playlist,
                             isActive: isActive,
                             isInactive: isInactive,
-                            onTap: () async {
-                              if (isInactive) {
-                                await ref
-                                    .read(inactivePlaylistIdsProvider.notifier)
-                                    .setActive(playlist.id, true);
-                              }
+                            syncState: syncState,
+                            epgJob: epgJobs[playlist.id],
+                            hasEpgUrl: playlist.effectiveEpgUrl != null,
+                            epgInterval: epgInterval,
+                            databaseUnavailable: databaseUnavailable,
+                            onTap: () => unawaited(
                               ref
-                                      .read(selectedPlaylistIdProvider.notifier)
-                                      .state =
-                                  playlist.id;
+                                  .read(playlistManagementControllerProvider)
+                                  .selectPlaylist(playlist.id),
+                            ),
+                            onActiveChanged: (active) => unawaited(
                               ref
-                                      .read(
-                                        selectedGroupFilterProvider.notifier,
-                                      )
-                                      .state =
-                                  kAllGroupsFilter;
-                              await ref
-                                  .read(hiddenGroupsProvider.notifier)
-                                  .reloadForPlaylist(playlist.id);
-                              await ref
-                                  .read(pinnedGroupsProvider.notifier)
-                                  .reloadForPlaylist(playlist.id);
-                            },
+                                  .read(playlistManagementControllerProvider)
+                                  .setActive(playlist.id, active),
+                            ),
+                            onSync: () => unawaited(
+                              ref
+                                  .read(playlistSyncNotifierProvider.notifier)
+                                  .sync(playlist.id),
+                            ),
+                            onEpgSync: () => unawaited(
+                              ref
+                                  .read(epgSyncControllerProvider)
+                                  .enqueue(playlist.id)
+                                  .catchError((_) {}),
+                            ),
+                            onEpgIntervalChanged: (interval) => unawaited(
+                              ref
+                                  .read(
+                                    epgRefreshIntervalProvider(
+                                      playlist.id,
+                                    ).notifier,
+                                  )
+                                  .setInterval(interval),
+                            ),
+                            onEdit: () =>
+                                showPlaylistEditDialog(context, playlist),
+                            onDelete: () =>
+                                _confirmDelete(context, ref, playlist),
+                            onManage: () => ref
+                                .read(playlistManagementControllerProvider)
+                                .openManagement(playlistId: playlist.id),
                           );
                         },
                       ),
@@ -200,37 +283,28 @@ class PlaylistHubScreen extends ConsumerWidget {
                                     hasVisibleGroups: visibleGroups.isNotEmpty,
                                     hasHiddenGroups: hidden.isNotEmpty,
                                     onHideAll:
-                                        activePlaylistId == null ||
+                                        managementId == null ||
                                             allGroups.isEmpty
                                         ? null
-                                        : () {
-                                            final playlistId = activePlaylistId;
-                                            ref
-                                                .read(
-                                                  hiddenGroupsProvider.notifier,
-                                                )
-                                                .setHidden(playlistId, {
-                                                  ...hidden,
-                                                  ...allGroups,
-                                                });
-                                          },
+                                        : () => unawaited(
+                                            _setManagedHiddenGroups(
+                                              ref,
+                                              managementId,
+                                              {...hidden, ...allGroups},
+                                            ),
+                                          ),
                                     onShowAll:
-                                        activePlaylistId == null ||
-                                            hidden.isEmpty
+                                        managementId == null || hidden.isEmpty
                                         ? null
-                                        : () {
-                                            final playlistId = activePlaylistId;
-                                            ref
-                                                .read(
-                                                  hiddenGroupsProvider.notifier,
-                                                )
-                                                .setHidden(
-                                                  playlistId,
-                                                  hidden.difference(
-                                                    allGroups.toSet(),
-                                                  ),
-                                                );
-                                          },
+                                        : () => unawaited(
+                                            _setManagedHiddenGroups(
+                                              ref,
+                                              managementId,
+                                              hidden.difference(
+                                                allGroups.toSet(),
+                                              ),
+                                            ),
+                                          ),
                                   ),
                                 ),
                                 if (visibleGroups.isNotEmpty) ...[
@@ -302,19 +376,80 @@ class PlaylistHubScreen extends ConsumerWidget {
     ref.listen(inactivePlaylistIdsProvider, (_, _) => syncSelection());
     SchedulerBinding.instance.addPostFrameCallback((_) => syncSelection());
   }
+
+  Future<void> _setManagedHiddenGroups(
+    WidgetRef ref,
+    int playlistId,
+    Set<String> groups,
+  ) async {
+    await ref
+        .read(appStateRepositoryProvider)
+        .setHiddenGroups(playlistId, groups);
+    ref.invalidate(managedHiddenGroupsProvider(playlistId));
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    Playlist playlist,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Playlist löschen?'),
+        content: Text(
+          'Die Playlist „${playlist.name}“ und ihre lokalen Daten werden entfernt.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await ref
+          .read(playlistFormNotifierProvider.notifier)
+          .deletePlaylist(playlist.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Playlist „${playlist.name}“ gelöscht.')),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Löschen fehlgeschlagen: $error')),
+        );
+      }
+    }
+  }
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.icon, required this.label, this.subtitle});
+  const _SectionTitle({
+    required this.icon,
+    required this.label,
+    this.subtitle,
+    this.action,
+  });
 
   final IconData icon;
   final String label;
   final String? subtitle;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return Row(
+    final heading = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppSurface(
@@ -354,6 +489,31 @@ class _SectionTitle extends StatelessWidget {
           ),
         ),
       ],
+    );
+    final titleAction = action;
+    if (titleAction == null) return heading;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 420) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              heading,
+              const SizedBox(height: 8),
+              Align(alignment: Alignment.centerRight, child: titleAction),
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: heading),
+            const SizedBox(width: 8),
+            titleAction,
+          ],
+        );
+      },
     );
   }
 }
@@ -424,13 +584,37 @@ class _PlaylistTile extends StatelessWidget {
     required this.playlist,
     required this.isActive,
     required this.isInactive,
+    required this.syncState,
+    required this.epgJob,
+    required this.hasEpgUrl,
+    required this.epgInterval,
     required this.onTap,
+    required this.onActiveChanged,
+    required this.onSync,
+    required this.onEpgSync,
+    required this.onEpgIntervalChanged,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onManage,
+    required this.databaseUnavailable,
   });
 
   final Playlist playlist;
   final bool isActive;
   final bool isInactive;
+  final AsyncValue<void> syncState;
+  final EpgSyncJob? epgJob;
+  final bool hasEpgUrl;
+  final EpgRefreshInterval epgInterval;
   final VoidCallback onTap;
+  final ValueChanged<bool> onActiveChanged;
+  final VoidCallback onSync;
+  final VoidCallback onEpgSync;
+  final ValueChanged<EpgRefreshInterval> onEpgIntervalChanged;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onManage;
+  final bool databaseUnavailable;
 
   @override
   Widget build(BuildContext context) {
@@ -454,20 +638,141 @@ class _PlaylistTile extends StatelessWidget {
           color: playlistAccent,
         ),
       ),
-      subtitle: Row(
-        mainAxisSize: MainAxisSize.min,
+      subtitle: Wrap(
+        spacing: 8,
+        runSpacing: 4,
         children: [
           Text(
             playlist.type.toUpperCase(),
             style: Theme.of(context).textTheme.bodySmall,
           ),
-          const SizedBox(width: 8),
           M3StatusPill(
-            label: isInactive ? 'Inactive' : 'Active',
+            label: isInactive ? 'Inaktiv' : 'Aktiv',
             accent: isInactive ? colors.outlineVariant : colors.secondary,
             foreground: isInactive
                 ? colors.onSurfaceVariant
                 : colors.onSecondaryContainer,
+          ),
+          if (syncState.isLoading)
+            const M3StatusPill(label: 'Sync …', accent: Colors.blue),
+          if (epgJob?.isActive ?? false)
+            const M3StatusPill(label: 'EPG …', accent: Colors.deepPurple),
+          if (hasEpgUrl && !(epgJob?.isActive ?? false))
+            M3StatusPill(
+              label: epgInterval.isAutomatic
+                  ? 'EPG ${epgInterval.label}'
+                  : 'EPG bereit',
+              accent: colors.tertiary,
+            ),
+        ],
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Switch(
+            value: !isInactive,
+            onChanged: databaseUnavailable ? null : onActiveChanged,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          IconButton(
+            tooltip: 'Playlist synchronisieren',
+            onPressed: syncState.isLoading ? null : onSync,
+            icon: syncState.isLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.sync_rounded, size: 18),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Weitere Playlist-Aktionen',
+            onSelected: (value) {
+              switch (value) {
+                case 'sync':
+                  if (!syncState.isLoading) onSync();
+                case 'epg-sync':
+                  if (hasEpgUrl && !(epgJob?.isActive ?? false)) onEpgSync();
+                case 'manage':
+                  onManage();
+                case 'edit':
+                  onEdit();
+                case 'delete':
+                  onDelete();
+                default:
+                  if (value.startsWith('epg:')) {
+                    onEpgIntervalChanged(
+                      EpgRefreshInterval.fromStorage(value.substring(4)),
+                    );
+                  }
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem<String>(
+                value: 'sync',
+                enabled: !syncState.isLoading,
+                child: Row(
+                  children: [
+                    syncState.isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.sync_rounded, size: 18),
+                    const SizedBox(width: 12),
+                    const Text('Playlist synchronisieren'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'epg-sync',
+                enabled: hasEpgUrl && !(epgJob?.isActive ?? false),
+                child: Row(
+                  children: [
+                    epgJob?.isActive ?? false
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.calendar_month_rounded, size: 18),
+                    const SizedBox(width: 12),
+                    Text(
+                      hasEpgUrl
+                          ? 'EPG synchronisieren'
+                          : 'Keine EPG-URL konfiguriert',
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                value: 'manage',
+                child: Text('Verwalten'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'edit',
+                child: Text('Bearbeiten'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'delete',
+                child: Text('Löschen'),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                enabled: false,
+                value: 'epg-label',
+                child: Text('EPG automatisch synchronisieren'),
+              ),
+              for (final interval in EpgRefreshInterval.values)
+                PopupMenuItem<String>(
+                  value: 'epg:${interval.storageValue}',
+                  child: Text(
+                    '${interval == epgInterval ? '✓ ' : ''}${interval.label}',
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -483,6 +788,7 @@ class _CategoryVisibilityTile extends StatelessWidget {
     required this.isPinned,
     required this.onVisibilityChanged,
     required this.onPinChanged,
+    required this.databaseUnavailable,
   });
 
   final String label;
@@ -491,6 +797,7 @@ class _CategoryVisibilityTile extends StatelessWidget {
   final bool isPinned;
   final ValueChanged<bool> onVisibilityChanged;
   final ValueChanged<bool> onPinChanged;
+  final bool databaseUnavailable;
 
   @override
   Widget build(BuildContext context) {
@@ -576,7 +883,10 @@ class _CategoryVisibilityTile extends StatelessWidget {
             onTap: () => onPinChanged(!isPinned),
           ),
           const SizedBox(width: 8),
-          Switch(value: isVisible, onChanged: onVisibilityChanged),
+          Switch(
+            value: isVisible,
+            onChanged: databaseUnavailable ? null : onVisibilityChanged,
+          ),
         ],
       ),
     );
@@ -799,7 +1109,9 @@ class _CategoryBulkActionsRow extends StatelessWidget {
 }
 
 class _EmptyPlaylists extends StatelessWidget {
-  const _EmptyPlaylists();
+  const _EmptyPlaylists({required this.onAdd});
+
+  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -823,8 +1135,14 @@ class _EmptyPlaylists extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Add a playlist in Settings, then manage it here.',
+              'Lege deine erste Quelle an und verwalte sie hier.',
               style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+            ),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              onPressed: onAdd,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Playlist hinzufügen'),
             ),
           ],
         ),

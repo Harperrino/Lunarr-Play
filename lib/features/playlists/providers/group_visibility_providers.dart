@@ -2,6 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/app/providers/core_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 
+/// Playlist-specific hidden-category read boundary. Unlike the legacy active
+/// notifier this family can be loaded for several All-scope playlists in
+/// parallel without mutating a global selected-playlist state.
+final hiddenGroupsForPlaylistProvider = FutureProvider.autoDispose
+    .family<Set<String>, int>((ref, playlistId) {
+      return ref.read(appStateRepositoryProvider).getHiddenGroups(playlistId);
+    });
+
 /// Hidden category names for the active playlist (persisted in AppStates).
 final hiddenGroupsProvider =
     AsyncNotifierProvider<HiddenGroupsNotifier, Set<String>>(
@@ -29,6 +37,7 @@ class HiddenGroupsNotifier extends AsyncNotifier<Set<String>> {
     if (ref.read(selectedPlaylistIdProvider) == playlistId) {
       state = AsyncData(hidden);
     }
+    ref.invalidate(hiddenGroupsForPlaylistProvider(playlistId));
   }
 
   Future<void> toggleGroup(

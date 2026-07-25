@@ -15,6 +15,12 @@ class _FakeShutdownActions implements AppShutdownActions {
   }
 
   @override
+  Future<void> prepareForShutdown() async {
+    calls.add('prepareForShutdown');
+    _maybeFail('prepareForShutdown');
+  }
+
+  @override
   Future<void> closeDatabase() async {
     calls.add('closeDatabase');
     _maybeFail('closeDatabase');
@@ -86,6 +92,7 @@ void main() {
       'stopPlayback',
       'saveSeriesResume:12345',
       'disposePlaybackResources',
+      'prepareForShutdown',
       'closeDatabase',
       'destroyWindow',
     ]);
@@ -114,6 +121,25 @@ void main() {
       'stopPlayback',
       'saveSeriesResume:12345',
       'disposePlaybackResources',
+      'prepareForShutdown',
+      'closeDatabase',
+      'destroyWindow',
+    ]);
+  });
+
+  test('the database closes only after the job drain finished', () async {
+    final actions = _FakeShutdownActions(failStep: 'prepareForShutdown');
+    final controller = AppShutdownController(actions);
+
+    await controller.requestShutdown(reason: 'window close');
+
+    // Even when the drain step fails, closeDatabase runs strictly after it.
+    expect(actions.calls, [
+      'captureSeriesResumeSnapshot',
+      'exitFullscreenIfNeeded',
+      'stopPlayback',
+      'disposePlaybackResources',
+      'prepareForShutdown',
       'closeDatabase',
       'destroyWindow',
     ]);

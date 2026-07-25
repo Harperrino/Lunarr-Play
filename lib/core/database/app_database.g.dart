@@ -109,6 +109,17 @@ class $PlaylistsTable extends Playlists
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _epgUrlOverrideMeta = const VerificationMeta(
+    'epgUrlOverride',
+  );
+  @override
+  late final GeneratedColumn<String> epgUrlOverride = GeneratedColumn<String>(
+    'epg_url_override',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _epgLastSyncedAtMeta = const VerificationMeta(
     'epgLastSyncedAt',
   );
@@ -132,6 +143,7 @@ class $PlaylistsTable extends Playlists
     createdAt,
     lastSyncedAt,
     epgUrl,
+    epgUrlOverride,
     epgLastSyncedAt,
   ];
   @override
@@ -206,6 +218,15 @@ class $PlaylistsTable extends Playlists
         epgUrl.isAcceptableOrUnknown(data['epg_url']!, _epgUrlMeta),
       );
     }
+    if (data.containsKey('epg_url_override')) {
+      context.handle(
+        _epgUrlOverrideMeta,
+        epgUrlOverride.isAcceptableOrUnknown(
+          data['epg_url_override']!,
+          _epgUrlOverrideMeta,
+        ),
+      );
+    }
     if (data.containsKey('epg_last_synced_at')) {
       context.handle(
         _epgLastSyncedAtMeta,
@@ -260,6 +281,10 @@ class $PlaylistsTable extends Playlists
         DriftSqlType.string,
         data['${effectivePrefix}epg_url'],
       ),
+      epgUrlOverride: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}epg_url_override'],
+      ),
       epgLastSyncedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}epg_last_synced_at'],
@@ -283,6 +308,7 @@ class Playlist extends DataClass implements Insertable<Playlist> {
   final DateTime createdAt;
   final DateTime? lastSyncedAt;
   final String? epgUrl;
+  final String? epgUrlOverride;
   final DateTime? epgLastSyncedAt;
   const Playlist({
     required this.id,
@@ -294,6 +320,7 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     required this.createdAt,
     this.lastSyncedAt,
     this.epgUrl,
+    this.epgUrlOverride,
     this.epgLastSyncedAt,
   });
   @override
@@ -315,6 +342,9 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     }
     if (!nullToAbsent || epgUrl != null) {
       map['epg_url'] = Variable<String>(epgUrl);
+    }
+    if (!nullToAbsent || epgUrlOverride != null) {
+      map['epg_url_override'] = Variable<String>(epgUrlOverride);
     }
     if (!nullToAbsent || epgLastSyncedAt != null) {
       map['epg_last_synced_at'] = Variable<DateTime>(epgLastSyncedAt);
@@ -341,6 +371,9 @@ class Playlist extends DataClass implements Insertable<Playlist> {
       epgUrl: epgUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(epgUrl),
+      epgUrlOverride: epgUrlOverride == null && nullToAbsent
+          ? const Value.absent()
+          : Value(epgUrlOverride),
       epgLastSyncedAt: epgLastSyncedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(epgLastSyncedAt),
@@ -362,6 +395,7 @@ class Playlist extends DataClass implements Insertable<Playlist> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
       epgUrl: serializer.fromJson<String?>(json['epgUrl']),
+      epgUrlOverride: serializer.fromJson<String?>(json['epgUrlOverride']),
       epgLastSyncedAt: serializer.fromJson<DateTime?>(json['epgLastSyncedAt']),
     );
   }
@@ -378,6 +412,7 @@ class Playlist extends DataClass implements Insertable<Playlist> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
       'epgUrl': serializer.toJson<String?>(epgUrl),
+      'epgUrlOverride': serializer.toJson<String?>(epgUrlOverride),
       'epgLastSyncedAt': serializer.toJson<DateTime?>(epgLastSyncedAt),
     };
   }
@@ -392,6 +427,7 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     DateTime? createdAt,
     Value<DateTime?> lastSyncedAt = const Value.absent(),
     Value<String?> epgUrl = const Value.absent(),
+    Value<String?> epgUrlOverride = const Value.absent(),
     Value<DateTime?> epgLastSyncedAt = const Value.absent(),
   }) => Playlist(
     id: id ?? this.id,
@@ -403,6 +439,9 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     createdAt: createdAt ?? this.createdAt,
     lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
     epgUrl: epgUrl.present ? epgUrl.value : this.epgUrl,
+    epgUrlOverride: epgUrlOverride.present
+        ? epgUrlOverride.value
+        : this.epgUrlOverride,
     epgLastSyncedAt: epgLastSyncedAt.present
         ? epgLastSyncedAt.value
         : this.epgLastSyncedAt,
@@ -420,6 +459,9 @@ class Playlist extends DataClass implements Insertable<Playlist> {
           ? data.lastSyncedAt.value
           : this.lastSyncedAt,
       epgUrl: data.epgUrl.present ? data.epgUrl.value : this.epgUrl,
+      epgUrlOverride: data.epgUrlOverride.present
+          ? data.epgUrlOverride.value
+          : this.epgUrlOverride,
       epgLastSyncedAt: data.epgLastSyncedAt.present
           ? data.epgLastSyncedAt.value
           : this.epgLastSyncedAt,
@@ -438,6 +480,7 @@ class Playlist extends DataClass implements Insertable<Playlist> {
           ..write('createdAt: $createdAt, ')
           ..write('lastSyncedAt: $lastSyncedAt, ')
           ..write('epgUrl: $epgUrl, ')
+          ..write('epgUrlOverride: $epgUrlOverride, ')
           ..write('epgLastSyncedAt: $epgLastSyncedAt')
           ..write(')'))
         .toString();
@@ -454,6 +497,7 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     createdAt,
     lastSyncedAt,
     epgUrl,
+    epgUrlOverride,
     epgLastSyncedAt,
   );
   @override
@@ -469,6 +513,7 @@ class Playlist extends DataClass implements Insertable<Playlist> {
           other.createdAt == this.createdAt &&
           other.lastSyncedAt == this.lastSyncedAt &&
           other.epgUrl == this.epgUrl &&
+          other.epgUrlOverride == this.epgUrlOverride &&
           other.epgLastSyncedAt == this.epgLastSyncedAt);
 }
 
@@ -482,6 +527,7 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
   final Value<DateTime> createdAt;
   final Value<DateTime?> lastSyncedAt;
   final Value<String?> epgUrl;
+  final Value<String?> epgUrlOverride;
   final Value<DateTime?> epgLastSyncedAt;
   const PlaylistsCompanion({
     this.id = const Value.absent(),
@@ -493,6 +539,7 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     this.createdAt = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
     this.epgUrl = const Value.absent(),
+    this.epgUrlOverride = const Value.absent(),
     this.epgLastSyncedAt = const Value.absent(),
   });
   PlaylistsCompanion.insert({
@@ -505,6 +552,7 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     this.createdAt = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
     this.epgUrl = const Value.absent(),
+    this.epgUrlOverride = const Value.absent(),
     this.epgLastSyncedAt = const Value.absent(),
   }) : name = Value(name),
        type = Value(type),
@@ -519,6 +567,7 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? lastSyncedAt,
     Expression<String>? epgUrl,
+    Expression<String>? epgUrlOverride,
     Expression<DateTime>? epgLastSyncedAt,
   }) {
     return RawValuesInsertable({
@@ -531,6 +580,7 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
       if (createdAt != null) 'created_at': createdAt,
       if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
       if (epgUrl != null) 'epg_url': epgUrl,
+      if (epgUrlOverride != null) 'epg_url_override': epgUrlOverride,
       if (epgLastSyncedAt != null) 'epg_last_synced_at': epgLastSyncedAt,
     });
   }
@@ -545,6 +595,7 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     Value<DateTime>? createdAt,
     Value<DateTime?>? lastSyncedAt,
     Value<String?>? epgUrl,
+    Value<String?>? epgUrlOverride,
     Value<DateTime?>? epgLastSyncedAt,
   }) {
     return PlaylistsCompanion(
@@ -557,6 +608,7 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
       createdAt: createdAt ?? this.createdAt,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
       epgUrl: epgUrl ?? this.epgUrl,
+      epgUrlOverride: epgUrlOverride ?? this.epgUrlOverride,
       epgLastSyncedAt: epgLastSyncedAt ?? this.epgLastSyncedAt,
     );
   }
@@ -591,6 +643,9 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     if (epgUrl.present) {
       map['epg_url'] = Variable<String>(epgUrl.value);
     }
+    if (epgUrlOverride.present) {
+      map['epg_url_override'] = Variable<String>(epgUrlOverride.value);
+    }
     if (epgLastSyncedAt.present) {
       map['epg_last_synced_at'] = Variable<DateTime>(epgLastSyncedAt.value);
     }
@@ -609,6 +664,7 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
           ..write('createdAt: $createdAt, ')
           ..write('lastSyncedAt: $lastSyncedAt, ')
           ..write('epgUrl: $epgUrl, ')
+          ..write('epgUrlOverride: $epgUrlOverride, ')
           ..write('epgLastSyncedAt: $epgLastSyncedAt')
           ..write(')'))
         .toString();
@@ -2429,6 +2485,7 @@ typedef $$PlaylistsTableCreateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime?> lastSyncedAt,
       Value<String?> epgUrl,
+      Value<String?> epgUrlOverride,
       Value<DateTime?> epgLastSyncedAt,
     });
 typedef $$PlaylistsTableUpdateCompanionBuilder =
@@ -2442,6 +2499,7 @@ typedef $$PlaylistsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime?> lastSyncedAt,
       Value<String?> epgUrl,
+      Value<String?> epgUrlOverride,
       Value<DateTime?> epgLastSyncedAt,
     });
 
@@ -2520,6 +2578,11 @@ class $$PlaylistsTableFilterComposer
 
   ColumnFilters<String> get epgUrl => $composableBuilder(
     column: $table.epgUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get epgUrlOverride => $composableBuilder(
+    column: $table.epgUrlOverride,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2608,6 +2671,11 @@ class $$PlaylistsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get epgUrlOverride => $composableBuilder(
+    column: $table.epgUrlOverride,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get epgLastSyncedAt => $composableBuilder(
     column: $table.epgLastSyncedAt,
     builder: (column) => ColumnOrderings(column),
@@ -2651,6 +2719,11 @@ class $$PlaylistsTableAnnotationComposer
 
   GeneratedColumn<String> get epgUrl =>
       $composableBuilder(column: $table.epgUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get epgUrlOverride => $composableBuilder(
+    column: $table.epgUrlOverride,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get epgLastSyncedAt => $composableBuilder(
     column: $table.epgLastSyncedAt,
@@ -2720,6 +2793,7 @@ class $$PlaylistsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
                 Value<String?> epgUrl = const Value.absent(),
+                Value<String?> epgUrlOverride = const Value.absent(),
                 Value<DateTime?> epgLastSyncedAt = const Value.absent(),
               }) => PlaylistsCompanion(
                 id: id,
@@ -2731,6 +2805,7 @@ class $$PlaylistsTableTableManager
                 createdAt: createdAt,
                 lastSyncedAt: lastSyncedAt,
                 epgUrl: epgUrl,
+                epgUrlOverride: epgUrlOverride,
                 epgLastSyncedAt: epgLastSyncedAt,
               ),
           createCompanionCallback:
@@ -2744,6 +2819,7 @@ class $$PlaylistsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
                 Value<String?> epgUrl = const Value.absent(),
+                Value<String?> epgUrlOverride = const Value.absent(),
                 Value<DateTime?> epgLastSyncedAt = const Value.absent(),
               }) => PlaylistsCompanion.insert(
                 id: id,
@@ -2755,6 +2831,7 @@ class $$PlaylistsTableTableManager
                 createdAt: createdAt,
                 lastSyncedAt: lastSyncedAt,
                 epgUrl: epgUrl,
+                epgUrlOverride: epgUrlOverride,
                 epgLastSyncedAt: epgLastSyncedAt,
               ),
           withReferenceMapper: (p0) => p0

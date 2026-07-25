@@ -2,26 +2,40 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/app/providers/core_providers.dart';
-import 'package:m3uxtream_player/core/constants/filter_constants.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/core/services/channel_group_filter.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/core/models/search_catalog_entry.dart';
+import 'package:m3uxtream_player/core/search/search_models.dart';
 import 'package:m3uxtream_player/features/epg/providers/epg_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/group_visibility_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
-import 'package:m3uxtream_player/features/playlists/providers/pinned_groups_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
+import 'package:m3uxtream_player/features/playlists/providers/pinned_groups_providers.dart';
 import 'package:m3uxtream_player/features/search/models/category_search_result.dart';
 import 'package:m3uxtream_player/features/search/models/channel_search_result.dart';
 import 'package:m3uxtream_player/features/search/models/global_search_results.dart';
 import 'package:m3uxtream_player/features/search/models/search_overlay_filter.dart';
 import 'package:m3uxtream_player/features/search/providers/search_providers.dart';
 
-/// One shared Drift stream for global search. Active/inactive playlist and
-/// hidden-category filtering happen in memory above this boundary.
+/// Compatibility-only stream retained for older test and feature boundaries.
+/// Production search reads only [SearchHit] rows from [SearchIndexRepository]
+/// and never materializes the channel catalogue in Dart.
 final globalSearchChannelsStreamProvider =
-    StreamProvider.autoDispose<List<Channel>>((ref) {
-      return ref.watch(playlistRepositoryProvider).watchAllChannels();
+    StreamProvider.autoDispose<List<SearchCatalogEntry>>((ref) {
+      return Stream.value(const []);
+    });
+
+final searchCatalogStreamProvider = globalSearchChannelsStreamProvider;
+
+/// Compatibility projection for callers that still observe the old catalogue
+/// provider. It is intentionally empty; all live search work uses SQLite FTS.
+final searchCatalogIndexProvider =
+    Provider.autoDispose<AsyncValue<List<SearchCatalogEntry>>>((ref) {
+      return ref.watch(globalSearchChannelsStreamProvider);
+    });
+
+final searchIndexBuildStateProvider =
+    StreamProvider.autoDispose<SearchIndexBuildState>((ref) {
+      return ref.read(searchIndexRepositoryProvider).watchIndexBuildState();
     });
 
 final searchHiddenGroupsForPlaylistProvider = FutureProvider.autoDispose
@@ -38,175 +52,139 @@ final searchOverlayFilterProvider = StateProvider<SearchOverlayFilter>(
   (ref) => SearchOverlayFilter.all,
 );
 
-final channelSearchResultsProvider =
-    Provider.autoDispose<List<ChannelSearchResult>>((ref) {
-      final query = ref.watch(globalSearchQueryProvider);
-      final normalizedQuery = query.trim().toLowerCase();
-      if (normalizedQuery.isEmpty) return const [];
+/// Asynchronous SQLite search boundary. Riverpod disposes an obsolete query
+/// computation when the debounced text changes, so an older result cannot
+/// replace a newer one in the dropdown.
+final globalSearchResultsAsyncProvider =
+    FutureProvider.autoDispose<GlobalSearchResults>((ref) async {
+      final session = ref.watch(searchOverlaySessionProvider);
+      final query = ref.watch(debouncedGlobalSearchQueryProvider).trim();
+      final filter = ref.watch(searchOverlayFilterProvider);
+      if (!session.isOpen || query.isEmpty) return _emptySearchResults;
 
-      final playlists =
-          ref.watch(playlistsStreamProvider).valueOrNull ?? const [];
-      final inactiveIds =
-          ref.watch(inactivePlaylistIdsProvider).valueOrNull ?? const <int>{};
-      final playlistNames = {
-        for (final playlist in playlists) playlist.id: playlist.name,
-      };
-      final activeIds = playlistNames.keys
-          .where((playlistId) => !inactiveIds.contains(playlistId))
-          .toSet();
-      if (activeIds.isEmpty) return const [];
+      var active = true;
+      ref.onDispose(() => active = false);
 
-      final selectedPlaylistId = ref.watch(selectedPlaylistIdProvider);
-      final hiddenByPlaylist = <int, Set<String>?>{
-        for (final playlistId in activeIds)
-          playlistId: _hiddenGroupsForPlaylist(
-            ref,
-            playlistId,
-            selectedPlaylistId,
-          ),
-      };
-      if (hiddenByPlaylist.values.any((hidden) => hidden == null)) {
-        return const [];
+      final playlists = await ref.watch(playlistsStreamProvider.future);
+      final inactiveIds = await ref.watch(inactivePlaylistIdsProvider.future);
+      final activePlaylists = playlists
+          .where((playlist) => !inactiveIds.contains(playlist.id))
+          .toList(growable: false);
+      if (!active || activePlaylists.isEmpty) return _emptySearchResults;
+
+      final hiddenByPlaylist = <int, Set<String>>{};
+      final pinnedByPlaylist = <int, Set<String>>{};
+      final metadata = await Future.wait(
+        activePlaylists.map((playlist) async {
+          final hidden = await ref.watch(
+            hiddenGroupsForPlaylistProvider(playlist.id).future,
+          );
+          final pinned = await ref.watch(
+            pinnedGroupsForPlaylistProvider(playlist.id).future,
+          );
+          return (
+            playlistId: playlist.id,
+            hidden: hidden,
+            pinned: pinned.toSet(),
+          );
+        }),
+      );
+      for (final entry in metadata) {
+        hiddenByPlaylist[entry.playlistId] = entry.hidden;
+        pinnedByPlaylist[entry.playlistId] = entry.pinned;
       }
-      final channels =
-          ref.watch(globalSearchChannelsStreamProvider).valueOrNull ??
-          const <Channel>[];
-      final matchingIndex = ref.watch(epgMatchingIndexProvider);
-      final scored = <_ScoredChannelSearchResult>[];
 
-      for (final channel in channels) {
-        if (channel.channelType != 'live' ||
-            !activeIds.contains(channel.playlistId)) {
+      final hits = await ref
+          .read(searchIndexRepositoryProvider)
+          .search(
+            SearchRequest(
+              query: query,
+              tab: _searchResultTabFor(filter),
+              activePlaylistIds: activePlaylists
+                  .map((playlist) => playlist.id)
+                  .toSet(),
+              hiddenGroupsByPlaylist: hiddenByPlaylist,
+              pinnedGroupsByPlaylist: pinnedByPlaylist,
+              limit: 12,
+            ),
+          );
+      if (!active) return _emptySearchResults;
+
+      final matchingIndex = ref.watch(epgMatchingIndexProvider);
+      final channels = <ChannelSearchResult>[];
+      final categories = <CategorySearchResult>[];
+      for (final hit in hits) {
+        if (hit.type == SearchHitType.channel && hit.channelId != null) {
+          final entry = SearchCatalogEntry(
+            channelId: hit.channelId!,
+            playlistId: hit.playlistId,
+            type: hit.mediaType,
+            name: hit.title,
+            category: hit.category,
+            epgChannelId: hit.epgChannelId,
+          );
+          channels.add(
+            ChannelSearchResult(
+              entry: entry,
+              playlistId: hit.playlistId,
+              playlistName: hit.playlistName,
+              categoryName: hit.category,
+              resolvedEpgChannelId: matchingIndex
+                  .matchCatalogEntry(entry)
+                  .resolvedEpgChannelId,
+            ),
+          );
           continue;
         }
 
-        final hidden = hiddenByPlaylist[channel.playlistId]!;
-        if (hidden.contains(normalizeGroupName(channel.groupName))) continue;
-
-        final name = channel.name.trim().toLowerCase();
-        final relevance = _matchRelevance(name, normalizedQuery);
-        if (relevance == null) continue;
-
-        scored.add(
-          _ScoredChannelSearchResult(
-            relevance: relevance,
-            result: ChannelSearchResult(
-              channel: channel,
-              playlistId: channel.playlistId,
-              playlistName:
-                  playlistNames[channel.playlistId] ??
-                  'Playlist ${channel.playlistId}',
-              categoryName: normalizeGroupName(channel.groupName),
-              resolvedEpgChannelId: matchingIndex
-                  .matchChannel(channel)
-                  .resolvedEpgChannelId,
-            ),
+        final target = _targetForChannelType(hit.mediaType);
+        if (target == null) continue;
+        categories.add(
+          CategorySearchResult(
+            target: target,
+            categoryName: hit.title,
+            playlistId: hit.playlistId,
+            playlistName: hit.playlistName,
+            isPinned: hit.isPinned,
           ),
         );
       }
 
-      scored.sort((a, b) {
-        final relevance = a.relevance.compareTo(b.relevance);
-        if (relevance != 0) return relevance;
-        final name = a.result.channel.name.toLowerCase().compareTo(
-          b.result.channel.name.toLowerCase(),
-        );
-        if (name != 0) return name;
-        final playlist = a.result.playlistName.toLowerCase().compareTo(
-          b.result.playlistName.toLowerCase(),
-        );
-        if (playlist != 0) return playlist;
-        return a.result.channel.id.compareTo(b.result.channel.id);
-      });
+      return GlobalSearchResults(channels: channels, categories: categories);
+    });
 
-      return scored
-          .take(12)
-          .map((entry) => entry.result)
-          .toList(growable: false);
+/// Synchronous compatibility projection used by existing tab providers.
+/// The dropdown itself observes [searchResultsAsyncProvider] for loading and
+/// error states.
+final globalSearchResultsProvider = Provider.autoDispose<GlobalSearchResults>((
+  ref,
+) {
+  return ref.watch(globalSearchResultsAsyncProvider).valueOrNull ??
+      _emptySearchResults;
+});
+
+final searchResultsAsyncProvider =
+    Provider.autoDispose<AsyncValue<GlobalSearchResults>>((ref) {
+      final session = ref.watch(searchOverlaySessionProvider);
+      final query = ref.watch(debouncedGlobalSearchQueryProvider).trim();
+      if (!session.isOpen || query.isEmpty) {
+        return const AsyncData(_emptySearchResults);
+      }
+      // This is deliberately a projection of the one canonical async
+      // provider. It must never read globalSearchResultsProvider while that
+      // provider is itself reading the async query.
+      return ref.watch(globalSearchResultsAsyncProvider);
+    });
+
+final channelSearchResultsProvider =
+    Provider.autoDispose<List<ChannelSearchResult>>((ref) {
+      return ref.watch(globalSearchResultsProvider).channels;
     });
 
 final categorySearchResultsProvider =
     Provider.autoDispose<List<CategorySearchResult>>((ref) {
-      final query = ref.watch(globalSearchQueryProvider);
-      final normalizedQuery = query.trim().toLowerCase();
-      if (normalizedQuery.isEmpty) return const [];
-
-      final playlists =
-          ref.watch(playlistsStreamProvider).valueOrNull ?? const [];
-      final inactiveIds =
-          ref.watch(inactivePlaylistIdsProvider).valueOrNull ?? const <int>{};
-      final playlistNames = {
-        for (final playlist in playlists) playlist.id: playlist.name,
-      };
-      final activeIds = playlistNames.keys
-          .where((playlistId) => !inactiveIds.contains(playlistId))
-          .toSet();
-      if (activeIds.isEmpty) return const [];
-
-      final selectedPlaylistId = ref.watch(selectedPlaylistIdProvider);
-      final channels =
-          ref.watch(globalSearchChannelsStreamProvider).valueOrNull ??
-          const <Channel>[];
-      final candidates = <CategorySearchResult>[];
-      final seen = <String>{};
-      final hiddenByPlaylist = <int, Set<String>?>{
-        for (final playlistId in activeIds)
-          playlistId: _hiddenGroupsForPlaylist(
-            ref,
-            playlistId,
-            selectedPlaylistId,
-          ),
-      };
-      if (hiddenByPlaylist.values.any((hidden) => hidden == null)) {
-        return const [];
-      }
-      final pinnedByPlaylist = <int, List<String>>{};
-
-      for (final channel in channels) {
-        if (!activeIds.contains(channel.playlistId)) continue;
-        final categoryName = normalizeGroupName(channel.groupName);
-        if (categoryName == kAllGroupsFilter) continue;
-
-        final hidden = hiddenByPlaylist[channel.playlistId]!;
-        if (hidden.contains(categoryName)) continue;
-
-        final target = _targetForChannelType(channel.channelType);
-        if (target == null) continue;
-        final identity = '${channel.playlistId}|${target.name}|$categoryName';
-        if (!seen.add(identity)) continue;
-
-        final pinned = pinnedByPlaylist.putIfAbsent(
-          channel.playlistId,
-          () => _pinnedGroupsForPlaylist(
-            ref,
-            channel.playlistId,
-            selectedPlaylistId,
-          ),
-        );
-        candidates.add(
-          CategorySearchResult(
-            target: target,
-            categoryName: categoryName,
-            playlistId: channel.playlistId,
-            playlistName:
-                playlistNames[channel.playlistId] ??
-                'Playlist ${channel.playlistId}',
-            isPinned: pinned.contains(categoryName),
-          ),
-        );
-      }
-
-      return matchCategorySearchResults(query: query, candidates: candidates);
+      return ref.watch(globalSearchResultsProvider).categories;
     });
-
-final globalSearchResultsProvider = Provider.autoDispose<GlobalSearchResults>((
-  ref,
-) {
-  return GlobalSearchResults(
-    channels: ref.watch(channelSearchResultsProvider),
-    categories: ref.watch(categorySearchResultsProvider),
-  );
-});
 
 final searchVisibleChannelResultsProvider =
     Provider.autoDispose<List<ChannelSearchResult>>((ref) {
@@ -310,34 +288,10 @@ SearchEpgLine _lineForResult(
       : SearchEpgLine.current(entry.title);
 }
 
-Set<String>? _hiddenGroupsForPlaylist(
-  Ref ref,
-  int playlistId,
-  int? selectedPlaylistId,
-) {
-  if (playlistId == selectedPlaylistId) {
-    final hidden = ref.watch(hiddenGroupsProvider);
-    if (hidden.isLoading) return null;
-    return hidden.valueOrNull ?? const <String>{};
-  }
-  final hidden = ref.watch(searchHiddenGroupsForPlaylistProvider(playlistId));
-  if (hidden.isLoading) return null;
-  return hidden.valueOrNull ?? const <String>{};
-}
-
-List<String> _pinnedGroupsForPlaylist(
-  Ref ref,
-  int playlistId,
-  int? selectedPlaylistId,
-) {
-  if (playlistId == selectedPlaylistId) {
-    return ref.watch(pinnedGroupsProvider).valueOrNull ?? const <String>[];
-  }
-  return ref
-          .watch(searchPinnedGroupsForPlaylistProvider(playlistId))
-          .valueOrNull ??
-      const <String>[];
-}
+const _emptySearchResults = GlobalSearchResults(
+  channels: <ChannelSearchResult>[],
+  categories: <CategorySearchResult>[],
+);
 
 CategorySearchTarget? _targetForChannelType(String type) => switch (type) {
   'live' => CategorySearchTarget.live,
@@ -346,19 +300,9 @@ CategorySearchTarget? _targetForChannelType(String type) => switch (type) {
   _ => null,
 };
 
-int? _matchRelevance(String value, String query) {
-  if (value == query) return 0;
-  if (value.startsWith(query)) return 1;
-  if (value.contains(query)) return 2;
-  return null;
-}
-
-class _ScoredChannelSearchResult {
-  const _ScoredChannelSearchResult({
-    required this.relevance,
-    required this.result,
-  });
-
-  final int relevance;
-  final ChannelSearchResult result;
-}
+SearchResultTab _searchResultTabFor(SearchOverlayFilter filter) =>
+    switch (filter) {
+      SearchOverlayFilter.all => SearchResultTab.all,
+      SearchOverlayFilter.channels => SearchResultTab.channels,
+      SearchOverlayFilter.categories => SearchResultTab.categories,
+    };

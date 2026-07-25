@@ -1,4 +1,5 @@
 import 'package:m3uxtream_player/core/database/app_database.dart';
+import 'package:m3uxtream_player/core/models/playlist_epg.dart';
 
 /// Pure logic for deciding whether the EPG update reminder banner should show.
 bool shouldShowEpgReminder({
@@ -9,7 +10,7 @@ bool shouldShowEpgReminder({
   if (isDismissed) return false;
   if (selectedPlaylistId != playlist.id) return false;
 
-  final epgUrl = playlist.epgUrl;
+  final epgUrl = playlist.effectiveEpgUrl;
   if (epgUrl == null || epgUrl.trim().isEmpty) return false;
 
   final epgLastSynced = playlist.epgLastSyncedAt;
@@ -29,7 +30,7 @@ int? resolveEpgReminderPlaylistId({
 }) {
   if (isDismissed) return null;
 
-  final epgUrl = playlist.epgUrl;
+  final epgUrl = playlist.effectiveEpgUrl;
   if (epgUrl == null || epgUrl.trim().isEmpty) return null;
 
   final epgLastSynced = playlist.epgLastSyncedAt;

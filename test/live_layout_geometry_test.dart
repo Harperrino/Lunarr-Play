@@ -172,7 +172,12 @@ void main() {
 
       expect(layout.arrangement, LiveHeaderArrangement.stacked);
       expect(layout.textBlockHeight, 100);
-      expect(layout.height, 168);
+      expect(
+        layout.height,
+        100 +
+            LiveLayoutMetrics.headerTitleSearchGap +
+            LiveLayoutMetrics.searchFieldHeight,
+      );
     });
 
     test('keeps a wide 200 percent header inline', () {
@@ -204,7 +209,12 @@ void main() {
 
         expect(resolvedWidth, availableWidth);
         expect(layout.arrangement, LiveHeaderArrangement.stacked);
-        expect(layout.height, 168);
+        expect(
+          layout.height,
+          layout.textBlockHeight +
+              LiveLayoutMetrics.headerTitleSearchGap +
+              LiveLayoutMetrics.searchFieldHeight,
+        );
       },
     );
   });

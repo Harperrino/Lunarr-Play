@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/app/providers/core_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
+import 'package:m3uxtream_player/core/models/search_catalog_entry.dart';
 import 'package:m3uxtream_player/core/repository/app_state_repository.dart';
 import 'package:m3uxtream_player/core/repository/playlist_repository.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
@@ -103,6 +104,8 @@ _buildSearchFixture() async {
   await container.read(playlistsStreamProvider.future);
   await container.read(inactivePlaylistIdsProvider.future);
   await container.read(hiddenGroupsProvider.future);
+  container.read(searchOverlaySessionProvider.notifier).state =
+      const SearchOverlaySessionState(isOpen: true);
   await container.read(globalSearchChannelsStreamProvider.future);
 
   return (
@@ -114,15 +117,11 @@ _buildSearchFixture() async {
 
 ChannelSearchResult _channelResult(int id) {
   return ChannelSearchResult(
-    channel: Channel(
-      id: id,
+    entry: SearchCatalogEntry(
+      channelId: id,
       playlistId: 1,
+      type: 'live',
       name: 'Channel $id',
-      streamUrl: 'https://example.invalid/$id',
-      providerOrder: id,
-      isFavorite: false,
-      isWatchLater: false,
-      channelType: 'live',
     ),
     playlistId: 1,
     playlistName: 'Main',
@@ -141,10 +140,11 @@ void main() {
       });
 
       fixture.container.read(globalSearchQueryProvider.notifier).state = 'news';
+      await fixture.container.read(globalSearchResultsAsyncProvider.future);
       final channels = fixture.container.read(channelSearchResultsProvider);
       final categories = fixture.container.read(categorySearchResultsProvider);
 
-      expect(channels.map((result) => result.channel.name), ['Visible News']);
+      expect(channels.map((result) => result.entry.name), ['Visible News']);
       expect(categories.map((result) => result.categoryName), ['News']);
       expect(categories.single.playlistId, fixture.activePlaylistId);
     },

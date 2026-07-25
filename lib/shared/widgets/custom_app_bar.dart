@@ -8,12 +8,18 @@ import 'package:window_manager/window_manager.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   static const double toolbarHeight = 72.0;
-  static const double defaultSearchHeight = 56.0;
+  static const double defaultSearchHeight = 48.0;
   static const double _brandWidth = 216.0;
   static const double _windowButtonExtent = 48.0;
 
   final String title;
   final VoidCallback onCloseRequested;
+
+  /// Neutral command slot rendered directly before the centered search.
+  /// Feature widgets are supplied by the shell and are intentionally not
+  /// imported by this shared app-bar primitive.
+  final Widget? leadingCommand;
+  final double leadingCommandWidth;
   final Widget? search;
   final double searchHeight;
 
@@ -21,6 +27,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     required this.onCloseRequested,
     this.title = AppIdentity.displayName,
+    this.leadingCommand,
+    this.leadingCommandWidth = 0,
     this.search,
     this.searchHeight = defaultSearchHeight,
   });
@@ -101,22 +109,40 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               const sideCorridor = _brandWidth + 16;
-              final centeredSearchWidth =
-                  (constraints.maxWidth - sideCorridor * 2)
-                      .clamp(0.0, 520.0)
-                      .toDouble();
+              final centerCorridor = (constraints.maxWidth - sideCorridor * 2)
+                  .clamp(0.0, double.infinity)
+                  .toDouble();
+              final centeredSearchWidth = leadingCommand == null
+                  ? centerCorridor.clamp(0.0, 520.0).toDouble()
+                  : (centerCorridor - leadingCommandWidth - 8)
+                        .clamp(0.0, 520.0)
+                        .toDouble();
 
               return Stack(
                 fit: StackFit.expand,
                 children: [
                   if (isDesktop) DragToMoveArea(child: const SizedBox.expand()),
                   Align(alignment: Alignment.centerLeft, child: titleArea),
-                  if (search != null)
+                  if (search != null || leadingCommand != null)
                     Center(
-                      child: SizedBox(
-                        width: centeredSearchWidth,
-                        height: searchHeight,
-                        child: search,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (leadingCommand != null)
+                            SizedBox(
+                              width: leadingCommandWidth,
+                              height: toolbarHeight,
+                              child: leadingCommand,
+                            ),
+                          if (leadingCommand != null && search != null)
+                            const SizedBox(width: 8),
+                          if (search != null)
+                            SizedBox(
+                              width: centeredSearchWidth,
+                              height: searchHeight,
+                              child: search,
+                            ),
+                        ],
                       ),
                     ),
                   Align(

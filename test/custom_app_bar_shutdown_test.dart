@@ -59,7 +59,7 @@ void main() {
 
       final appBarRect = tester.getRect(find.byType(CustomAppBar));
       final searchRect = tester.getRect(find.byType(GlobalSearchField));
-      expect(find.text('LUNARR One'), findsOneWidget);
+      expect(find.text('Lunarr Player'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('window-bar-brand-mark')),
         findsOneWidget,
@@ -73,7 +73,9 @@ void main() {
     },
   );
 
-  testWidgets('Material 3 LUNARR One top bar visual contract', (tester) async {
+  testWidgets('Material 3 Lunarr Player top bar visual contract', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 160);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);

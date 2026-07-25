@@ -1,11 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_single_instance/flutter_single_instance.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
-import 'package:m3uxtream_player/core/constants/app_identity.dart';
 import 'package:window_manager/window_manager.dart';
+
+export 'package:m3uxtream_player/app/bootstrap/desktop_window_placement.dart';
+
+import 'package:m3uxtream_player/app/bootstrap/desktop_window_placement.dart';
 
 /// Desktop-only startup: single-instance guard and frameless window init.
 Future<void> bootstrapDesktopWindow() async {
@@ -41,6 +43,9 @@ Future<void> bootstrapDesktopWindow() async {
     if (!shouldContinue) {
       exit(0);
     }
+
+    final initialSize = await resolveDesktopWindowSize();
+    _desktopWindowOptions = desktopWindowOptionsFor(initialSize);
   } catch (e, stackTrace) {
     AppLogger.error(
       'App Startup FATAL: Failed desktop environment boot!',
@@ -92,12 +97,8 @@ Future<void> focusPrimaryDesktopWindow({
   await focus();
 }
 
-const desktopWindowOptions = WindowOptions(
-  title: AppIdentity.displayName,
-  size: Size(1440, 900),
-  minimumSize: Size(1080, 720),
-  center: true,
-  backgroundColor: Colors.transparent,
-  titleBarStyle: TitleBarStyle.hidden,
-  skipTaskbar: false,
+WindowOptions _desktopWindowOptions = desktopWindowOptionsFor(
+  desktopWindowDefaultSize,
 );
+
+WindowOptions get desktopWindowOptions => _desktopWindowOptions;

@@ -3,7 +3,8 @@ import 'package:media_kit/media_kit.dart' hide PlayerState;
 
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_channel_providers.dart';
+import 'package:m3uxtream_player/features/epg/providers/epg_providers.dart';
+import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
 
@@ -55,16 +56,37 @@ typedef PlayerPreparationOverlayViewModel = ({
   double? progressValue,
 });
 
-final currentProgramTitleForSelectedChannelProvider =
-    Provider.autoDispose<String?>((ref) {
+/// EPG match for exactly the selected channel. The player header resolves
+/// its programme title through this single-channel boundary instead of the
+/// global all-channel match map.
+final selectedChannelEpgMatchProvider =
+    Provider.autoDispose<EpgChannelMatchResult?>((ref) {
       final channel = ref.watch(selectedChannelProvider);
       if (channel == null) return null;
+      ref.watch(epgCompletionRevisionProvider);
+      return ref.watch(epgMatchingIndexProvider).matchChannel(channel);
+    });
 
-      final matchStatus = ref.watch(epgMatchStatusProvider(channel.id));
-      if (matchStatus != EpgMatchStatus.matched) return null;
+/// Current programme for one resolved EPG channel id — one bounded lookup,
+/// never a per-row query.
+final currentProgramForEpgIdProvider = FutureProvider.autoDispose
+    .family<EpgEntry?, String>((ref, epgChannelId) {
+      ref.watch(epgCompletionRevisionProvider);
+      return ref
+          .read(epgRepositoryProvider)
+          .getCurrentProgram(epgChannelId, DateTime.now());
+    });
+
+final currentProgramTitleForSelectedChannelProvider =
+    Provider.autoDispose<String?>((ref) {
+      final match = ref.watch(selectedChannelEpgMatchProvider);
+      final resolvedId = match?.resolvedEpgChannelId;
+      if (match?.matchStatus != EpgMatchStatus.matched || resolvedId == null) {
+        return null;
+      }
 
       return ref
-          .watch(currentProgramForChannelProvider(channel.id))
+          .watch(currentProgramForEpgIdProvider(resolvedId))
           .valueOrNull
           ?.title;
     });

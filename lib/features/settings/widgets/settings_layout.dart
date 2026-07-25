@@ -6,14 +6,18 @@ import 'package:m3uxtream_player/features/settings/widgets/settings_section_navi
 class SettingsLayout extends StatefulWidget {
   const SettingsLayout({
     required this.topSection,
-    required this.playlistForm,
-    required this.playlistSection,
+    this.playlistForm,
+    this.playlistSection,
     super.key,
   });
 
   final Widget topSection;
-  final Widget playlistForm;
-  final Widget playlistSection;
+
+  /// Legacy extension points kept for callers that still render the old
+  /// settings composition. The Settings screen itself no longer supplies
+  /// playlist management content; that responsibility lives in Playlists.
+  final Widget? playlistForm;
+  final Widget? playlistSection;
 
   @override
   State<SettingsLayout> createState() => _SettingsLayoutState();
@@ -42,10 +46,14 @@ class _SettingsLayoutState extends State<SettingsLayout> {
         final usesFullContentWidth = SettingsLayoutMetrics.usesFullContentWidth(
           textScaleFactor,
         );
-        final hasSectionNavigation = SettingsLayoutMetrics.hasSectionNavigation(
-          availableWidth: constraints.maxWidth,
-          textScaleFactor: textScaleFactor,
-        );
+        final hasPlaylistManagement =
+            widget.playlistForm != null && widget.playlistSection != null;
+        final hasSectionNavigation =
+            hasPlaylistManagement &&
+            SettingsLayoutMetrics.hasSectionNavigation(
+              availableWidth: constraints.maxWidth,
+              textScaleFactor: textScaleFactor,
+            );
         final narrowWidth =
             constraints.maxWidth < SettingsLayoutMetrics.compactWidth;
         final shortHeight = constraints.maxHeight < 640;
@@ -65,13 +73,18 @@ class _SettingsLayoutState extends State<SettingsLayout> {
               ),
               children: [
                 KeyedSubtree(key: _generalKey, child: widget.topSection),
-                const SizedBox(height: 16),
-                KeyedSubtree(key: _playlistFormKey, child: widget.playlistForm),
-                const SizedBox(height: 16),
-                KeyedSubtree(
-                  key: _playlistListKey,
-                  child: widget.playlistSection,
-                ),
+                if (hasPlaylistManagement) ...[
+                  const SizedBox(height: 16),
+                  KeyedSubtree(
+                    key: _playlistFormKey,
+                    child: widget.playlistForm!,
+                  ),
+                  const SizedBox(height: 16),
+                  KeyedSubtree(
+                    key: _playlistListKey,
+                    child: widget.playlistSection!,
+                  ),
+                ],
               ],
             ),
           ),

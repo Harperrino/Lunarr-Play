@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:m3uxtream_player/core/models/epg_refresh_interval.dart';
+import 'package:m3uxtream_player/core/models/epg_sync_job.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_status_pill.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_settings_section_header.dart';
@@ -18,6 +20,10 @@ class SettingsPlaylistItem {
     required this.onEdit,
     required this.onActiveChanged,
     required this.onDelete,
+    this.epgRefreshInterval = EpgRefreshInterval.manual,
+    this.epgSyncJob,
+    this.onEpgRefreshIntervalChanged,
+    this.onEpgRetry,
   });
 
   final String name;
@@ -31,6 +37,10 @@ class SettingsPlaylistItem {
   final VoidCallback onEdit;
   final ValueChanged<bool> onActiveChanged;
   final VoidCallback onDelete;
+  final EpgRefreshInterval epgRefreshInterval;
+  final EpgSyncJob? epgSyncJob;
+  final ValueChanged<EpgRefreshInterval>? onEpgRefreshIntervalChanged;
+  final VoidCallback? onEpgRetry;
 }
 
 class SettingsPlaylistSection extends StatelessWidget {
@@ -222,11 +232,17 @@ class SettingsPlaylistTile extends StatelessWidget {
     final lastSynced = item.lastSyncedAt != null
         ? _formatDateTime(item.lastSyncedAt!.toLocal())
         : 'Never synced';
-    final epgLastSynced = item.epgLastSyncedAt != null
-        ? _formatRelativeTime(item.epgLastSyncedAt!.toLocal())
+    final effectiveEpgLastSyncedAt =
+        item.epgLastSyncedAt ??
+        (item.epgSyncJob?.status == EpgSyncStatus.succeeded
+            ? item.epgSyncJob?.completedAt
+            : null);
+    final epgLastSynced = effectiveEpgLastSyncedAt != null
+        ? _formatRelativeTime(effectiveEpgLastSyncedAt.toLocal())
         : 'EPG never synced';
     final epgUrl = item.epgUrl;
-    final hasEpgUrl = epgUrl != null && epgUrl.isNotEmpty;
+    final displayEpgUrl = epgUrl?.trim() ?? '';
+    final hasEpgUrl = displayEpgUrl.isNotEmpty;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -263,11 +279,13 @@ class SettingsPlaylistTile extends StatelessWidget {
             ),
           ],
         );
+        final epgJob = item.epgSyncJob;
+        final isEpgActive = epgJob?.isActive ?? (isEpgSyncing && hasEpgUrl);
         final actions = _PlaylistActions(
           item: item,
           isSyncing: isSyncing,
-          isEpgSyncing: isEpgSyncing,
-          isBusy: isBusy,
+          isEpgSyncing: isEpgActive,
+          isBusy: isBusy || isEpgActive,
           hasEpgUrl: hasEpgUrl,
           showSyncLabel: constraints.maxWidth >= 360,
         );
@@ -313,7 +331,7 @@ class SettingsPlaylistTile extends StatelessWidget {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        epgUrl,
+                        displayEpgUrl,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -342,6 +360,20 @@ class SettingsPlaylistTile extends StatelessWidget {
                   ),
                 ),
               const SizedBox(height: 6),
+              _EpgRefreshControl(
+                interval: item.epgRefreshInterval,
+                enabled:
+                    hasEpgUrl &&
+                    item.onEpgRefreshIntervalChanged != null &&
+                    !isEpgActive,
+                onChanged: item.onEpgRefreshIntervalChanged,
+              ),
+              const SizedBox(height: 6),
+              _EpgInlineStatus(
+                job: epgJob,
+                fallbackIsSyncing: isEpgSyncing,
+                onRetry: item.onEpgRetry,
+              ),
               Row(
                 children: [
                   Expanded(
@@ -362,6 +394,153 @@ class SettingsPlaylistTile extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _EpgRefreshControl extends StatelessWidget {
+  const _EpgRefreshControl({
+    required this.interval,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final EpgRefreshInterval interval;
+  final bool enabled;
+  final ValueChanged<EpgRefreshInterval>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact =
+            constraints.maxWidth < 440 ||
+            MediaQuery.textScalerOf(context).scale(1) > 1.35;
+        final dropdown = DropdownButtonHideUnderline(
+          child: DropdownButton<EpgRefreshInterval>(
+            value: interval,
+            isExpanded: true,
+            onChanged: enabled
+                ? (value) {
+                    if (value != null) onChanged?.call(value);
+                  }
+                : null,
+            items: [
+              for (final option in EpgRefreshInterval.values)
+                DropdownMenuItem<EpgRefreshInterval>(
+                  value: option,
+                  child: Text(option.label, overflow: TextOverflow.ellipsis),
+                ),
+            ],
+          ),
+        );
+        final field = InputDecorator(
+          decoration: InputDecoration(
+            labelText: 'EPG-Aktualisierung',
+            isDense: true,
+            filled: true,
+            fillColor: colors.surfaceContainer,
+            enabled: enabled,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          child: dropdown,
+        );
+        return Semantics(
+          label: 'EPG-Aktualisierung: ${interval.label}',
+          enabled: enabled,
+          child: compact ? field : Row(children: [Expanded(child: field)]),
+        );
+      },
+    );
+  }
+}
+
+class _EpgInlineStatus extends StatelessWidget {
+  const _EpgInlineStatus({
+    required this.job,
+    required this.fallbackIsSyncing,
+    required this.onRetry,
+  });
+
+  final EpgSyncJob? job;
+  final bool fallbackIsSyncing;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final status = job?.status;
+    if (status == EpgSyncStatus.queued) {
+      return _statusRow(
+        context,
+        icon: Icons.schedule_rounded,
+        color: colors.onSurfaceVariant,
+        label: 'EPG-Aktualisierung wartet …',
+      );
+    }
+    if (status == EpgSyncStatus.syncing ||
+        (status == null && fallbackIsSyncing)) {
+      return _statusRow(
+        context,
+        icon: null,
+        color: colors.primary,
+        label: 'EPG wird aktualisiert …',
+        spinner: true,
+      );
+    }
+    if (status == EpgSyncStatus.failed) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.warning_amber_rounded, size: 16, color: colors.error),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'EPG-Aktualisierung fehlgeschlagen${job?.error == null ? '' : ': ${job!.error}'}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 10, color: colors.error),
+            ),
+          ),
+          if (onRetry != null)
+            TextButton(
+              onPressed: onRetry,
+              child: const Text('Erneut versuchen'),
+            ),
+        ],
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _statusRow(
+    BuildContext context, {
+    required IconData? icon,
+    required Color color,
+    required String label,
+    bool spinner = false,
+  }) {
+    return Row(
+      children: [
+        if (spinner)
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2, color: color),
+          )
+        else
+          Icon(icon, size: 16, color: color),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 10, color: color),
+          ),
+        ),
+      ],
     );
   }
 }

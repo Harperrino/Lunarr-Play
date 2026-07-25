@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/app/providers/fullscreen_providers.dart';
 import 'package:m3uxtream_player/app/providers/app_shutdown_providers.dart';
+import 'package:m3uxtream_player/app/providers/core_providers.dart';
 import 'package:m3uxtream_player/app/bootstrap/desktop_window_bootstrap.dart';
 import 'package:m3uxtream_player/app/shell/shell_tab_labels.dart';
 import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
@@ -12,10 +13,12 @@ import 'package:m3uxtream_player/app/shell/standard_app_shell.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/core/services/channel_navigation.dart';
+import 'package:m3uxtream_player/core/services/database_health_controller.dart';
 import 'package:m3uxtream_player/core/services/fullscreen_toggle.dart';
 import 'package:m3uxtream_player/core/shortcuts/global_shortcuts.dart';
 import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
 import 'package:m3uxtream_player/features/diagnostics/providers/ui_logs_providers.dart';
+import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_ui_command_providers.dart';
 import 'package:m3uxtream_player/features/player/services/player_ui_command_runner.dart';
@@ -23,6 +26,7 @@ import 'package:m3uxtream_player/features/player/vod/vod_playback_video_overlay.
 import 'package:m3uxtream_player/features/player/widgets/live_tab_shell.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
+import 'package:m3uxtream_player/features/playlists/widgets/top_bar_playlist_menu.dart';
 import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/features/settings/providers/debug_mode_providers.dart';
 import 'package:m3uxtream_player/features/xtream/providers/media_library_providers.dart';
@@ -39,14 +43,17 @@ class MainLayoutScreen extends ConsumerStatefulWidget {
 }
 
 class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
-    with WindowListener {
+    with WindowListener, WidgetsBindingObserver {
   final GlobalKey _playerPanelKey = GlobalKey();
+  late final DesktopWindowPlacementController _windowPlacementController;
   bool _fullscreenBusy = false;
   bool _sidebarExpanded = false;
 
   @override
   void initState() {
     super.initState();
+    _windowPlacementController = DesktopWindowPlacementController();
+    WidgetsBinding.instance.addObserver(this);
     if (ref.read(isDesktopPlatformProvider)) {
       windowManager.addListener(this);
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -54,14 +61,27 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
       });
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncFullscreenState());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_startSearchIndexBootstrap());
+      ref.read(epgAutoRefreshCoordinatorProvider).start();
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (ref.read(isDesktopPlatformProvider)) {
       windowManager.removeListener(this);
     }
+    _windowPlacementController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(ref.read(epgAutoRefreshCoordinatorProvider).onResume());
+    }
   }
 
   Future<void> _syncFullscreenState() async {
@@ -78,6 +98,18 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
     } catch (e, stackTrace) {
       AppLogger.error(
         'MainLayout: Failed to read window fullscreen state',
+        e,
+        stackTrace,
+      );
+    }
+  }
+
+  Future<void> _startSearchIndexBootstrap() async {
+    try {
+      await ref.read(searchIndexRepositoryProvider).ensureExistingIndexes();
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'MainLayout: Search index bootstrap failed.',
         e,
         stackTrace,
       );
@@ -181,6 +213,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
   }
 
   Future<void> _requestShutdown({required String reason}) async {
+    await _windowPlacementController.flush();
     await ref
         .read(appShutdownControllerProvider)
         .requestShutdown(reason: reason);
@@ -272,16 +305,17 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
       }
     });
 
-    ref.listen<AsyncValue<List<Playlist>>>(
-      playlistsStreamProvider,
-      (_, _) => _syncSelectedPlaylist(),
-    );
-    ref.listen<AsyncValue<Set<int>>>(
-      inactivePlaylistIdsProvider,
-      (_, _) => _syncSelectedPlaylist(),
-    );
+    ref.listen<AsyncValue<List<Playlist>>>(playlistsStreamProvider, (_, _) {
+      _syncSelectedPlaylist();
+      unawaited(ref.read(epgAutoRefreshCoordinatorProvider).refreshNow());
+    });
+    ref.listen<AsyncValue<Set<int>>>(inactivePlaylistIdsProvider, (_, _) {
+      _syncSelectedPlaylist();
+      unawaited(ref.read(epgAutoRefreshCoordinatorProvider).refreshNow());
+    });
 
     final debugModeEnabled = ref.watch(debugModeProvider).valueOrNull ?? false;
+    final databaseHealth = ref.watch(databaseHealthProvider);
     final immersive = ref.watch(immersiveLayoutProvider);
     final activeIndex = shellNavigationIndexFor(
       ref.watch(activeSidebarIndexProvider),
@@ -378,6 +412,13 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
               ),
             ),
             const VodPlaybackVideoOverlay(),
+            if (databaseHealth.isFatal)
+              const Positioned(
+                left: 16,
+                right: 16,
+                top: 12,
+                child: _DatabaseFatalStatus(),
+              ),
           ],
         ),
       ),
@@ -387,6 +428,57 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
   @override
   void onWindowClose() {
     unawaited(_requestShutdown(reason: 'window close'));
+  }
+
+  @override
+  void onWindowResize() {
+    _windowPlacementController.onWindowResize(
+      immersive: ref.read(isFullscreenProvider),
+    );
+  }
+
+  @override
+  void onWindowResized() {
+    _windowPlacementController.onWindowResize(
+      immersive: ref.read(isFullscreenProvider),
+    );
+  }
+}
+
+class _DatabaseFatalStatus extends StatelessWidget {
+  const _DatabaseFatalStatus();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      label: 'Datenbankverbindung unterbrochen. Anwendung neu starten.',
+      child: Material(
+        color: colors.errorContainer,
+        borderRadius: BorderRadius.circular(14),
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(Icons.error_outline_rounded, color: colors.onErrorContainer),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Datenbankverbindung unterbrochen – bitte Anwendung neu starten.',
+                  style: TextStyle(
+                    color: colors.onErrorContainer,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -407,10 +499,21 @@ class _AppBarWrapper extends ConsumerWidget {
       child: AnimatedOpacity(
         duration: LiveTabShell.layoutTransitionDuration,
         opacity: immersive ? 0 : 1,
-        child: CustomAppBar(
-          onCloseRequested: onCloseRequested,
-          search: const GlobalSearchField(),
-          searchHeight: GlobalSearchField.fieldHeight,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final playlistWidth = TopBarPlaylistMenu.widthFor(
+              constraints.maxWidth,
+            );
+            return CustomAppBar(
+              onCloseRequested: onCloseRequested,
+              leadingCommand: TopBarPlaylistMenu(
+                availableWidth: constraints.maxWidth,
+              ),
+              leadingCommandWidth: playlistWidth,
+              search: const GlobalSearchField(),
+              searchHeight: GlobalSearchField.fieldHeight,
+            );
+          },
         ),
       ),
     );

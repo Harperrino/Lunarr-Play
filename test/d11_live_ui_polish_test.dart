@@ -83,7 +83,7 @@ void main() {
     },
   );
 
-  testWidgets('search bar owns one 56-dp Material contour', (tester) async {
+  testWidgets('search bar owns one 48-dp Material contour', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
@@ -101,7 +101,10 @@ void main() {
 
     expect(find.byType(SearchBar), findsOneWidget);
     expect(find.byType(AppSurface), findsNothing);
-    expect(tester.getSize(find.byType(SearchBar)), const Size(640, 56));
+    expect(
+      tester.getSize(find.byType(SearchBar)),
+      const Size(640, GlobalSearchField.fieldHeight),
+    );
     final searchBar = tester.widget<SearchBar>(find.byType(SearchBar));
     expect(searchBar.side!.resolve(<WidgetState>{}), BorderSide.none);
     expect(searchBar.side!.resolve({WidgetState.focused})!.width, 2);
@@ -132,6 +135,7 @@ void main() {
     container.read(globalSearchQueryProvider.notifier).state = 'remote';
     await tester.pump();
     expect(tester.widget<EditableText>(editable).controller.text, 'remote');
+    await tester.pump(const Duration(milliseconds: 140));
   });
 
   testWidgets('shell search widths stay bounded and do not overlap the title', (
@@ -168,7 +172,7 @@ void main() {
       final searchRect = tester.getRect(find.byKey(ShellCommandArea.searchKey));
       final titleRect = tester.getRect(find.byKey(ShellCommandArea.titleKey));
       expect(searchRect.width, closeTo(expectedSearchWidth, 0.01));
-      expect(searchRect.height, 56);
+      expect(searchRect.height, GlobalSearchField.fieldHeight);
       expect(searchRect.overlaps(titleRect), isFalse);
       expect(tester.takeException(), isNull);
     }

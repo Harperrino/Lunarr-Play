@@ -17,6 +17,17 @@ import 'package:window_manager/window_manager.dart';
 
 export 'package:m3uxtream_player/features/xtream/models/playback_prep_target.dart';
 
+/// A catalogue item carries its owning playlist even when it was shown by the
+/// synthetic All scope. Playback and detail providers must switch to that
+/// concrete boundary before they resolve episodes or start a stream.
+///
+/// Only the concrete detail/playback context is switched here. The catalogue
+/// scope is deliberately left untouched: an item opened from the All-active
+/// catalogue returns to that same All view afterwards.
+void selectConcretePlaylistContext(WidgetRef ref, int playlistId) {
+  ref.read(selectedPlaylistIdProvider.notifier).state = playlistId;
+}
+
 /// Active prep target (movie or episode). Null = catalogue visible.
 final playbackPrepTargetProvider = StateProvider<PlaybackPrepTarget?>((ref) {
   ref.listen<int?>(selectedPlaylistIdProvider, (previous, next) {
@@ -233,11 +244,13 @@ void selectSeriesEpisodePrep(
   required ParsedSeriesEpisode episode,
   int startPositionMs = 0,
 }) {
-  final playlistId = ref.read(selectedPlaylistIdProvider);
+  final playlistId = seriesChannel.playlistId;
   final seriesStreamId = seriesChannel.streamId;
-  if (playlistId == null || seriesStreamId == null || seriesStreamId.isEmpty) {
+  if (seriesStreamId == null || seriesStreamId.isEmpty) {
     return;
   }
+
+  selectConcretePlaylistContext(ref, playlistId);
 
   ref.read(seriesActivePlaybackProvider.notifier).state = SeriesActivePlayback(
     playlistId: playlistId,

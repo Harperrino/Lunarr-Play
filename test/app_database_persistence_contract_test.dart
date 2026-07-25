@@ -171,13 +171,13 @@ AppDatabase _openFileDatabase(File file) {
 }
 
 Future<void> _expectSchemaContract(AppDatabase database) async {
-  expect(database.schemaVersion, 6);
+  expect(database.schemaVersion, 9);
 
   final userVersion = await database
       .customSelect('PRAGMA user_version')
       .map((row) => row.read<int>('user_version'))
       .getSingle();
-  expect(userVersion, 6);
+  expect(userVersion, 9);
 
   final foreignKeys = await database
       .customSelect('PRAGMA foreign_keys')
@@ -188,7 +188,9 @@ Future<void> _expectSchemaContract(AppDatabase database) async {
   final tables = await database
       .customSelect(
         "SELECT name FROM sqlite_master WHERE type = 'table' "
-        "AND name NOT LIKE 'sqlite_%' ORDER BY name",
+        "AND name IN ('app_states', 'channels', 'epg_channels', "
+        "'epg_entries', 'playlists', 'search_documents', "
+        "'search_index_state') ORDER BY name",
       )
       .map((row) => row.read<String>('name'))
       .get();
@@ -198,6 +200,8 @@ Future<void> _expectSchemaContract(AppDatabase database) async {
     'epg_channels',
     'epg_entries',
     'playlists',
+    'search_documents',
+    'search_index_state',
   ]);
 
   await _expectColumns(database, 'playlists', {
@@ -210,6 +214,7 @@ Future<void> _expectSchemaContract(AppDatabase database) async {
     'created_at',
     'last_synced_at',
     'epg_url',
+    'epg_url_override',
     'epg_last_synced_at',
   });
   await _expectColumns(database, 'channels', {
@@ -243,6 +248,55 @@ Future<void> _expectSchemaContract(AppDatabase database) async {
     'display_name',
   });
   await _expectColumns(database, 'app_states', {'key', 'value'});
+  await _expectColumns(database, 'search_documents', {
+    'id',
+    'playlist_id',
+    'document_type',
+    'channel_id',
+    'media_type',
+    'title',
+    'normalized_title',
+    'category',
+    'normalized_category',
+    'epg_channel_id',
+  });
+  await _expectColumns(database, 'search_index_state', {
+    'playlist_id',
+    'index_format_version',
+    'sync_revision',
+    'document_count',
+    'status',
+    'updated_at',
+  });
+
+  for (final ftsName in const [
+    'search_documents_fts_trigram',
+    'search_documents_fts_prefix',
+  ]) {
+    final ftsObject = await database
+        .customSelect("SELECT type FROM sqlite_master WHERE name = '$ftsName'")
+        .map((row) => row.read<String>('type'))
+        .getSingle();
+    expect(ftsObject, 'table');
+  }
+
+  final searchTriggers = await database
+      .customSelect(
+        "SELECT name FROM sqlite_master WHERE type = 'trigger' "
+        "AND name LIKE 'search_%' ORDER BY name",
+      )
+      .map((row) => row.read<String>('name'))
+      .get();
+  expect(
+    searchTriggers,
+    containsAll([
+      'search_documents_ai',
+      'search_documents_ad',
+      'search_documents_au',
+      'search_documents_channel_ad',
+      'search_index_state_playlist_ai',
+    ]),
+  );
 
   final indexSql = await database
       .customSelect(
@@ -260,6 +314,15 @@ Future<void> _expectSchemaContract(AppDatabase database) async {
   expect(channelForeignKeys.single.read<String>('table'), 'playlists');
   expect(channelForeignKeys.single.read<String>('from'), 'playlist_id');
   expect(channelForeignKeys.single.read<String>('on_delete'), 'CASCADE');
+
+  final searchForeignKeys = await database
+      .customSelect('PRAGMA foreign_key_list(search_documents)')
+      .get();
+  expect(searchForeignKeys, hasLength(2));
+  expect(
+    searchForeignKeys.map((row) => row.read<String>('on_delete')),
+    everyElement('CASCADE'),
+  );
 }
 
 Future<void> _expectColumns(

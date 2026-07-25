@@ -267,7 +267,7 @@ void main() {
               supportingText: 'Watch live television',
               search: const SizedBox(
                 key: ValueKey('d13-search'),
-                height: 56,
+                height: GlobalSearchField.fieldHeight,
                 child: ColoredBox(color: Colors.blue),
               ),
             ),

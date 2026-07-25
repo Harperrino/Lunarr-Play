@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "LUNARR One" "\0"
-            VALUE "FileDescription", "LUNARR One" "\0"
+            VALUE "CompanyName", "Lunarr Player" "\0"
+            VALUE "FileDescription", "Lunarr Player" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "lunarr_one" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 LUNARR One. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Lunarr Player. All rights reserved." "\0"
             VALUE "OriginalFilename", "lunarr_one.exe" "\0"
-            VALUE "ProductName", "LUNARR One" "\0"
+            VALUE "ProductName", "Lunarr Player" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

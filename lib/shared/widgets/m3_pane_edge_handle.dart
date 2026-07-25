@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_elevation.dart';
 import '../theme/app_shapes.dart';
@@ -18,6 +21,10 @@ class M3PaneEdgeHandle extends StatefulWidget {
     required this.onPressed,
     this.focusNode,
     this.focusOutlineKey,
+    this.onHorizontalDragUpdate,
+    this.onDragEnd,
+    this.onDoubleTap,
+    this.onResizeByKeyboard,
   });
 
   final M3PaneTarget target;
@@ -25,6 +32,10 @@ class M3PaneEdgeHandle extends StatefulWidget {
   final VoidCallback onPressed;
   final FocusNode? focusNode;
   final Key? focusOutlineKey;
+  final ValueChanged<double>? onHorizontalDragUpdate;
+  final VoidCallback? onDragEnd;
+  final VoidCallback? onDoubleTap;
+  final ValueChanged<double>? onResizeByKeyboard;
 
   static const hitWidth = 48.0;
   static const hitHeight = 72.0;
@@ -35,17 +46,100 @@ class M3PaneEdgeHandle extends StatefulWidget {
   State<M3PaneEdgeHandle> createState() => _M3PaneEdgeHandleState();
 }
 
+/// Full-height resize seam for a pane.
+///
+/// This intentionally has no collapse action. The neighbouring
+/// [M3PaneEdgeHandle] remains the small click/keyboard target, while this
+/// opaque seam owns horizontal dragging and the double-click reset gesture.
+class M3PaneResizeEdge extends StatefulWidget {
+  const M3PaneResizeEdge({
+    super.key,
+    required this.onHorizontalDragUpdate,
+    required this.onDragEnd,
+    required this.onDoubleTap,
+    this.onResizeByKeyboard,
+  });
+
+  static const hitWidth = 10.0;
+
+  final ValueChanged<double> onHorizontalDragUpdate;
+  final VoidCallback onDragEnd;
+  final VoidCallback onDoubleTap;
+  final ValueChanged<double>? onResizeByKeyboard;
+
+  @override
+  State<M3PaneResizeEdge> createState() => _M3PaneResizeEdgeState();
+}
+
+class _M3PaneResizeEdgeState extends State<M3PaneResizeEdge> {
+  bool _hovered = false;
+  bool _focused = false;
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final resize = widget.onResizeByKeyboard;
+    if (resize == null) return KeyEventResult.ignored;
+    if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      resize(-16);
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+      resize(16);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final active = _hovered || _focused;
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Focus(
+        onFocusChange: (focused) => setState(() => _focused = focused),
+        onKeyEvent: _handleKeyEvent,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragUpdate: (details) =>
+              widget.onHorizontalDragUpdate(details.delta.dx),
+          onHorizontalDragEnd: (_) => widget.onDragEnd(),
+          onDoubleTap: widget.onDoubleTap,
+          child: Semantics(
+            container: true,
+            label: 'Kategorienbreite ändern',
+            hint: 'Ziehen zum Ändern, doppelt klicken zum Zurücksetzen',
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              width: M3PaneResizeEdge.hitWidth,
+              color: active
+                  ? colors.primary.withValues(alpha: 0.18)
+                  : Colors.transparent,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _M3PaneEdgeHandleState extends State<M3PaneEdgeHandle> {
   FocusNode? _internalFocusNode;
   bool _hovered = false;
   bool _focused = false;
   bool _pressed = false;
+  bool _dragging = false;
+  bool _doubleTapPending = false;
+  Timer? _doubleTapTimer;
 
   FocusNode get _focusNode =>
       widget.focusNode ?? (_internalFocusNode ??= FocusNode());
 
   @override
   void dispose() {
+    _doubleTapTimer?.cancel();
     _internalFocusNode?.dispose();
     super.dispose();
   }
@@ -55,6 +149,48 @@ class _M3PaneEdgeHandleState extends State<M3PaneEdgeHandle> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNode.requestFocus();
     });
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final resize = widget.onResizeByKeyboard;
+    if (resize != null) {
+      if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+        resize(-16);
+        return KeyEventResult.handled;
+      }
+      if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+        resize(16);
+        return KeyEventResult.handled;
+      }
+    }
+    if (event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.space) {
+      _handlePressed();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  void _handlePointerUp(PointerUpEvent event) {
+    if (widget.onDoubleTap == null || _dragging) {
+      _dragging = false;
+      _doubleTapPending = false;
+      _doubleTapTimer?.cancel();
+      return;
+    }
+
+    if (_doubleTapPending) {
+      _doubleTapPending = false;
+      _doubleTapTimer?.cancel();
+      widget.onDoubleTap!();
+    } else {
+      _doubleTapPending = true;
+      _doubleTapTimer?.cancel();
+      _doubleTapTimer = Timer(const Duration(milliseconds: 300), () {
+        if (mounted) _doubleTapPending = false;
+      });
+    }
   }
 
   @override
@@ -102,7 +238,6 @@ class _M3PaneEdgeHandleState extends State<M3PaneEdgeHandle> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          focusNode: _focusNode,
           canRequestFocus: true,
           onTap: _handlePressed,
           onFocusChange: (value) => setState(() => _focused = value),
@@ -116,16 +251,43 @@ class _M3PaneEdgeHandleState extends State<M3PaneEdgeHandle> {
         ),
       ),
     );
+    final gestures = GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragUpdate: widget.onHorizontalDragUpdate == null
+          ? null
+          : (details) {
+              _dragging = true;
+              widget.onHorizontalDragUpdate!(details.delta.dx);
+            },
+      onHorizontalDragEnd:
+          widget.onHorizontalDragUpdate == null && widget.onDragEnd == null
+          ? null
+          : (_) {
+              widget.onDragEnd?.call();
+              _dragging = false;
+            },
+      child: action,
+    );
     return Tooltip(
       message: actionLabel,
-      child: Semantics(
-        container: true,
-        button: true,
-        enabled: true,
-        toggled: widget.expanded,
-        label: actionLabel,
-        onTap: _handlePressed,
-        child: action,
+      child: Focus(
+        focusNode: _focusNode,
+        onKeyEvent: _handleKeyEvent,
+        child: Listener(
+          onPointerDown: (_) {
+            _dragging = false;
+          },
+          onPointerUp: _handlePointerUp,
+          child: Semantics(
+            container: true,
+            button: true,
+            enabled: true,
+            toggled: widget.expanded,
+            label: actionLabel,
+            onTap: _handlePressed,
+            child: gestures,
+          ),
+        ),
       ),
     );
   }
