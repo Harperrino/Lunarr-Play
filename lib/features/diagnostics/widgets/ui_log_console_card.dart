@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// Reusable diagnostic log panel.
 class UiLogConsoleCard extends StatefulWidget {
@@ -75,7 +76,7 @@ class _UiLogConsoleCardState extends State<UiLogConsoleCard> {
               ),
               const SizedBox(width: 12),
               Text(
-                'SYSTEM REAL-TIME DIAGNOSTIC',
+                context.l10n.diagnosticsConsoleTitle,
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontSize: 14),
@@ -84,7 +85,7 @@ class _UiLogConsoleCardState extends State<UiLogConsoleCard> {
               TextButton(
                 onPressed: widget.onClear,
                 child: Text(
-                  'Clear',
+                  context.l10n.diagnosticsConsoleClear,
                   style: TextStyle(
                     fontSize: 12,
                     color: colors.onSurfaceVariant,
@@ -121,7 +122,7 @@ class _UiLogConsoleCardState extends State<UiLogConsoleCard> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Press [Space] for Play/Pause, [F] for Fullscreen, [+/-] for Volume, [Arrow keys] to change channel.',
+            context.l10n.diagnosticsConsoleKeyboardHelp,
             style: TextStyle(fontSize: 10, color: colors.onSurfaceVariant),
           ),
         ],

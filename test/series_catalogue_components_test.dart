@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/features/xtream/widgets/episode_card.dart';
 import 'package:m3uxtream_player/features/xtream/widgets/series_card.dart';
-import 'package:m3uxtream_player/features/xtream/widgets/series_grid.dart';
+import 'package:m3uxtream_player/app/composition/xtream/widgets/series_grid.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
@@ -54,7 +54,7 @@ void main() {
       final posterSize = tester.getSize(poster);
       expect(posterSize.width / posterSize.height, closeTo(2 / 3, 0.001));
       expect(find.byType(MediaMetadataRow), findsOneWidget);
-      expect(find.bySemanticsLabel('Serie: Expressive Serie'), findsOneWidget);
+      expect(find.bySemanticsLabel('Series: Expressive Serie'), findsOneWidget);
       expect(
         tester.widget<AppSurface>(find.byType(AppSurface)).states,
         contains(WidgetState.selected),

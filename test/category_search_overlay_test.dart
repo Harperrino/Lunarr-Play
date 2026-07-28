@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/fullscreen_providers.dart';
-import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/shared/providers/app_shell_state_providers.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
 import 'package:m3uxtream_player/core/models/search_catalog_entry.dart';
 import 'package:m3uxtream_player/core/search/search_models.dart';
 import 'package:m3uxtream_player/features/search/models/category_search_result.dart';
 import 'package:m3uxtream_player/features/search/models/channel_search_result.dart';
 import 'package:m3uxtream_player/features/search/models/global_search_results.dart';
 import 'package:m3uxtream_player/features/search/models/search_overlay_filter.dart';
-import 'package:m3uxtream_player/features/search/providers/category_search_providers.dart';
+import 'package:m3uxtream_player/app/composition/search/providers/category_search_providers.dart';
 import 'package:m3uxtream_player/features/search/providers/search_providers.dart';
-import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
+import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/features/xtream/providers/media_library_providers.dart';
-import 'package:m3uxtream_player/features/xtream/providers/series_providers.dart';
-import 'package:m3uxtream_player/features/xtream/providers/vod_providers.dart';
+import 'package:m3uxtream_player/app/composition/xtream/providers/series_providers.dart';
+import 'package:m3uxtream_player/app/composition/xtream/providers/vod_providers.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 
 GlobalSearchResults _results() => const GlobalSearchResults(
@@ -162,7 +162,7 @@ void main() {
     addTearDown(container.dispose);
     await _pumpSearch(tester, container);
 
-    await tester.tap(find.text('Channel'));
+    await tester.tap(find.text('Channels'));
     await tester.pump();
 
     expect(
@@ -359,11 +359,11 @@ void main() {
     await _pumpSearch(tester, container);
     await tester.pump();
 
-    expect(find.text('Alle'), findsOneWidget);
-    expect(find.text('Channel'), findsOneWidget);
-    expect(find.text('Kategorien'), findsOneWidget);
+    expect(find.text('All'), findsOneWidget);
+    expect(find.text('Channels'), findsOneWidget);
+    expect(find.text('Categories'), findsOneWidget);
     expect(find.text('News HD'), findsOneWidget);
     expect(find.text('News · Main playlist'), findsOneWidget);
-    expect(find.text('Jetzt: Tagesschau'), findsOneWidget);
+    expect(find.text('Now: Tagesschau'), findsOneWidget);
   });
 }

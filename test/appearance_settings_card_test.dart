@@ -2,7 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/repository/app_state_repository.dart';
 import 'package:m3uxtream_player/features/settings/providers/appearance_providers.dart';
@@ -78,7 +78,7 @@ void main() {
         closeTo(changed.surfaceTone, 0.001),
       );
 
-      await tester.tap(find.text('Standard wiederherstellen'));
+      await tester.tap(find.text('Restore defaults'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 20));
 

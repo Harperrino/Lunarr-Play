@@ -2,16 +2,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/native.dart';
 
-import 'package:m3uxtream_player/app/providers/fullscreen_providers.dart';
-import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
+import 'package:m3uxtream_player/shared/providers/app_shell_state_providers.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/search_catalog_entry.dart';
 import 'package:m3uxtream_player/core/parsers/m3u_parser.dart';
 import 'package:m3uxtream_player/core/repository/playlist_repository.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/features/search/models/channel_search_result.dart';
-import 'package:m3uxtream_player/features/search/services/category_search_navigation.dart';
+import 'package:m3uxtream_player/app/services/category_search_navigation.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 
 import 'support/fake_media_player.dart';

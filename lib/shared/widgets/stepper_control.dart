@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// Numeric stepper with tap (+/-1) and long-press repeat (faster increments).
 class StepperControl extends StatefulWidget {
@@ -63,7 +64,7 @@ class _StepperControlState extends State<StepperControl> {
       children: [
         _StepButton(
           icon: Icons.remove_rounded,
-          semanticLabel: 'Decrease value',
+          semanticLabel: context.l10n.stepperDecreaseValue,
           enabled: widget.value > widget.min,
           onTap: () => _applyDelta(-1),
           onLongPressStart: () => _startRepeat(-1),
@@ -82,7 +83,7 @@ class _StepperControlState extends State<StepperControl> {
         ),
         _StepButton(
           icon: Icons.add_rounded,
-          semanticLabel: 'Increase value',
+          semanticLabel: context.l10n.stepperIncreaseValue,
           enabled: widget.value < widget.max,
           onTap: () => _applyDelta(1),
           onLongPressStart: () => _startRepeat(1),

@@ -56,4 +56,36 @@ void main() {
     expect(redacted, isNot(contains('token=abc')));
     expect(redacted, isNot(contains('username=bob')));
   });
+
+  test(
+    'redacts mixed-case schemes, key variants, and prefixed Xtream paths',
+    () {
+      final redacted = redactStreamText(
+        'Open HTTPS://iptv.example.com/base/api/LIVE/alice/secret/42'
+        '?API_Key=sentinel-api&access-token=sentinel-token&quality=hd',
+      );
+
+      expect(redacted, contains('iptv.example.com'));
+      expect(redacted, contains('42'));
+      expect(redacted, contains('quality=hd'));
+      expect(redacted, isNot(contains('alice')));
+      expect(redacted, isNot(contains('secret')));
+      expect(redacted, isNot(contains('sentinel-api')));
+      expect(redacted, isNot(contains('sentinel-token')));
+    },
+  );
+
+  test('fails closed for malformed URLs and removes local private paths', () {
+    final malformed = redactStreamUrl('https://%zz/sentinel?token=secret');
+    final text = redactStreamText(
+      r'Failure at C:\Users\sentinel\Private Folder\epg.xml and '
+      r'\\server\private\guide.xml with password=sentinel-pass',
+    );
+
+    expect(malformed, '[REDACTED_URL]');
+    expect(text, isNot(contains('sentinel')));
+    expect(text, isNot(contains('Private Folder')));
+    expect(text, contains('[LOCAL_PATH]'));
+    expect(text, contains('password=***'));
+  });
 }

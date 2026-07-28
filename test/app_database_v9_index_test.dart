@@ -86,12 +86,12 @@ void main() {
       final database = AppDatabase.executor(NativeDatabase(file));
       addTearDown(database.close);
 
-      expect(database.schemaVersion, 9);
+      expect(database.schemaVersion, 10);
       final userVersion = await database
           .customSelect('PRAGMA user_version')
           .map((row) => row.read<int>('user_version'))
           .getSingle();
-      expect(userVersion, 9);
+      expect(userVersion, 10);
 
       final indexRows = await database
           .customSelect(

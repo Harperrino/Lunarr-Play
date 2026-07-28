@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_settings_section_header.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 enum PlaylistFormMode { m3u, xtream }
 
@@ -47,9 +48,8 @@ class PlaylistForm extends StatelessWidget {
         children: [
           M3SettingsSectionHeader(
             icon: Icons.add_circle_outline_rounded,
-            title: 'ADD PLAYLIST',
-            description:
-                'Create a new source and keep the flow focused on setup, sync and playback.',
+            title: context.l10n.playlistFormTitle,
+            description: context.l10n.playlistFormDescription,
             compact: compact,
           ),
           SizedBox(height: compact ? 14 : 20),
@@ -63,35 +63,35 @@ class PlaylistForm extends StatelessWidget {
             children: [
               PlaylistTextField(
                 controller: nameController,
-                label: 'Name',
-                hint: 'My IPTV List',
+                label: context.l10n.playlistFormNameLabel,
+                hint: context.l10n.playlistFormNameHint,
                 enabled: !isBusy,
               ),
               SizedBox(height: compact ? 12 : 14),
               if (isM3u)
                 PlaylistTextField(
                   controller: urlController,
-                  label: 'URL or file path',
+                  label: context.l10n.playlistFormUrlOrFileLabel,
                   hint: 'https://example.com/playlist.m3u',
                   enabled: !isBusy,
                 )
               else ...[
                 PlaylistTextField(
                   controller: hostController,
-                  label: 'Host',
+                  label: context.l10n.playlistFormHostLabel,
                   hint: 'http://provider.example.com:8080',
                   enabled: !isBusy,
                 ),
                 SizedBox(height: compact ? 12 : 14),
                 PlaylistTextField(
                   controller: usernameController,
-                  label: 'Username',
+                  label: context.l10n.playlistFormUsernameLabel,
                   enabled: !isBusy,
                 ),
                 SizedBox(height: compact ? 12 : 14),
                 PlaylistTextField(
                   controller: passwordController,
-                  label: 'Password',
+                  label: context.l10n.playlistFormPasswordLabel,
                   obscureText: true,
                   enabled: !isBusy,
                 ),
@@ -99,8 +99,8 @@ class PlaylistForm extends StatelessWidget {
               SizedBox(height: compact ? 12 : 14),
               PlaylistTextField(
                 controller: epgUrlController,
-                label: 'EPG override (optional)',
-                hint: 'Leer lassen für die automatische URL',
+                label: context.l10n.playlistFormEpgOverrideLabel,
+                hint: context.l10n.playlistFormEpgOverrideHint,
                 enabled: !isBusy,
               ),
             ],
@@ -121,7 +121,11 @@ class PlaylistForm extends StatelessWidget {
                         ),
                       )
                     : const Icon(Icons.save_rounded, size: 18),
-                label: Text(isBusy ? 'Working…' : 'Add & Sync'),
+                label: Text(
+                  isBusy
+                      ? context.l10n.playlistFormWorking
+                      : context.l10n.playlistFormAddAndSync,
+                ),
                 style: FilledButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: compact ? 12 : 14),
                   shape: RoundedRectangleBorder(

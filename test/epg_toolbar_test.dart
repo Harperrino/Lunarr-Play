@@ -3,7 +3,7 @@ import 'dart:ui' show SemanticsAction;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/features/epg/widgets/epg_compact_agenda.dart';
+import 'package:m3uxtream_player/app/composition/epg/widgets/epg_compact_agenda.dart';
 import 'package:m3uxtream_player/features/epg/widgets/epg_screen_layout.dart';
 import 'package:m3uxtream_player/features/epg/widgets/epg_toolbar.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
@@ -89,7 +89,7 @@ void main() {
       callbacks: _ToolbarCallbacks.recording(invoked),
     );
 
-    final enabledFinder = find.semantics.byLabel('Zum aktuellen Zeitpunkt');
+    final enabledFinder = find.semantics.byLabel('Go to the current time');
     final enabledNode = enabledFinder.evaluate().single;
     expect(
       enabledNode.getSemanticsData().hasAction(SemanticsAction.tap),
@@ -106,7 +106,7 @@ void main() {
       callbacks: _ToolbarCallbacks.recording(invoked),
     );
     final disabledNode = find.semantics
-        .byLabel('Zum aktuellen Zeitpunkt')
+        .byLabel('Go to the current time')
         .evaluate()
         .single;
     expect(
@@ -202,14 +202,14 @@ void main() {
 }
 
 const _semanticLabels = [
-  'Zum aktuellen Zeitpunkt',
-  'Zwei Stunden zurück',
-  'Zwei Stunden vor',
-  'Einen Tag zurück',
-  'Einen Tag vor',
-  'Zeitachse verkleinern',
-  'Zeitachse vergrößern',
-  'Zeitachse auf 100 Prozent zurücksetzen',
+  'Go to the current time',
+  'Go back two hours',
+  'Go forward two hours',
+  'Go back one day',
+  'Go forward one day',
+  'Zoom out the timeline',
+  'Zoom in the timeline',
+  'Reset the timeline to 100 percent',
 ];
 
 Future<void> _pumpToolbar(

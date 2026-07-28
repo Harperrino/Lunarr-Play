@@ -1,8 +1,8 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
-import 'package:m3uxtream_player/core/services/live_layout_geometry.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
+import 'package:m3uxtream_player/shared/layout/live_layout_geometry.dart';
 
 void main() {
   group('LiveLayoutMetrics.playerRect', () {

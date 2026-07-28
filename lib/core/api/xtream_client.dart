@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:m3uxtream_player/core/imports/import_budget.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 
 /// Highly-optimized API Client for communicating with IPTV Xtream Codes servers.
@@ -28,7 +30,10 @@ class XtreamClient {
     required String password,
     String? action,
     Map<String, String> extraParams = const {},
+    ImportBudget? budget,
+    String endpoint = 'xtream',
   }) async {
+    budget?.checkpoint('xtream_transport');
     final baseUrl = normalizeHost(host);
     if (baseUrl.isEmpty) {
       throw const FormatException('XtreamClient: Host URL cannot be empty.');
@@ -51,6 +56,9 @@ class XtreamClient {
     final client = HttpClient();
     // Prevent UI freezes by setting tight connection timeouts (12 seconds)
     client.connectionTimeout = const Duration(seconds: 12);
+    final unregisterCancellation = budget?.cancellation.register(
+      () => client.close(force: true),
+    );
 
     try {
       final uri = Uri.parse(fullUrl);
@@ -63,9 +71,21 @@ class XtreamClient {
         );
       }
 
-      // Stream the response bytes and decode using UTF-8
-      final responseBody = await response.transform(utf8.decoder).join();
-      return responseBody;
+      final bytes = BytesBuilder(copy: false);
+      await for (final chunk in response) {
+        budget?.consumeTransportBytes(
+          chunk.length,
+          phase: 'xtream_transport',
+          endpoint: endpoint,
+        );
+        budget?.consumeDecodedBytes(
+          chunk.length,
+          phase: 'xtream_decode',
+        );
+        bytes.add(chunk);
+      }
+      budget?.checkpoint('xtream_decode');
+      return utf8.decode(bytes.takeBytes());
     } catch (e, stackTrace) {
       AppLogger.error(
         'XtreamClient: Network request failed to execute!',
@@ -74,6 +94,7 @@ class XtreamClient {
       );
       rethrow;
     } finally {
+      unregisterCancellation?.call();
       client.close();
     }
   }
@@ -115,12 +136,15 @@ class XtreamClient {
     required String host,
     required String username,
     required String password,
+    ImportBudget? budget,
   }) async {
     return await _requestRaw(
       host: host,
       username: username,
       password: password,
       action: 'get_live_categories',
+      budget: budget,
+      endpoint: 'live_categories',
     );
   }
 
@@ -130,12 +154,15 @@ class XtreamClient {
     required String host,
     required String username,
     required String password,
+    ImportBudget? budget,
   }) async {
     return await _requestRaw(
       host: host,
       username: username,
       password: password,
       action: 'get_live_streams',
+      budget: budget,
+      endpoint: 'live_streams',
     );
   }
 
@@ -144,12 +171,15 @@ class XtreamClient {
     required String host,
     required String username,
     required String password,
+    ImportBudget? budget,
   }) async {
     return await _requestRaw(
       host: host,
       username: username,
       password: password,
       action: 'get_vod_categories',
+      budget: budget,
+      endpoint: 'vod_categories',
     );
   }
 
@@ -158,12 +188,15 @@ class XtreamClient {
     required String host,
     required String username,
     required String password,
+    ImportBudget? budget,
   }) async {
     return await _requestRaw(
       host: host,
       username: username,
       password: password,
       action: 'get_vod_streams',
+      budget: budget,
+      endpoint: 'vod_streams',
     );
   }
 
@@ -172,12 +205,15 @@ class XtreamClient {
     required String host,
     required String username,
     required String password,
+    ImportBudget? budget,
   }) async {
     return await _requestRaw(
       host: host,
       username: username,
       password: password,
       action: 'get_series_categories',
+      budget: budget,
+      endpoint: 'series_categories',
     );
   }
 
@@ -186,12 +222,15 @@ class XtreamClient {
     required String host,
     required String username,
     required String password,
+    ImportBudget? budget,
   }) async {
     return await _requestRaw(
       host: host,
       username: username,
       password: password,
       action: 'get_series',
+      budget: budget,
+      endpoint: 'series',
     );
   }
 

@@ -185,7 +185,7 @@ void main() {
       raw.close();
 
       final first = AppDatabase.executor(NativeDatabase(file));
-      expect(first.schemaVersion, 9);
+      expect(first.schemaVersion, 10);
       expect(
         await first
             .customSelect(
@@ -204,7 +204,7 @@ void main() {
           .customSelect('PRAGMA user_version')
           .map((row) => row.read<int>('user_version'))
           .getSingle();
-      expect(userVersion, 9);
+      expect(userVersion, 10);
       await second.close();
     },
   );
@@ -260,6 +260,71 @@ void main() {
     expect(automatic.effectiveEpgUrl, 'https://example.invalid/automatic.xml');
     await migrated.close();
   });
+
+  test(
+    'schema v10 discards unowned EPG cache and resets sync timestamps',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'm3uxtream-epg-v10-',
+      );
+      final file = File('${directory.path}/epg-v9.sqlite');
+      addTearDown(() async {
+        if (await directory.exists()) await directory.delete(recursive: true);
+      });
+
+      final created = AppDatabase.executor(NativeDatabase(file));
+      final playlistId = await created
+          .into(created.playlists)
+          .insert(
+            PlaylistsCompanion.insert(
+              name: 'EPG migration',
+              type: 'm3u',
+              urlOrHost: 'https://example.invalid/list.m3u',
+              epgUrl: const Value('https://example.invalid/guide.xml'),
+              epgLastSyncedAt: Value(DateTime.utc(2026, 7, 25)),
+            ),
+          );
+      await created.close();
+
+      final raw = sqlite3.open(file.path);
+      raw.execute('DROP TABLE epg_entries');
+      raw.execute('DROP TABLE epg_channels');
+      raw.execute('''
+CREATE TABLE epg_entries (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  channel_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  start_time INTEGER NOT NULL,
+  end_time INTEGER NOT NULL
+)''');
+      raw.execute('''
+CREATE TABLE epg_channels (
+  channel_id TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  PRIMARY KEY (channel_id, display_name)
+)''');
+      raw.execute(
+        "INSERT INTO epg_channels(channel_id, display_name) "
+        "VALUES ('shared', 'Legacy')",
+      );
+      raw.execute(
+        "INSERT INTO epg_entries(channel_id, title, start_time, end_time) "
+        "VALUES ('shared', 'Legacy programme', 0, 1)",
+      );
+      raw.execute('PRAGMA user_version = 9');
+      raw.close();
+
+      final migrated = AppDatabase.executor(NativeDatabase(file));
+      expect(await migrated.select(migrated.epgEntries).get(), isEmpty);
+      expect(await migrated.select(migrated.epgChannels).get(), isEmpty);
+      final playlist = await (migrated.select(
+        migrated.playlists,
+      )..where((table) => table.id.equals(playlistId))).getSingle();
+      expect(playlist.epgLastSyncedAt, isNull);
+      await migrated.close();
+    },
+  );
 }
 
 class _MigrationFixture {
@@ -351,12 +416,12 @@ Future<void> _expectRecoveredDatabase(
   final database = AppDatabase.executor(NativeDatabase(fixture.file));
   addTearDown(database.close);
 
-  expect(database.schemaVersion, 9);
+  expect(database.schemaVersion, 10);
   final userVersion = await database
       .customSelect('PRAGMA user_version')
       .map((row) => row.read<int>('user_version'))
       .getSingle();
-  expect(userVersion, 9);
+  expect(userVersion, 10);
 
   final playlist = await (database.select(
     database.playlists,

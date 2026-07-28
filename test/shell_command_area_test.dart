@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/app/shell/shell_command_area.dart';
-import 'package:m3uxtream_player/core/services/live_layout_geometry.dart';
-import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
+import 'package:m3uxtream_player/shared/layout/live_layout_geometry.dart';
+import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 
 Widget _wrap(double width, Widget child) => MaterialApp(
   home: Scaffold(

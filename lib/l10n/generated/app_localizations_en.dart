@@ -1,0 +1,1614 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for English (`en`).
+class AppLocalizationsEn extends AppLocalizations {
+  AppLocalizationsEn([String locale = 'en']) : super(locale);
+
+  @override
+  String get appTitle => 'Lunarr Player';
+
+  @override
+  String get globalSearchHint => 'Search channels, movies, and series…';
+
+  @override
+  String get globalSearchClearTooltip => 'Clear search';
+
+  @override
+  String get globalSearchSemanticsLabel => 'Global search';
+
+  @override
+  String get globalSearchUnavailable => 'Search is unavailable';
+
+  @override
+  String globalSearchIndexBuildingProgress(int ready, int total) {
+    return 'Building search index… $ready/$total';
+  }
+
+  @override
+  String get globalSearchLoading => 'Loading search…';
+
+  @override
+  String get globalSearchNoResults => 'No results';
+
+  @override
+  String get globalSearchOpenHint => 'Open';
+
+  @override
+  String get globalSearchFilterAll => 'All';
+
+  @override
+  String get globalSearchFilterChannels => 'Channels';
+
+  @override
+  String get globalSearchFilterCategories => 'Categories';
+
+  @override
+  String globalSearchIndexProgressSemantics(int ready, int total) {
+    return 'Search index: $ready of $total playlists';
+  }
+
+  @override
+  String globalSearchIndexRetrySemantics(int count) {
+    return 'Search index: $count incomplete playlists. Retry';
+  }
+
+  @override
+  String globalSearchIndexIncompletePlaylists(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count playlists are not fully indexed',
+      one: '1 playlist is not fully indexed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get globalSearchRetry => 'Retry';
+
+  @override
+  String get globalSearchEpgLoading => 'Loading EPG…';
+
+  @override
+  String get globalSearchEpgUnavailable => 'EPG unavailable';
+
+  @override
+  String globalSearchEpgNow(String title) {
+    return 'Now: $title';
+  }
+
+  @override
+  String get globalSearchEpgNone => 'No EPG';
+
+  @override
+  String globalSearchResultSemantics(String title, String metadata) {
+    return '$title · $metadata';
+  }
+
+  @override
+  String get playlistMenuTitle => 'Playlists';
+
+  @override
+  String get playlistMenuAdd => 'Add playlist';
+
+  @override
+  String get playlistMenuAllActiveSelection => 'All active playlists';
+
+  @override
+  String get playlistMenuChoose => 'Choose playlist';
+
+  @override
+  String get playlistMenuStatusActive => 'Active';
+
+  @override
+  String get playlistMenuStatusInactive => 'Inactive';
+
+  @override
+  String get playlistMenuAllLabel => 'All';
+
+  @override
+  String get playlistMenuActivePlaylistsSubtitle => 'Active playlists';
+
+  @override
+  String get playlistMenuSyncing => 'Syncing…';
+
+  @override
+  String get playlistMenuSyncFailed => 'Sync failed';
+
+  @override
+  String get playlistMenuSyncTooltip => 'Sync playlist';
+
+  @override
+  String get playlistMenuManageTooltip => 'Manage playlist';
+
+  @override
+  String playlistDialogCreateFailed(String error) {
+    return 'Could not create playlist: $error';
+  }
+
+  @override
+  String get playlistDialogAddTitle => 'Add playlist';
+
+  @override
+  String get playlistDialogCancel => 'Cancel';
+
+  @override
+  String get playlistDialogAddAndSync => 'Add and sync';
+
+  @override
+  String playlistDialogEditTitle(String type) {
+    return 'Edit $type playlist';
+  }
+
+  @override
+  String get playlistDialogNameField => 'Name';
+
+  @override
+  String get playlistDialogHostField => 'Host';
+
+  @override
+  String get playlistDialogUrlOrFileField => 'URL or file path';
+
+  @override
+  String get playlistDialogUsernameField => 'Username';
+
+  @override
+  String get playlistDialogPasswordField => 'Password';
+
+  @override
+  String get playlistDialogAutomaticUrlTitle => 'Detected automatically';
+
+  @override
+  String get playlistDialogNoAutomaticUrl =>
+      'No URL was detected from the source.';
+
+  @override
+  String get playlistDialogEpgOverrideField => 'EPG override (optional)';
+
+  @override
+  String get playlistDialogEpgOverrideHint =>
+      'Leave empty to use the automatic URL';
+
+  @override
+  String playlistDialogEffectiveUrl(String url) {
+    return 'Effective: $url';
+  }
+
+  @override
+  String get playlistDialogSaving => 'Saving…';
+
+  @override
+  String get playlistDialogSave => 'Save';
+
+  @override
+  String playlistHubLoadError(String error) {
+    return 'Failed to load playlists: $error';
+  }
+
+  @override
+  String get playlistHubTitle => 'Playlists';
+
+  @override
+  String get playlistHubSubtitle =>
+      'Activate, sync, and manage each playlist separately.';
+
+  @override
+  String get playlistHubAdd => 'Add playlist';
+
+  @override
+  String get playlistHubCategoryVisibilityTitle => 'Category visibility';
+
+  @override
+  String get playlistHubCategoryVisibilitySubtitle =>
+      'Pin what matters, hide what you do not need, and keep the same order everywhere.';
+
+  @override
+  String get playlistHubSyncToLoadCategories =>
+      'Sync the playlist to load categories.';
+
+  @override
+  String get playlistHubVisibleCategoriesSection => 'Visible categories';
+
+  @override
+  String get playlistHubHiddenCategoriesSection => 'Hidden categories';
+
+  @override
+  String get playlistHubDeleteTitle => 'Delete playlist?';
+
+  @override
+  String playlistHubDeleteBody(String name) {
+    return 'The playlist “$name” and its local data will be removed.';
+  }
+
+  @override
+  String get playlistHubDeleteCancel => 'Cancel';
+
+  @override
+  String get playlistHubDeleteConfirm => 'Delete';
+
+  @override
+  String playlistHubDeleteSuccess(String name) {
+    return 'Playlist “$name” deleted.';
+  }
+
+  @override
+  String playlistHubDeleteFailure(String error) {
+    return 'Delete failed: $error';
+  }
+
+  @override
+  String get playlistHubContentFilterAll => 'All';
+
+  @override
+  String get playlistHubContentFilterLive => 'Live';
+
+  @override
+  String get playlistHubContentFilterVod => 'VOD';
+
+  @override
+  String get playlistHubContentFilterSeries => 'Series';
+
+  @override
+  String get playlistHubEmptyCategoriesAll =>
+      'No categories found in this playlist.';
+
+  @override
+  String get playlistHubEmptyCategoriesLive =>
+      'No live categories found in this playlist.';
+
+  @override
+  String get playlistHubEmptyCategoriesVod =>
+      'No VOD categories found in this playlist.';
+
+  @override
+  String get playlistHubEmptyCategoriesSeries =>
+      'No series categories found in this playlist.';
+
+  @override
+  String get playlistHubStatusInactive => 'Inactive';
+
+  @override
+  String get playlistHubStatusActive => 'Active';
+
+  @override
+  String get playlistHubStatusSyncing => 'Syncing…';
+
+  @override
+  String get playlistHubStatusEpgSyncing => 'EPG syncing…';
+
+  @override
+  String get playlistHubStatusEpgError => 'EPG error';
+
+  @override
+  String get playlistHubStatusEpgReady => 'EPG ready';
+
+  @override
+  String playlistHubStatusEpgInterval(String interval) {
+    return 'EPG $interval';
+  }
+
+  @override
+  String get playlistHubSyncTooltip => 'Sync playlist';
+
+  @override
+  String get playlistHubMoreActionsTooltip => 'More playlist actions';
+
+  @override
+  String get playlistHubSyncAction => 'Sync playlist';
+
+  @override
+  String get playlistHubNoEpgUrl => 'No EPG URL configured';
+
+  @override
+  String get playlistHubRetryEpgAction => 'Retry EPG';
+
+  @override
+  String get playlistHubSyncEpgAction => 'Sync EPG';
+
+  @override
+  String get playlistHubManageAction => 'Manage';
+
+  @override
+  String get playlistHubEditAction => 'Edit';
+
+  @override
+  String get playlistHubDeleteAction => 'Delete';
+
+  @override
+  String get playlistHubAutomaticEpgTitle => 'Automatically sync EPG';
+
+  @override
+  String get playlistHubEpgIntervalManual => 'Manual';
+
+  @override
+  String get playlistHubEpgIntervalHours6 => 'Every 6 hours';
+
+  @override
+  String get playlistHubEpgIntervalHours12 => 'Every 12 hours';
+
+  @override
+  String get playlistHubEpgIntervalHours24 => 'Every 24 hours';
+
+  @override
+  String get playlistHubCategoryVisibleDescription =>
+      'Visible in all category sidebars';
+
+  @override
+  String get playlistHubCategoryHiddenDescription =>
+      'Hidden from sidebar lists';
+
+  @override
+  String get playlistHubUnpinCategoryTooltip => 'Unpin category';
+
+  @override
+  String get playlistHubPinCategoryTooltip => 'Pin category';
+
+  @override
+  String get playlistHubSummaryVisible => 'Visible';
+
+  @override
+  String get playlistHubSummaryPinned => 'Pinned';
+
+  @override
+  String get playlistHubSummaryHidden => 'Hidden';
+
+  @override
+  String get playlistHubSummaryHiddenPinned => 'Hidden pinned';
+
+  @override
+  String get playlistHubHideAllCategories => 'Hide all';
+
+  @override
+  String get playlistHubHideLiveCategories => 'Hide live categories';
+
+  @override
+  String get playlistHubHideVodCategories => 'Hide VOD categories';
+
+  @override
+  String get playlistHubHideSeriesCategories => 'Hide series categories';
+
+  @override
+  String get playlistHubShowAllCategories => 'Show all';
+
+  @override
+  String get playlistHubShowLiveCategories => 'Show live categories';
+
+  @override
+  String get playlistHubShowVodCategories => 'Show VOD categories';
+
+  @override
+  String get playlistHubShowSeriesCategories => 'Show series categories';
+
+  @override
+  String get playlistHubEmptyTitle => 'No playlists yet';
+
+  @override
+  String get playlistHubEmptySubtitle =>
+      'Add your first source and manage it here.';
+
+  @override
+  String get diagnosticsConsoleTitle => 'SYSTEM REAL-TIME DIAGNOSTICS';
+
+  @override
+  String get diagnosticsConsoleClear => 'Clear';
+
+  @override
+  String get diagnosticsConsoleKeyboardHelp =>
+      'Press [Space] to play or pause, [F] for fullscreen, [+/-] for volume, and [Arrow keys] to change channels.';
+
+  @override
+  String get channelFavoriteRemove => 'Remove from favorites';
+
+  @override
+  String get channelFavoriteAdd => 'Add to favorites';
+
+  @override
+  String get audioTrackChooseTooltip => 'Choose audio track';
+
+  @override
+  String get audioTrackNoneDetectedTooltip => 'No audio tracks detected';
+
+  @override
+  String get audioTrackAutomatic => 'Auto';
+
+  @override
+  String get playerEmptyTitle => 'Select a channel to play';
+
+  @override
+  String get playerEmptySubtitle =>
+      'Select a channel from the list or use the arrow keys.';
+
+  @override
+  String get playbackAudioRawNone => 'No raw audio tracks detected';
+
+  @override
+  String get playbackAudioNoneSelectable =>
+      'Audio tracks detected, but none are currently selectable';
+
+  @override
+  String playbackAudioTrackCounts(int rawCount, int selectableCount) {
+    return '$rawCount raw / $selectableCount selectable';
+  }
+
+  @override
+  String get playbackAudioNotExposed =>
+      'Audio track not exposed by stream or demuxer';
+
+  @override
+  String get playbackAudioNone => 'None';
+
+  @override
+  String get playbackInfoTitle => 'Playback information';
+
+  @override
+  String get playbackInfoCloseTooltip => 'Close';
+
+  @override
+  String get playbackInfoTitleLabel => 'Title';
+
+  @override
+  String get playbackInfoGroupLabel => 'Group';
+
+  @override
+  String get playbackInfoTypeLabel => 'Type';
+
+  @override
+  String get playbackInfoResolutionLabel => 'Resolution';
+
+  @override
+  String get playbackInfoVideoFormatLabel => 'Video format';
+
+  @override
+  String get playbackInfoAudioTrackLabel => 'Audio track';
+
+  @override
+  String get playbackInfoAudioTrackStatusLabel => 'Audio track status';
+
+  @override
+  String get playbackInfoAudioDecodedLabel => 'Audio decoded';
+
+  @override
+  String get playbackInfoAudioFormatLabel => 'Audio format';
+
+  @override
+  String get playbackInfoAudioChannelsLabel => 'Audio channels';
+
+  @override
+  String get playbackInfoAudioHintLabel => 'Audio note';
+
+  @override
+  String get playbackInfoSampleRateLabel => 'Sample rate';
+
+  @override
+  String get playbackInfoAudioBitrateLabel => 'Audio bitrate';
+
+  @override
+  String get playbackInfoContainerLabel => 'Container';
+
+  @override
+  String get playbackInfoPositionLabel => 'Position';
+
+  @override
+  String get playbackInfoDurationLabel => 'Duration';
+
+  @override
+  String get playbackInfoDemuxerBufferLabel => 'Buffer (demuxer)';
+
+  @override
+  String get playbackInfoBufferedUntilLabel => 'Buffered until';
+
+  @override
+  String get playbackInfoStatusLabel => 'Status';
+
+  @override
+  String get playbackInfoYes => 'Yes';
+
+  @override
+  String get playbackInfoNo => 'No';
+
+  @override
+  String get playbackInfoBuffering => 'Buffering…';
+
+  @override
+  String get playbackInfoPlaying => 'Playing';
+
+  @override
+  String get playbackInfoPaused => 'Paused';
+
+  @override
+  String get playbackInfoTypeVod => 'Movie (VOD)';
+
+  @override
+  String get playbackInfoTypeSeries => 'Series / episode';
+
+  @override
+  String get playbackInfoTypeLive => 'Live TV';
+
+  @override
+  String episodeCardSemantics(String title) {
+    return 'Episode: $title';
+  }
+
+  @override
+  String movieCardSemantics(String title) {
+    return 'Movie: $title';
+  }
+
+  @override
+  String seriesCardSemantics(String title) {
+    return 'Series: $title';
+  }
+
+  @override
+  String get epgNowMarkerSemantics => 'Now, current time in the programme';
+
+  @override
+  String get epgNowMarkerLabel => 'NOW';
+
+  @override
+  String get epgToolbarTitle => 'TV PROGRAMME';
+
+  @override
+  String get epgToolbarNow => 'Now';
+
+  @override
+  String get epgToolbarJumpToNowTooltip => 'Go to the current time';
+
+  @override
+  String get epgToolbarBackTwoHoursTooltip => 'Go back two hours';
+
+  @override
+  String get epgToolbarForwardTwoHoursTooltip => 'Go forward two hours';
+
+  @override
+  String get epgToolbarBackOneDayTooltip => 'Go back one day';
+
+  @override
+  String get epgToolbarForwardOneDayTooltip => 'Go forward one day';
+
+  @override
+  String get epgToolbarZoomOutTooltip => 'Zoom out the timeline';
+
+  @override
+  String get epgToolbarZoomInTooltip => 'Zoom in the timeline';
+
+  @override
+  String get epgToolbarResetZoomTooltip => 'Reset the timeline to 100 percent';
+
+  @override
+  String get playlistFormTitle => 'ADD PLAYLIST';
+
+  @override
+  String get playlistFormDescription =>
+      'Create a new source and keep the flow focused on setup, sync, and playback.';
+
+  @override
+  String get playlistFormNameLabel => 'Name';
+
+  @override
+  String get playlistFormNameHint => 'My IPTV list';
+
+  @override
+  String get playlistFormUrlOrFileLabel => 'URL or file path';
+
+  @override
+  String get playlistFormHostLabel => 'Host';
+
+  @override
+  String get playlistFormUsernameLabel => 'Username';
+
+  @override
+  String get playlistFormPasswordLabel => 'Password';
+
+  @override
+  String get playlistFormEpgOverrideLabel => 'EPG override (optional)';
+
+  @override
+  String get playlistFormEpgOverrideHint =>
+      'Leave empty to use the automatic URL';
+
+  @override
+  String get playlistFormWorking => 'Working…';
+
+  @override
+  String get playlistFormAddAndSync => 'Add and sync';
+
+  @override
+  String get appearanceTitle => 'Appearance';
+
+  @override
+  String get appearanceDescription =>
+      'Adjust the accent and neutral surfaces independently.';
+
+  @override
+  String get appearanceRestoreDefaults => 'Restore defaults';
+
+  @override
+  String get appearanceAccentColor => 'Accent color';
+
+  @override
+  String get appearanceNeutralSurfaceTone => 'Neutral gray / surface tone';
+
+  @override
+  String appearanceDegreesSemantics(int value) {
+    return '$value degrees';
+  }
+
+  @override
+  String appearancePercentSemantics(int value) {
+    return '$value percent';
+  }
+
+  @override
+  String get appearancePreviewLiveTv => 'Live TV';
+
+  @override
+  String get appearancePreviewLibrary => 'Library';
+
+  @override
+  String get appearancePreviewSelect => 'Select';
+
+  @override
+  String get debugModeTitle => 'DEBUG MODE';
+
+  @override
+  String get debugModeDescription =>
+      'Shows the Diagnostics / Logs tab and keeps collecting logs even when hidden.';
+
+  @override
+  String get debugModeDiagnosticsOn => 'Diagnostics on';
+
+  @override
+  String get debugModeHidden => 'Hidden';
+
+  @override
+  String get debugModeEnabled => 'Enabled';
+
+  @override
+  String get debugModeDisabled => 'Disabled';
+
+  @override
+  String get settingsSectionsTitle => 'Sections';
+
+  @override
+  String get settingsSectionGeneral => 'General';
+
+  @override
+  String get settingsSectionPlaylistSetup => 'Playlist setup';
+
+  @override
+  String get settingsSectionSavedPlaylists => 'Saved playlists';
+
+  @override
+  String get favoriteSaveFailed => 'Could not save favorite.';
+
+  @override
+  String get favoritesLoadFailed => 'Could not load favorites';
+
+  @override
+  String get favoritesNoPlaylistTitle => 'No playlist selected';
+
+  @override
+  String get favoritesNoPlaylistSubtitle =>
+      'Select a playlist to see your favorites.';
+
+  @override
+  String get favoritesEmptyTitle => 'No live favorites yet';
+
+  @override
+  String get favoritesEmptySubtitle =>
+      'Favorites from your active playlist will appear here.';
+
+  @override
+  String favoriteChannelSemantics(String title) {
+    return 'Favorite: $title';
+  }
+
+  @override
+  String get favoriteIconSemantics => 'Favorite';
+
+  @override
+  String get favoritePlayLiveSemantics => 'Play live';
+
+  @override
+  String get watchLaterRemove => 'Remove from Watch Later';
+
+  @override
+  String get watchLaterSave => 'Save for later';
+
+  @override
+  String get watchLaterLoadFailed => 'Could not load Watch Later';
+
+  @override
+  String get watchLaterNoPlaylistSubtitle => 'Select an active playlist first.';
+
+  @override
+  String get watchLaterEmptyTitle => 'Nothing saved for later yet';
+
+  @override
+  String get watchLaterEmptySubtitle =>
+      'Bookmark movies or series to keep them here.';
+
+  @override
+  String get catalogNoPlaylistSubtitle =>
+      'Select a playlist in the Playlists tab or Settings.';
+
+  @override
+  String get catalogResetFilters => 'Reset filters';
+
+  @override
+  String get catalogSyncPlaylist => 'Sync playlist';
+
+  @override
+  String get catalogSyncingPlaylist => 'Syncing playlist…';
+
+  @override
+  String get catalogGenresTitle => 'Genres';
+
+  @override
+  String get catalogSyncAction => 'Sync';
+
+  @override
+  String get vodLoadFailed => 'Could not load movies';
+
+  @override
+  String get vodNoSearchResults => 'No movies match your search';
+
+  @override
+  String get vodNoVisibleMovies => 'No movies visible';
+
+  @override
+  String get vodNoMoviesFound => 'No movies found';
+
+  @override
+  String get vodClearSearchSubtitle =>
+      'Clear the search field to show all movies again.';
+
+  @override
+  String get vodHiddenByFiltersSubtitle =>
+      'Your VOD catalogue is loaded, but filters or hidden categories are hiding the visible list.';
+
+  @override
+  String get vodSyncSubtitle => 'Sync your Xtream playlist to load VOD movies.';
+
+  @override
+  String get vodToolbarTitle => 'VOD MOVIES';
+
+  @override
+  String get seriesLoadFailed => 'Could not load series';
+
+  @override
+  String get seriesNoSearchResults => 'No series match your search';
+
+  @override
+  String get seriesNoVisibleSeries => 'No series visible';
+
+  @override
+  String get seriesNoSeriesFound => 'No series found';
+
+  @override
+  String get seriesClearSearchSubtitle =>
+      'Clear the search field to show all series again.';
+
+  @override
+  String get seriesHiddenByFiltersSubtitle =>
+      'Your series catalogue is loaded, but filters or hidden categories are hiding the visible list.';
+
+  @override
+  String get seriesSyncSubtitle => 'Sync your Xtream playlist to load series.';
+
+  @override
+  String get seriesToolbarTitle => 'SERIES';
+
+  @override
+  String get epgNoSearchResults => 'No channels match your search';
+
+  @override
+  String epgClearSearchSubtitle(int count) {
+    return 'Clear the search field to show all $count channels again.';
+  }
+
+  @override
+  String get epgNoChannelsTitle => 'No channels loaded';
+
+  @override
+  String get epgNoChannelsSubtitle =>
+      'Select a playlist and sync channels on the Live tab or in Settings.';
+
+  @override
+  String get epgNoDataTitle => 'No EPG data for this time window';
+
+  @override
+  String get epgUpdateGuideSubtitle =>
+      'Update the TV programme guide for your active playlist.';
+
+  @override
+  String get epgConfigureUrlSubtitle =>
+      'Configure an EPG URL in Settings or sync an M3U playlist with a url-tvg header.';
+
+  @override
+  String get epgUpdateAction => 'Update EPG';
+
+  @override
+  String get playbackSettingsTitle => 'PLAYBACK';
+
+  @override
+  String get playbackSettingsDescription =>
+      'Choose how much content is buffered before live playback starts. Higher values delay startup but reduce stuttering on unstable streams.';
+
+  @override
+  String get playbackSettingsLiveBufferLabel => 'Live startup buffer';
+
+  @override
+  String get playbackSettingsVodBufferDescription =>
+      'VOD pre-buffering loads media before playback for smoother seeking. Higher values require more time and bandwidth.';
+
+  @override
+  String get playbackSettingsVodBufferLabel => 'VOD pre-buffer';
+
+  @override
+  String get playbackSettingsForceStereoTitle => 'Force stereo';
+
+  @override
+  String get playbackSettingsForceStereoDescription =>
+      'Helps with external sound cards, mixing consoles, or channels with multichannel audio.';
+
+  @override
+  String get playbackSettingsPreferredLanguageTitle =>
+      'Preferred audio language';
+
+  @override
+  String get playbackSettingsPreferredLanguageDescription =>
+      'When multiple audio tracks are available, this language is preferred.';
+
+  @override
+  String get playbackSettingsLanguageAutomatic => 'Automatic';
+
+  @override
+  String get playbackSettingsLanguageGerman => 'German';
+
+  @override
+  String get playbackSettingsBufferOff => 'Off';
+
+  @override
+  String playbackSettingsBufferSeconds(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other: '$seconds seconds',
+      one: '1 second',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String playbackSettingsBufferMaximum(int seconds) {
+    return '$seconds seconds (maximum)';
+  }
+
+  @override
+  String seriesPlayEpisode(String title) {
+    return 'Play — $title';
+  }
+
+  @override
+  String get seriesEpisodesTab => 'Episodes';
+
+  @override
+  String get commonBackTooltip => 'Back';
+
+  @override
+  String get seriesContinueWatching => 'Continue watching';
+
+  @override
+  String get seriesContinueAction => 'Continue';
+
+  @override
+  String get seriesNoEpisodes => 'No episodes found.';
+
+  @override
+  String get channelRefreshFailedRetained =>
+      'Channels could not be refreshed. The last loaded channels remain visible.';
+
+  @override
+  String get channelLoadFailed => 'Could not load channels';
+
+  @override
+  String get channelNoPlaylistSubtitle =>
+      'Add and sync a playlist to see channels here.';
+
+  @override
+  String get channelNoSearchResults => 'No channels match your search';
+
+  @override
+  String get channelNoChannelsFound => 'No channels found';
+
+  @override
+  String get channelClearSearchSubtitle =>
+      'Clear the search field to show all channels again.';
+
+  @override
+  String get channelSyncOrFilterSubtitle =>
+      'Sync your playlist or try a different category filter.';
+
+  @override
+  String channelSyncFailed(String error) {
+    return 'Sync failed: $error';
+  }
+
+  @override
+  String get channelEpgUpdated => 'EPG updated successfully.';
+
+  @override
+  String channelEpgSyncFailed(String error) {
+    return 'EPG sync failed: $error';
+  }
+
+  @override
+  String channelPlaylistCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count playlists',
+      one: '1 playlist',
+      zero: 'No playlists',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelAllActivePlaylists => 'All active playlists';
+
+  @override
+  String get channelLiveTitle => 'LIVE CHANNELS';
+
+  @override
+  String get channelUncategorized => 'Uncategorized';
+
+  @override
+  String get channelLoading => 'Loading channels…';
+
+  @override
+  String get commonRetry => 'Retry';
+
+  @override
+  String channelSortTooltip(String mode) {
+    return 'Sort: $mode';
+  }
+
+  @override
+  String get channelSortProvider => 'Provider order';
+
+  @override
+  String get channelSortAlphabetical => 'Alphabetical';
+
+  @override
+  String get channelSortNumber => 'Channel number';
+
+  @override
+  String channelEpgNow(String title) {
+    return 'Now: $title';
+  }
+
+  @override
+  String get channelEpgLoading => 'Loading EPG…';
+
+  @override
+  String get channelNoEpg => 'No EPG';
+
+  @override
+  String get channelEpgNotUpdated =>
+      'The TV programme guide (EPG) has not been updated yet.';
+
+  @override
+  String get channelEpgUpdating => 'Updating…';
+
+  @override
+  String get channelEpgUpdateNow => 'Update EPG now';
+
+  @override
+  String get commonDismissTooltip => 'Dismiss';
+
+  @override
+  String get commonSyncing => 'Syncing…';
+
+  @override
+  String get commonSync => 'Sync';
+
+  @override
+  String get mediaLibraryMoviesTab => 'Movies';
+
+  @override
+  String get mediaLibrarySeriesTab => 'Series';
+
+  @override
+  String get mediaLibraryWatchLaterTab => 'Watch Later';
+
+  @override
+  String epgAgendaNext(String title) {
+    return 'Next: $title';
+  }
+
+  @override
+  String epgAgendaNow(String title) {
+    return 'NOW: $title';
+  }
+
+  @override
+  String get epgAgendaUnavailable => 'No EPG available';
+
+  @override
+  String get epgAgendaNoCurrentProgram => 'No programme currently airing';
+
+  @override
+  String epgAgendaChannelSemantics(String name) {
+    return 'Channel: $name';
+  }
+
+  @override
+  String epgAgendaLiveSemantics(String title) {
+    return 'LIVE, now playing: $title';
+  }
+
+  @override
+  String get epgAgendaStartChannel => 'Play channel';
+
+  @override
+  String get epgLiveNowSemantics => 'LIVE, now playing';
+
+  @override
+  String get commonLiveLabel => 'LIVE';
+
+  @override
+  String epgProgramLiveSemantics(String title) {
+    return 'Live now: $title';
+  }
+
+  @override
+  String epgProgramSemantics(String title) {
+    return 'Programme: $title';
+  }
+
+  @override
+  String epgProgramDurationMinutes(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes min',
+      one: '1 min',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get epgGridChannelHeader => 'CHANNEL';
+
+  @override
+  String epgGridChannelSemantics(String name, String status) {
+    return 'Channel: $name. $status';
+  }
+
+  @override
+  String get epgGridNoProgramme => 'No programme';
+
+  @override
+  String get epgGridNoEpg => 'No EPG';
+
+  @override
+  String get epgTimelineResizeSemantics => 'Adjust time column width';
+
+  @override
+  String get epgTimelineResizeHint =>
+      'Use the arrow keys to adjust it step by step';
+
+  @override
+  String diagnosticsSettingsLoadFailed(String error) {
+    return 'Could not load streaming diagnostics settings: $error';
+  }
+
+  @override
+  String get diagnosticsStreamingTitle => 'PLAYER & STREAMING';
+
+  @override
+  String get diagnosticsStreamingSubtitle => 'Advanced diagnostics';
+
+  @override
+  String get diagnosticsFallbackOn => 'Fallback on';
+
+  @override
+  String get diagnosticsFallbackOff => 'Fallback off';
+
+  @override
+  String get diagnosticsAutoFallbackTitle => 'Use fallback automatically';
+
+  @override
+  String get diagnosticsAutoFallbackSubtitle =>
+      'Automatically try the live fallback matrix before showing an error.';
+
+  @override
+  String get diagnosticsShowOnErrorTitle => 'Show diagnostics on error';
+
+  @override
+  String get diagnosticsShowOnErrorSubtitle =>
+      'Writes a short diagnostic entry to the UI logs when live playback fails to start.';
+
+  @override
+  String get diagnosticsCopyLastFailure => 'Copy last failure';
+
+  @override
+  String get diagnosticsLastFailureCopied => 'Last streaming failure copied.';
+
+  @override
+  String get diagnosticsCopyPlayerLog => 'Copy player log';
+
+  @override
+  String get diagnosticsPlayerLogCopied => 'Player log copied.';
+
+  @override
+  String get diagnosticsTestStream => 'Test stream';
+
+  @override
+  String get diagnosticsStreamCheckFailed => 'Stream check failed.';
+
+  @override
+  String get diagnosticsLastFailureTitle => 'Last streaming failure';
+
+  @override
+  String get playerPreviousChannelTooltip => 'Previous channel';
+
+  @override
+  String get playerPlayTooltip => 'Play';
+
+  @override
+  String get playerPauseTooltip => 'Pause';
+
+  @override
+  String get playerStopTooltip => 'Stop';
+
+  @override
+  String get playerNextChannelTooltip => 'Next channel';
+
+  @override
+  String get playerPlaybackInfoTooltip => 'Playback information';
+
+  @override
+  String get playerFullscreenTooltip => 'Fullscreen';
+
+  @override
+  String playerNowPlaying(String title) {
+    return 'Now playing: $title';
+  }
+
+  @override
+  String playerPositionSemantics(String position) {
+    return 'Position $position';
+  }
+
+  @override
+  String playerBufferedAhead(String duration) {
+    return '$duration ahead';
+  }
+
+  @override
+  String get playerBuffering => 'Buffering…';
+
+  @override
+  String get playerLoading => 'Loading…';
+
+  @override
+  String playerStartupBufferProgress(String current, String target) {
+    return 'Startup buffer $current / $target';
+  }
+
+  @override
+  String get playerStartupBufferBuilding => 'Building startup buffer…';
+
+  @override
+  String playerBuffered(String duration) {
+    return '$duration buffered';
+  }
+
+  @override
+  String get playerStabilizingLive => 'Stabilizing live connection…';
+
+  @override
+  String get playerLiveInstantStart => 'Live — instant start';
+
+  @override
+  String get playerLiveRollingBuffer => 'Live — rolling buffer active';
+
+  @override
+  String playerStartsAtBuffer(String target) {
+    return 'Starts at $target';
+  }
+
+  @override
+  String get playerLiveCacheActive => 'Live cache active';
+
+  @override
+  String playerTargetBuffer(String target) {
+    return 'Target buffer $target';
+  }
+
+  @override
+  String playerMaximumBuffer(String duration) {
+    return 'Max $duration';
+  }
+
+  @override
+  String get playerVolumeSemantics => 'Volume';
+
+  @override
+  String get playerUnmuteTooltip => 'Unmute';
+
+  @override
+  String get playerMuteTooltip => 'Mute';
+
+  @override
+  String playerVolumePercentSemantics(int percent) {
+    return 'Volume $percent percent';
+  }
+
+  @override
+  String get playerNoChannelSelected => 'No channel selected';
+
+  @override
+  String get playerStatusIdle => 'IDLE';
+
+  @override
+  String get playerStatusStabilizing => 'STABILIZING';
+
+  @override
+  String get playerStatusWarmingUp => 'WARMING UP';
+
+  @override
+  String get playerStatusBuffering => 'BUFFERING';
+
+  @override
+  String get playerStatusLive => 'LIVE';
+
+  @override
+  String get playerStatusPaused => 'PAUSED';
+
+  @override
+  String get playerExitFullscreenHint => 'Press F or Esc to exit fullscreen';
+
+  @override
+  String get playerLivePlaybackTitle => 'LIVE PLAYBACK';
+
+  @override
+  String get playerStatusError => 'ERROR';
+
+  @override
+  String get playerStatusReady => 'READY';
+
+  @override
+  String get playerStatusConnecting => 'CONNECTING';
+
+  @override
+  String get playerStatusOnAir => 'ON AIR';
+
+  @override
+  String get playerSelectChannelTitle => 'Select a channel';
+
+  @override
+  String get playerSelectChannelFullscreenSubtitle =>
+      'Exit fullscreen (F / Esc) and select a channel from the list.';
+
+  @override
+  String get playerPlaybackFailedTitle => 'Playback failed';
+
+  @override
+  String get playerVideoInitializationFailed =>
+      'Could not initialize video output.';
+
+  @override
+  String get playbackPrepEpisodeTitle => 'Prepare episode';
+
+  @override
+  String get playbackPrepMovieTitle => 'Prepare movie';
+
+  @override
+  String get playbackPrepEpisodeSubtitle =>
+      'Pre-buffered start for a smoother episode handoff.';
+
+  @override
+  String get playbackPrepMovieSubtitle =>
+      'Pre-buffered start for smoother seeking and faster resume.';
+
+  @override
+  String playbackPrepBufferingProgress(int percent) {
+    return 'Buffering… $percent%';
+  }
+
+  @override
+  String get playbackPrepOpeningStream => 'Opening stream…';
+
+  @override
+  String get playbackPrepCompleted => 'Preparation complete';
+
+  @override
+  String get playbackPrepReady => 'Ready to play';
+
+  @override
+  String playbackPrepDetectedMedia(String resolution, String container) {
+    return 'Detected: $resolution$container';
+  }
+
+  @override
+  String get playbackPrepEpisodeExplanation =>
+      'Buffer the episode before playback for smoother seeking and resume.';
+
+  @override
+  String get playbackPrepMovieExplanation =>
+      'Buffer before playback for smoother forward and backward seeking.';
+
+  @override
+  String get playbackPrepLoadingAction => 'Loading…';
+
+  @override
+  String get playbackPrepPrepareAction => 'Prepare';
+
+  @override
+  String get playbackPrepStartAction => 'Start playback';
+
+  @override
+  String get playbackPrepStartImmediatelyAction => 'Start immediately';
+
+  @override
+  String playbackPrepStartPosition(String position) {
+    return 'Start at $position';
+  }
+
+  @override
+  String get playbackPrepEpisodeDetail =>
+      'Buffer the episode before playback for smoother seeking within the episode.';
+
+  @override
+  String get playbackPrepMovieDetail =>
+      'Buffer before playback for smoother forward and backward seeking.';
+
+  @override
+  String get playbackPrepToggleTitle => 'Pre-buffer';
+
+  @override
+  String playbackPrepToggleSubtitle(int seconds) {
+    return 'Loads approximately $seconds seconds before playback (Settings → Playback)';
+  }
+
+  @override
+  String get windowMinimizeTooltip => 'Minimize';
+
+  @override
+  String get windowMaximizeRestoreTooltip => 'Maximize / Restore';
+
+  @override
+  String get windowCloseTooltip => 'Close';
+
+  @override
+  String get paneCategories => 'Categories';
+
+  @override
+  String get paneChannels => 'Channel list';
+
+  @override
+  String paneCollapseAction(String pane) {
+    return 'Collapse $pane';
+  }
+
+  @override
+  String paneExpandAction(String pane) {
+    return 'Expand $pane';
+  }
+
+  @override
+  String get categoryPaneResizeLabel => 'Resize category pane';
+
+  @override
+  String get categoryPaneResizeHint => 'Drag to resize; double-click to reset';
+
+  @override
+  String get stepperDecreaseValue => 'Decrease value';
+
+  @override
+  String get stepperIncreaseValue => 'Increase value';
+
+  @override
+  String get databaseFatalSemanticLabel =>
+      'Database connection interrupted. Restart the application.';
+
+  @override
+  String get databaseFatalMessage =>
+      'Database connection interrupted — please restart the application.';
+
+  @override
+  String get comingSoonTitle => 'Feature — Coming Soon';
+
+  @override
+  String get comingSoonDescription =>
+      'This section is planned for a future milestone.';
+
+  @override
+  String get playbackSettingsLanguageEnglish => 'English';
+
+  @override
+  String get playbackSettingsLanguageFrench => 'Français';
+
+  @override
+  String get playbackSettingsLanguageSpanish => 'Español';
+
+  @override
+  String get playbackSettingsLanguageItalian => 'Italiano';
+
+  @override
+  String get playbackSettingsLanguagePortuguese => 'Português';
+
+  @override
+  String get playbackSettingsLanguageTurkish => 'Türkçe';
+
+  @override
+  String get playbackSettingsLanguageRussian => 'Русский';
+
+  @override
+  String get shellTabLiveTitle => 'Live TV';
+
+  @override
+  String get shellTabLiveSubtitle =>
+      'Watch live channels — select a playlist and tap to play.';
+
+  @override
+  String get shellTabMediaLibraryTitle => 'Media Library';
+
+  @override
+  String get shellTabMediaLibrarySubtitle =>
+      'Movies, series, and Watch Later in one shared media library.';
+
+  @override
+  String get shellTabFavoritesTitle => 'Favorites';
+
+  @override
+  String get shellTabFavoritesSubtitle =>
+      'Quick access to your favorite live channels.';
+
+  @override
+  String get shellTabPlaylistsTitle => 'Playlists';
+
+  @override
+  String get shellTabPlaylistsSubtitle =>
+      'Switch playlists and manage which categories are visible.';
+
+  @override
+  String get shellTabEpgTitle => 'EPG Guide';
+
+  @override
+  String get shellTabEpgSubtitle =>
+      'TV program guide for the active playlist — select a show to watch live.';
+
+  @override
+  String get shellTabVodTitle => 'VOD Movies';
+
+  @override
+  String get shellTabVodSubtitle =>
+      'Browse movies from your active playlist — select one to play on the Live tab.';
+
+  @override
+  String get shellTabSeriesTitle => 'Series';
+
+  @override
+  String get shellTabSeriesSubtitle =>
+      'Browse series — open a show for episodes and resume where you left off.';
+
+  @override
+  String get shellTabDiagnosticsTitle => 'Diagnostics / Logs';
+
+  @override
+  String get shellTabDiagnosticsSubtitle =>
+      'Debug-only log console and runtime diagnostics.';
+
+  @override
+  String get shellTabSettingsTitle => 'Settings';
+
+  @override
+  String get shellTabSettingsSubtitle =>
+      'Add, sync, and manage M3U and Xtream playlists.';
+
+  @override
+  String get shellFallbackTitle => 'Neural Control Center';
+
+  @override
+  String get shellFallbackSubtitle =>
+      'Material 3 media workspace (Drift & Riverpod)';
+
+  @override
+  String get shellSidebarLabel => 'Sidebar';
+
+  @override
+  String get liveStartupBufferOff => 'Off';
+
+  @override
+  String liveStartupBufferSeconds(int seconds) {
+    return '$seconds seconds';
+  }
+
+  @override
+  String liveStartupBufferSecondsMaximum(int seconds) {
+    return '$seconds seconds (maximum)';
+  }
+
+  @override
+  String playerPanelError(String error) {
+    return 'Player error: $error';
+  }
+
+  @override
+  String get playerAudioDetectionTitle => 'Detecting audio';
+
+  @override
+  String get playerAudioDetectionSubtitle => 'Detecting audio track…';
+
+  @override
+  String get playerAudioSynchronizationTitle => 'Synchronizing audio';
+
+  @override
+  String get playerAudioSynchronizationSubtitle => 'Stabilizing audio track…';
+
+  @override
+  String get playerInstantStartActive => 'Instant start active';
+
+  @override
+  String playerStartsAtBufferTarget(String target) {
+    return 'Starts at $target buffer';
+  }
+
+  @override
+  String get playerBuildingLiveBuffer => 'Building live buffer';
+
+  @override
+  String get playerPreparingStream => 'Preparing stream';
+
+  @override
+  String get playerDetectingAudio => 'Detecting audio…';
+
+  @override
+  String get playerEstablishingConnection => 'Establishing connection…';
+
+  @override
+  String epgGridNowProgram(String title) {
+    return 'Now: $title';
+  }
+
+  @override
+  String get playbackPrepVideoSurfaceTimeout =>
+      'Video output was not ready in time. Please start playback again.';
+
+  @override
+  String get globalSearchTargetLive => 'Live TV';
+
+  @override
+  String get globalSearchTargetMovies => 'Movies';
+
+  @override
+  String get globalSearchTargetSeries => 'Series';
+
+  @override
+  String globalSearchCategoryVisibleLabel(
+    String category,
+    String target,
+    String playlist,
+  ) {
+    return '$category · $target · $playlist';
+  }
+
+  @override
+  String globalSearchCategoryMetadata(String target, String playlist) {
+    return '$target · $playlist';
+  }
+
+  @override
+  String get playbackAudioMultichannelHint =>
+      'Multichannel audio decoded. If no sound is audible, try Force stereo.';
+}

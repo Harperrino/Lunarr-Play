@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/features/player/widgets/player_panel.dart';
-import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
+import 'package:m3uxtream_player/app/composition/player/widgets/player_panel.dart';
+import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/shared/theme/app_status_colors.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/widgets/status_snack_bar.dart';

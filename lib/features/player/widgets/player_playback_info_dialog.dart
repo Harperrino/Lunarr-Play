@@ -5,31 +5,42 @@ import 'package:m3uxtream_player/core/services/live_audio_track_service.dart';
 import 'package:m3uxtream_player/features/player/models/playback_media_info.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
+import 'package:m3uxtream_player/l10n/generated/app_localizations.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// Stream / playback details (bitrate, resolution, codecs).
-String audioTrackExposureStatusLabel(int rawCount, int selectableCount) {
+String audioTrackExposureStatusLabel(
+  int rawCount,
+  int selectableCount, {
+  AppLocalizations? localizations,
+}) {
+  final l10n = localizations ?? lookupAppLocalizations(const Locale('en'));
   if (rawCount == 0) {
-    return 'No raw audio tracks detected';
+    return l10n.playbackAudioRawNone;
   }
   if (selectableCount == 0) {
-    return 'Audio tracks detected, none currently selectable';
+    return l10n.playbackAudioNoneSelectable;
   }
-  return '$rawCount raw / $selectableCount selectable';
+  return l10n.playbackAudioTrackCounts(rawCount, selectableCount);
 }
 
 String audioTrackDisplayLabel({
   required String currentTrackId,
   required int rawCount,
   required int selectableCount,
+  AppLocalizations? localizations,
 }) {
+  final l10n = localizations ?? lookupAppLocalizations(const Locale('en'));
   if (currentTrackId == AudioTrack.auto().id && selectableCount == 0) {
     return rawCount == 0
-        ? 'Audio track not exposed by stream/demuxer'
-        : 'Audio tracks detected, none currently selectable';
+        ? l10n.playbackAudioNotExposed
+        : l10n.playbackAudioNoneSelectable;
   }
 
-  if (currentTrackId == AudioTrack.auto().id) return 'Auto';
-  if (currentTrackId == AudioTrack.no().id) return 'Keine';
+  if (currentTrackId == AudioTrack.auto().id) {
+    return l10n.audioTrackAutomatic;
+  }
+  if (currentTrackId == AudioTrack.no().id) return l10n.playbackAudioNone;
   return currentTrackId;
 }
 
@@ -57,7 +68,7 @@ class _PlayerPlaybackInfoDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final info = playerState.mediaInfo;
-    final audioTrackLabel = _audioTrackLabel(playerState);
+    final audioTrackLabel = _audioTrackLabel(context, playerState);
     final audioCompatibilityHint = decodedAudioCompatibilityHint(info);
     final isVod =
         channel != null &&
@@ -94,7 +105,7 @@ class _PlayerPlaybackInfoDialog extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Wiedergabe-Informationen',
+                          context.l10n.playbackInfoTitle,
                           style: Theme.of(
                             context,
                           ).textTheme.titleMedium?.copyWith(fontSize: 15),
@@ -103,46 +114,57 @@ class _PlayerPlaybackInfoDialog extends StatelessWidget {
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
                         icon: const Icon(Icons.close_rounded, size: 18),
-                        tooltip: 'Schliessen',
+                        tooltip: context.l10n.playbackInfoCloseTooltip,
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  _InfoRow(label: 'Titel', value: channel?.name ?? '-'),
+                  _InfoRow(
+                    label: context.l10n.playbackInfoTitleLabel,
+                    value: channel?.name ?? '-',
+                  ),
                   if (channel?.groupName != null &&
                       channel!.groupName!.isNotEmpty)
-                    _InfoRow(label: 'Gruppe', value: channel!.groupName!),
+                    _InfoRow(
+                      label: context.l10n.playbackInfoGroupLabel,
+                      value: channel!.groupName!,
+                    ),
                   _InfoRow(
-                    label: 'Typ',
-                    value: _channelTypeLabel(channel?.channelType),
+                    label: context.l10n.playbackInfoTypeLabel,
+                    value: _channelTypeLabel(context, channel?.channelType),
                   ),
                   Divider(
                     height: 24,
                     color: Theme.of(context).colorScheme.outlineVariant,
                   ),
                   _InfoRow(
-                    label: 'Aufloesung',
+                    label: context.l10n.playbackInfoResolutionLabel,
                     value: info.resolutionLabel ?? '-',
                   ),
                   _InfoRow(
-                    label: 'Video-Format',
+                    label: context.l10n.playbackInfoVideoFormatLabel,
                     value: info.videoPixelFormat ?? '-',
                   ),
-                  _InfoRow(label: 'Audio-Spur', value: audioTrackLabel),
                   _InfoRow(
-                    label: 'Audio-Track-Status',
-                    value: _audioTrackExposureLabel(playerState),
+                    label: context.l10n.playbackInfoAudioTrackLabel,
+                    value: audioTrackLabel,
                   ),
                   _InfoRow(
-                    label: 'Audio dekodiert',
-                    value: info.hasAudioInfo ? 'Ja' : 'Nein',
+                    label: context.l10n.playbackInfoAudioTrackStatusLabel,
+                    value: _audioTrackExposureLabel(context, playerState),
                   ),
                   _InfoRow(
-                    label: 'Audio-Format',
+                    label: context.l10n.playbackInfoAudioDecodedLabel,
+                    value: info.hasAudioInfo
+                        ? context.l10n.playbackInfoYes
+                        : context.l10n.playbackInfoNo,
+                  ),
+                  _InfoRow(
+                    label: context.l10n.playbackInfoAudioFormatLabel,
                     value: info.audioFormat ?? '-',
                   ),
                   _InfoRow(
-                    label: 'Audio-Kanaele',
+                    label: context.l10n.playbackInfoAudioChannelsLabel,
                     value:
                         info.audioChannelsLabel ??
                         (info.audioChannelCount != null
@@ -151,23 +173,23 @@ class _PlayerPlaybackInfoDialog extends StatelessWidget {
                   ),
                   if (audioCompatibilityHint != null)
                     _InfoRow(
-                      label: 'Audio-Hinweis',
+                      label: context.l10n.playbackInfoAudioHintLabel,
                       value: audioCompatibilityHint,
                     ),
                   _InfoRow(
-                    label: 'Sample-Rate',
+                    label: context.l10n.playbackInfoSampleRateLabel,
                     value: info.audioSampleRate != null
                         ? '${info.audioSampleRate} Hz'
                         : '-',
                   ),
                   _InfoRow(
-                    label: 'Audio-Bitrate',
+                    label: context.l10n.playbackInfoAudioBitrateLabel,
                     value: info.audioBitrateKbps != null
                         ? '${info.audioBitrateKbps!.toStringAsFixed(0)} kbps'
                         : '-',
                   ),
                   _InfoRow(
-                    label: 'Container',
+                    label: context.l10n.playbackInfoContainerLabel,
                     value: info.containerLabel ?? '-',
                   ),
                   Divider(
@@ -175,22 +197,22 @@ class _PlayerPlaybackInfoDialog extends StatelessWidget {
                     color: Theme.of(context).colorScheme.outlineVariant,
                   ),
                   _InfoRow(
-                    label: 'Position',
+                    label: context.l10n.playbackInfoPositionLabel,
                     value: _formatClock(playerState.position),
                   ),
                   _InfoRow(
-                    label: 'Dauer',
+                    label: context.l10n.playbackInfoDurationLabel,
                     value: playerState.hasFiniteDuration
                         ? _formatClock(playerState.duration)
                         : '-',
                   ),
                   if (isVod) ...[
                     _InfoRow(
-                      label: 'Puffer (Demuxer)',
+                      label: context.l10n.playbackInfoDemuxerBufferLabel,
                       value: _formatBuffer(playerState.bufferDuration),
                     ),
                     _InfoRow(
-                      label: 'Voraus gepuffert bis',
+                      label: context.l10n.playbackInfoBufferedUntilLabel,
                       value: playerState.hasFiniteDuration
                           ? _formatClock(
                               Duration(
@@ -208,10 +230,12 @@ class _PlayerPlaybackInfoDialog extends StatelessWidget {
                     ),
                   ],
                   _InfoRow(
-                    label: 'Status',
+                    label: context.l10n.playbackInfoStatusLabel,
                     value: playerState.isBuffering
-                        ? 'Puffert...'
-                        : (playerState.isPlaying ? 'Wiedergabe' : 'Pause'),
+                        ? context.l10n.playbackInfoBuffering
+                        : (playerState.isPlaying
+                              ? context.l10n.playbackInfoPlaying
+                              : context.l10n.playbackInfoPaused),
                   ),
                 ],
               ),
@@ -222,11 +246,11 @@ class _PlayerPlaybackInfoDialog extends StatelessWidget {
     );
   }
 
-  static String _channelTypeLabel(String? type) {
+  static String _channelTypeLabel(BuildContext context, String? type) {
     return switch (type) {
-      'vod' => 'Film (VOD)',
-      'series' => 'Serie / Episode',
-      'live' => 'Live TV',
+      'vod' => context.l10n.playbackInfoTypeVod,
+      'series' => context.l10n.playbackInfoTypeSeries,
+      'live' => context.l10n.playbackInfoTypeLive,
       _ => type ?? '-',
     };
   }
@@ -244,22 +268,30 @@ class _PlayerPlaybackInfoDialog extends StatelessWidget {
     return '${secs.toStringAsFixed(1)} s';
   }
 
-  static String _audioTrackLabel(PlayerState playerState) {
+  static String _audioTrackLabel(
+    BuildContext context,
+    PlayerState playerState,
+  ) {
     final track = playerState.player.state.track.audio;
     if (track.id == AudioTrack.auto().id || track.id == AudioTrack.no().id) {
       return audioTrackDisplayLabel(
         currentTrackId: track.id,
         rawCount: playerState.player.state.tracks.audio.length,
         selectableCount: playerState.audioTracks.length,
+        localizations: context.l10n,
       );
     }
     return LiveAudioTrackService.labelFor(track);
   }
 
-  static String _audioTrackExposureLabel(PlayerState playerState) {
+  static String _audioTrackExposureLabel(
+    BuildContext context,
+    PlayerState playerState,
+  ) {
     return audioTrackExposureStatusLabel(
       playerState.player.state.tracks.audio.length,
       playerState.audioTracks.length,
+      localizations: context.l10n,
     );
   }
 }

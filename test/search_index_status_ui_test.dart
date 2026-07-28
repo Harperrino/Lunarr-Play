@@ -2,14 +2,14 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/search/search_index_repository.dart';
 import 'package:m3uxtream_player/core/search/search_models.dart';
 import 'package:m3uxtream_player/features/search/models/category_search_result.dart';
 import 'package:m3uxtream_player/features/search/models/global_search_results.dart';
-import 'package:m3uxtream_player/features/search/providers/category_search_providers.dart';
-import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
+import 'package:m3uxtream_player/app/composition/search/providers/category_search_providers.dart';
+import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 
 final _searchResults = const GlobalSearchResults(
   channels: [],
@@ -106,10 +106,10 @@ void main() {
   ) async {
     await _pumpSearch(tester, _state(ready: 2, building: 2, failed: 0));
 
-    expect(find.byTooltip('Suchindex 2 von 4 Playlists'), findsOneWidget);
-    expect(find.text('Suchindex 2 von 4 Playlists'), findsOneWidget);
+    expect(find.byTooltip('Search index: 2 of 4 playlists'), findsOneWidget);
+    expect(find.text('Search index: 2 of 4 playlists'), findsOneWidget);
     expect(
-      find.bySemanticsLabel('Suchindex 2 von 4 Playlists'),
+      find.bySemanticsLabel('Search index: 2 of 4 playlists'),
       findsAtLeastNWidgets(1),
     );
   });
@@ -127,10 +127,10 @@ void main() {
       repository: repository,
     );
 
-    expect(find.byTooltip('Suchindex 3 von 4 Playlists'), findsNothing);
-    expect(find.text('1 Playlist nicht vollständig indiziert'), findsOneWidget);
-    expect(find.text('Erneut versuchen'), findsOneWidget);
-    await tester.tap(find.text('Erneut versuchen'));
+    expect(find.byTooltip('Search index: 3 of 4 playlists'), findsNothing);
+    expect(find.text('1 playlist is not fully indexed'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+    await tester.tap(find.text('Retry'));
     await tester.pump();
     expect(tester.takeException(), isNull);
   });

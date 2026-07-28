@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
-import 'package:m3uxtream_player/core/services/live_composition_geometry.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
+import 'package:m3uxtream_player/shared/layout/live_composition_geometry.dart';
 
 const categoryPaneDefaultWidth = 232.0;
 const categoryPaneMinimumWidth = 200.0;

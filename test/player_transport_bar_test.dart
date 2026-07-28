@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
 
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
-import 'package:m3uxtream_player/features/player/providers/player_ui_providers.dart';
-import 'package:m3uxtream_player/features/player/widgets/player_transport_bar.dart';
+import 'package:m3uxtream_player/app/composition/player/providers/player_ui_providers.dart';
+import 'package:m3uxtream_player/app/composition/player/widgets/player_transport_bar.dart';
 import 'package:m3uxtream_player/shared/theme/app_status_colors.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
@@ -161,7 +161,7 @@ void main() {
       final volumeRect = tester.getRect(find.byTooltip('Mute'));
       final playRect = tester.getRect(find.byTooltip('Play'));
       final audioRect = tester.getRect(
-        find.byTooltip('Keine Audio-Spuren erkannt'),
+        find.byTooltip('No audio tracks detected'),
       );
       final fullscreenRect = tester.getRect(find.byTooltip('Fullscreen'));
       expect(volumeRect.center.dx, lessThan(playRect.center.dx));
@@ -173,7 +173,7 @@ void main() {
         find.byType(M3ExpressiveSlider),
       );
       expect(slider.value, 0.5);
-      expect(slider.semanticFormatter?.call(0.5), 'Lautstärke 50 Prozent');
+      expect(slider.semanticFormatter?.call(0.5), 'Volume 50 percent');
     },
   );
 
@@ -233,8 +233,8 @@ void main() {
 
       await tester.pump();
 
-      expect(find.textContaining('Startpuffer wird aufgebaut'), findsOneWidget);
-      expect(find.textContaining('Starte bei'), findsOneWidget);
+      expect(find.textContaining('Building startup buffer'), findsOneWidget);
+      expect(find.textContaining('Starts at'), findsOneWidget);
       final indicator = tester.widget<LinearProgressIndicator>(
         find.byType(LinearProgressIndicator),
       );
@@ -435,7 +435,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(find.textContaining('Startpuffer wird aufgebaut'), findsOneWidget);
+      expect(find.textContaining('Building startup buffer'), findsOneWidget);
     },
   );
 

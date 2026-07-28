@@ -8,9 +8,9 @@ void main() {
   });
 
   test('labels live startup buffer options correctly', () {
-    expect(labelForLiveStartupBufferSeconds(0), 'Aus');
-    expect(labelForLiveStartupBufferSeconds(5), '5 Sekunden');
-    expect(labelForLiveStartupBufferSeconds(120), '120 Sekunden (maximal)');
+    expect(labelForLiveStartupBufferSeconds(0), 'Off');
+    expect(labelForLiveStartupBufferSeconds(5), '5 seconds');
+    expect(labelForLiveStartupBufferSeconds(120), '120 seconds (maximum)');
   });
 
   test('normalizes stored seconds to the closest allowed option', () {

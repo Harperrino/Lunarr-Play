@@ -3,9 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/core/logger/app_error_handlers.dart';
+import 'package:m3uxtream_player/app/services/app_error_handlers.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
-import 'package:m3uxtream_player/features/diagnostics/providers/ui_logs_providers.dart';
+import 'package:m3uxtream_player/core/providers/ui_logs_providers.dart';
 
 void main() {
   setUp(() {

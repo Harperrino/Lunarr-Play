@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/app/shell/shell_sidebar.dart';
-import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
-import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
+import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/shared/theme/app_status_colors.dart';
 
 Widget _wrap(Widget child, {ThemeData? theme}) {
@@ -75,7 +75,7 @@ void main() {
       ),
     );
 
-    expect(find.byTooltip('Collapse sidebar'), findsOneWidget);
+    expect(find.byTooltip('Collapse Sidebar'), findsOneWidget);
     expect(find.byKey(const ValueKey('shell-sidebar-brand')), findsNothing);
     expect(
       find.byKey(const ValueKey('shell-sidebar-brand-mark')),
@@ -91,15 +91,15 @@ void main() {
       return widget is SizedBox && widget.height == 48;
     });
     expect(header, isNotEmpty);
-    final collapseRect = tester.getRect(find.byTooltip('Collapse sidebar'));
+    final collapseRect = tester.getRect(find.byTooltip('Collapse Sidebar'));
     final sidebarRect = tester.getRect(find.byType(ShellSidebar));
     expect(collapseRect.right, lessThanOrEqualTo(sidebarRect.right));
-    await tester.tap(find.byTooltip('Collapse sidebar'));
+    await tester.tap(find.byTooltip('Collapse Sidebar'));
     await tester.pump();
 
     expect(toggleCount, 1);
     expect(tappedIndices, isEmpty);
-    expect(find.text('Mediathek'), findsOneWidget);
+    expect(find.text('Media Library'), findsOneWidget);
   });
 
   testWidgets('collapsed items retain tooltip semantics and active index', (
@@ -120,9 +120,9 @@ void main() {
       ),
     );
 
-    expect(find.byTooltip('Expand sidebar'), findsOneWidget);
-    expect(find.byTooltip('Mediathek'), findsOneWidget);
-    await tester.tap(find.byTooltip('Mediathek'));
+    expect(find.byTooltip('Expand Sidebar'), findsOneWidget);
+    expect(find.byTooltip('Media Library'), findsOneWidget);
+    await tester.tap(find.byTooltip('Media Library'));
 
     expect(tappedIndices, [shellMediaLibraryTabIndex]);
   });
@@ -148,18 +148,18 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byTooltip('Collapse sidebar'));
+    await tester.tap(find.byTooltip('Collapse Sidebar'));
     await tester.pumpAndSettle();
 
     expect(isExpanded, isFalse);
     expect(tappedIndices, isEmpty);
-    expect(find.byTooltip('Expand sidebar'), findsOneWidget);
-    final library = find.bySemanticsLabel('Mediathek');
+    expect(find.byTooltip('Expand Sidebar'), findsOneWidget);
+    final library = find.bySemanticsLabel('Media Library');
     expect(library, findsOneWidget);
     expect(
       tester.getSemantics(library),
       matchesSemantics(
-        label: 'Mediathek',
+        label: 'Media Library',
         isButton: true,
         hasSelectedState: true,
         isSelected: true,
@@ -190,12 +190,12 @@ void main() {
       const ValueKey('shell-sidebar-item-$shellMediaLibraryTabIndex'),
     );
     expect(tester.getSize(libraryItem).height, shellSidebarNavigationRowHeight);
-    final librarySemantics = find.bySemanticsLabel('Mediathek');
+    final librarySemantics = find.bySemanticsLabel('Media Library');
     expect(librarySemantics, findsOneWidget);
     expect(
       tester.getSemantics(librarySemantics),
       matchesSemantics(
-        label: 'Mediathek',
+        label: 'Media Library',
         isButton: true,
         hasSelectedState: true,
         isSelected: true,
@@ -229,7 +229,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
 
-    final toggle = find.byTooltip('Collapse sidebar');
+    final toggle = find.byTooltip('Collapse Sidebar');
     _expectFocusRing(tester, toggle);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
@@ -261,7 +261,7 @@ void main() {
       tester
           .widget<InkWell>(
             find.descendant(
-              of: find.byTooltip('Collapse sidebar'),
+              of: find.byTooltip('Collapse Sidebar'),
               matching: find.byType(InkWell),
             ),
           )
@@ -273,7 +273,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
 
-    final expand = find.byTooltip('Expand sidebar');
+    final expand = find.byTooltip('Expand Sidebar');
     expect(isExpanded, isFalse);
     expect(expand, findsOneWidget);
     expect(
@@ -335,7 +335,7 @@ void main() {
     final settingsY = tester.getCenter(find.text('Settings')).dy;
     final primaryItems = [
       'Live TV',
-      'Mediathek',
+      'Media Library',
       'Favorites',
       'Playlists',
       'EPG Guide',

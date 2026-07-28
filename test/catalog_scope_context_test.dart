@@ -5,8 +5,8 @@ import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/parsers/xtream_parser.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_catalog_providers.dart';
-import 'package:m3uxtream_player/features/xtream/providers/playback_prep_providers.dart';
-import 'package:m3uxtream_player/features/xtream/providers/series_providers.dart';
+import 'package:m3uxtream_player/app/composition/xtream/providers/playback_prep_providers.dart';
+import 'package:m3uxtream_player/app/composition/xtream/providers/series_providers.dart';
 
 void main() {
   testWidgets('All catalogue scope survives opening a movie', (tester) async {

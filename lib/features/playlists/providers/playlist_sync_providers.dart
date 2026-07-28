@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_catalog_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
@@ -39,9 +39,9 @@ class PlaylistSyncNotifier extends AsyncNotifier<void> {
       );
       // The sync replaced exactly this playlist's channels; only its warm
       // catalogue entries become stale, never the whole cache.
-      ref.read(playlistCatalogWarmCacheProvider).invalidateForPlaylist(
-        playlistId,
-      );
+      ref
+          .read(playlistCatalogWarmCacheProvider)
+          .invalidateForPlaylist(playlistId);
       AppLogger.info(
         'PlaylistSyncNotifier: Sync completed for Playlist ID: $playlistId.',
       );

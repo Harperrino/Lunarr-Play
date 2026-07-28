@@ -3,6 +3,7 @@ import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/shared/widgets/group_accent.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_metadata_row.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_poster_frame.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 import 'vod_poster_image.dart';
 
@@ -28,7 +29,7 @@ class VodCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         MediaPosterFrame(
-          semanticLabel: 'Film: ${channel.name}',
+          semanticLabel: context.l10n.movieCardSemantics(channel.name),
           isSelected: isSelected,
           onActivate: onTap,
           poster: VodPosterImage(logoUrl: channel.logo, accent: accent),
@@ -38,9 +39,4 @@ class VodCard extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Back-compat alias for poster/chip accents.
-abstract final class VodGenreAccent {
-  static Color forGroup(String groupName) => GroupAccent.forGroup(groupName);
 }

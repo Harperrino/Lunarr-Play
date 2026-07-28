@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 enum EpgToolbarAction {
   now,
@@ -122,7 +123,7 @@ class _EpgToolbarTitle extends StatelessWidget {
           color: colorScheme.secondary,
         ),
         Text(
-          'TV PROGRAMME',
+          context.l10n.epgToolbarTitle,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 14),
         ),
         if (isEntriesLoading)
@@ -175,33 +176,33 @@ class _EpgToolbarActions extends StatelessWidget {
           children: [
             _EpgToolbarButton(
               action: EpgToolbarAction.now,
-              label: 'Jetzt',
-              tooltip: 'Zum aktuellen Zeitpunkt',
+              label: context.l10n.epgToolbarNow,
+              tooltip: context.l10n.epgToolbarJumpToNowTooltip,
               icon: Icons.my_location_rounded,
               onPressed: _whenEnabled(onJumpToNow),
             ),
             _EpgToolbarButton(
               action: EpgToolbarAction.backTwoHours,
               label: '-2h',
-              tooltip: 'Zwei Stunden zurück',
+              tooltip: context.l10n.epgToolbarBackTwoHoursTooltip,
               onPressed: _whenEnabled(onBackTwoHours),
             ),
             _EpgToolbarButton(
               action: EpgToolbarAction.forwardTwoHours,
               label: '+2h',
-              tooltip: 'Zwei Stunden vor',
+              tooltip: context.l10n.epgToolbarForwardTwoHoursTooltip,
               onPressed: _whenEnabled(onForwardTwoHours),
             ),
             _EpgToolbarButton(
               action: EpgToolbarAction.backOneDay,
               label: '-1d',
-              tooltip: 'Einen Tag zurück',
+              tooltip: context.l10n.epgToolbarBackOneDayTooltip,
               onPressed: _whenEnabled(onBackOneDay),
             ),
             _EpgToolbarButton(
               action: EpgToolbarAction.forwardOneDay,
               label: '+1d',
-              tooltip: 'Einen Tag vor',
+              tooltip: context.l10n.epgToolbarForwardOneDayTooltip,
               onPressed: _whenEnabled(onForwardOneDay),
             ),
           ],
@@ -211,19 +212,19 @@ class _EpgToolbarActions extends StatelessWidget {
             _EpgToolbarButton(
               action: EpgToolbarAction.zoomOut,
               label: '−',
-              tooltip: 'Zeitachse verkleinern',
+              tooltip: context.l10n.epgToolbarZoomOutTooltip,
               onPressed: _whenEnabled(onZoomOut),
             ),
             _EpgToolbarButton(
               action: EpgToolbarAction.zoomIn,
               label: '+',
-              tooltip: 'Zeitachse vergrößern',
+              tooltip: context.l10n.epgToolbarZoomInTooltip,
               onPressed: _whenEnabled(onZoomIn),
             ),
             _EpgToolbarButton(
               action: EpgToolbarAction.resetZoom,
               label: '100%',
-              tooltip: 'Zeitachse auf 100 Prozent zurücksetzen',
+              tooltip: context.l10n.epgToolbarResetZoomTooltip,
               onPressed: _whenEnabled(onResetZoom),
             ),
           ],

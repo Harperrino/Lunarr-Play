@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/app/shell/app_sidebar.dart';
 import 'package:m3uxtream_player/app/shell/non_live_tab_body.dart';
 import 'package:m3uxtream_player/app/shell/shell_command_area.dart';
 import 'package:m3uxtream_player/app/shell/shell_layout.dart';
 import 'package:m3uxtream_player/app/shell/shell_tab_labels.dart';
-import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 import 'package:m3uxtream_player/shared/theme/app_spacing.dart';
 
 /// Layout for sidebar tabs 1â€“6 (playlists, EPG, VOD, series, diagnostics, settings).
@@ -65,10 +66,12 @@ class StandardAppShell extends StatelessWidget {
                           title: shellHeaderTitle(
                             activeIndex,
                             debugModeEnabled: debugModeEnabled,
+                            l10n: context.l10n,
                           ),
                           supportingText: shellHeaderSubtitle(
                             activeIndex,
                             debugModeEnabled: debugModeEnabled,
+                            l10n: context.l10n,
                           ),
                         ),
                         SizedBox(height: spacing.xl),

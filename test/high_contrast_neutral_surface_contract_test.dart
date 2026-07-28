@@ -3,19 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState, Playlist;
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/streaming_diagnostics.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
-import 'package:m3uxtream_player/features/diagnostics/providers/streaming_diagnostics_providers.dart';
-import 'package:m3uxtream_player/features/diagnostics/widgets/streaming_diagnostics_card.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/core/providers/streaming_diagnostics_providers.dart';
+import 'package:m3uxtream_player/app/composition/diagnostics/widgets/streaming_diagnostics_card.dart';
 import 'package:m3uxtream_player/features/diagnostics/widgets/ui_log_console_card.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/group_visibility_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/pinned_groups_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
-import 'package:m3uxtream_player/features/playlists/widgets/playlist_hub_screen.dart';
+import 'package:m3uxtream_player/app/widgets/playlist_hub_screen.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 
@@ -144,11 +144,11 @@ void main() {
       final colors = AppTheme.highContrastDarkTheme.colorScheme;
       _expectTonalSurface(tester, colors);
       expect(
-        tester.widget<Text>(find.text('Erweiterte Diagnose')).style?.color,
+        tester.widget<Text>(find.text('Advanced diagnostics')).style?.color,
         colors.onSurfaceVariant,
       );
       expect(
-        find.widgetWithText(OutlinedButton, 'Letzten Fehler kopieren'),
+        find.widgetWithText(OutlinedButton, 'Copy last failure'),
         findsOneWidget,
       );
     },
@@ -213,7 +213,7 @@ void _expectLogRoles(WidgetTester tester, ColorScheme colors) {
     tester
         .widget<Text>(
           find.text(
-            'Press [Space] for Play/Pause, [F] for Fullscreen, [+/-] for Volume, [Arrow keys] to change channel.',
+            'Press [Space] to play or pause, [F] for fullscreen, [+/-] for volume, and [Arrow keys] to change channels.',
           ),
         )
         .style

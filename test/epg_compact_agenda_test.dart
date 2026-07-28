@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_grid_providers.dart';
-import 'package:m3uxtream_player/features/epg/widgets/epg_compact_agenda.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/widgets/epg_compact_agenda.dart';
 import 'package:m3uxtream_player/shared/theme/app_status_colors.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 
@@ -32,6 +32,7 @@ EpgEntry _entry({
   required DateTime end,
 }) => EpgEntry(
   id: id,
+  playlistId: 1,
   channelId: 'example.channel',
   title: title,
   description: null,
@@ -122,15 +123,15 @@ void main() {
 
     expect(find.byKey(const ValueKey('epg-compact-agenda')), findsOneWidget);
     expect(find.text('LIVE'), findsOneWidget);
-    expect(find.text('JETZT: Laufende Sendung'), findsOneWidget);
-    expect(find.text('Danach: Nächste Sendung'), findsOneWidget);
+    expect(find.text('NOW: Laufende Sendung'), findsOneWidget);
+    expect(find.text('Next: Nächste Sendung'), findsOneWidget);
     expect(
       tester.widget<Text>(find.text('LIVE')).style?.color,
       AppTheme.darkTheme.extension<AppStatusColors>()!.onLiveContainer,
     );
     expect(
       find.bySemanticsLabel(
-        RegExp('Sender: Testkanal. LIVE, läuft jetzt: Laufende Sendung'),
+        RegExp('Channel: Testkanal. LIVE, now playing: Laufende Sendung'),
       ),
       findsOneWidget,
     );

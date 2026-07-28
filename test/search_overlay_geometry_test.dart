@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/search/search_models.dart';
 import 'package:m3uxtream_player/features/search/models/category_search_result.dart';
 import 'package:m3uxtream_player/features/search/models/global_search_results.dart';
-import 'package:m3uxtream_player/features/search/providers/category_search_providers.dart';
-import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
+import 'package:m3uxtream_player/app/composition/search/providers/category_search_providers.dart';
+import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/widgets/app_overlay_surface.dart';
 

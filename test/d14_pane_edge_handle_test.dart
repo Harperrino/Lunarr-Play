@@ -34,15 +34,15 @@ void main() {
     );
     expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
     expect(find.byType(M3PaneTargetGlyph), findsNothing);
-    expect(find.byTooltip('Kategorien einklappen'), findsOneWidget);
+    expect(find.byTooltip('Collapse Categories'), findsOneWidget);
 
     final semantics = tester.getSemantics(
-      find.bySemanticsLabel('Kategorien einklappen'),
+      find.bySemanticsLabel('Collapse Categories'),
     );
     expect(
       semantics,
       matchesSemantics(
-        label: 'Kategorien einklappen',
+        label: 'Collapse Categories',
         isButton: true,
         hasTapAction: true,
         hasEnabledState: true,

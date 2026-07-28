@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_grid_providers.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_providers.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
-import 'package:m3uxtream_player/features/epg/widgets/epg_screen.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_sync_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/widgets/epg_screen.dart';
 import 'package:m3uxtream_player/features/epg/widgets/epg_toolbar.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
@@ -25,11 +25,11 @@ void main() {
           ),
         ),
         epgSyncNotifierProvider.overrideWith(_TestEpgSyncNotifier.new),
-        epgGridEntriesStreamProvider.overrideWith(
-          (ref) => Stream.value(const <EpgEntry>[]),
+        epgGridEntriesSnapshotProvider.overrideWith(
+          (ref) => const AsyncValue.data(<EpgEntry>[]),
         ),
         knownEpgChannelIdsProvider.overrideWith(
-          (ref) => Stream.value(const <String>{}),
+          (ref) => Stream.value(const <int, Set<String>>{}),
         ),
         epgGridRowsProvider.overrideWith((ref) => const <EpgGridRowData>[]),
         epgGridChannelsProvider.overrideWith((ref) => const <Channel>[]),

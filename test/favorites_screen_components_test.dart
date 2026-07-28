@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
-import 'package:m3uxtream_player/features/favorites/widgets/favorite_channel_list.dart';
-import 'package:m3uxtream_player/features/favorites/widgets/favorites_screen.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/app/composition/favorites/widgets/favorite_channel_list.dart';
+import 'package:m3uxtream_player/app/composition/favorites/widgets/favorites_screen.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
@@ -60,10 +60,10 @@ void main() {
 
     expect(find.byKey(const ValueKey('favorite-channel-list')), findsOneWidget);
     expect(
-      find.bySemanticsLabel(RegExp('Favorit: Expressiver Lieblingssender')),
+      find.bySemanticsLabel(RegExp('Favorite: Expressiver Lieblingssender')),
       findsOneWidget,
     );
-    expect(find.bySemanticsLabel('Aus Favoriten entfernen'), findsOneWidget);
+    expect(find.bySemanticsLabel('Remove from favorites'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
@@ -118,7 +118,7 @@ void main() {
       find.byKey(const ValueKey('favorites-screen-surface')),
       findsOneWidget,
     );
-    expect(find.text('Keine Playlist ausgewählt'), findsOneWidget);
+    expect(find.text('No playlist selected'), findsOneWidget);
   });
 
   testWidgets('screen reads the selected playlist stream without new storage', (
@@ -198,7 +198,7 @@ void main() {
       find.byKey(const ValueKey('favorite-channel-tile-71')),
       findsNothing,
     );
-    expect(find.text('Noch keine Live-Favoriten'), findsOneWidget);
+    expect(find.text('No live favorites yet'), findsOneWidget);
   });
 
   testWidgets(
@@ -229,10 +229,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(
-        find.text('Favorit konnte nicht gespeichert werden.'),
-        findsOneWidget,
-      );
+      expect(find.text('Could not save favorite.'), findsOneWidget);
       expect(find.textContaining('example.invalid'), findsNothing);
     },
   );

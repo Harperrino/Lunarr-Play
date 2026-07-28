@@ -6,26 +6,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState, Playlist;
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/app/shell/shell_command_area.dart';
 import 'package:m3uxtream_player/app/shell/shell_sidebar.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/core/services/live_composition_geometry.dart';
-import 'package:m3uxtream_player/core/services/live_layout_geometry.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/shared/layout/live_composition_geometry.dart';
+import 'package:m3uxtream_player/shared/layout/live_layout_geometry.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
 import 'package:m3uxtream_player/features/channels/providers/category_pane_width_providers.dart';
-import 'package:m3uxtream_player/features/channels/widgets/channel_list_panel.dart';
-import 'package:m3uxtream_player/features/channels/widgets/live_category_sidebar.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
+import 'package:m3uxtream_player/app/composition/channels/widgets/channel_list_panel.dart';
+import 'package:m3uxtream_player/app/composition/channels/widgets/live_category_sidebar.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_sync_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/pinned_groups_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_sync_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
-import 'package:m3uxtream_player/features/player/providers/player_ui_providers.dart';
-import 'package:m3uxtream_player/features/player/widgets/live_tab_shell.dart';
-import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
+import 'package:m3uxtream_player/app/composition/player/providers/player_ui_providers.dart';
+import 'package:m3uxtream_player/app/widgets/live_tab_shell.dart';
+import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_pane_edge_handle.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_pane_toggle_button.dart';
 
@@ -205,7 +205,7 @@ void main() {
       _expectRect(tester, find.byType(ChannelListPanel), channelListRect);
     } else {
       expect(find.byType(ChannelListPanel), findsNothing);
-      expect(find.byTooltip('Senderliste anzeigen'), findsOneWidget);
+      expect(find.byTooltip('Expand Channel list'), findsOneWidget);
     }
 
     final categoryFinder = find.byType(LiveCategorySidebar);
@@ -321,7 +321,7 @@ void main() {
         textScaleFactor: 2,
       );
 
-      expect(find.byTooltip('Senderliste anzeigen'), findsOneWidget);
+      expect(find.byTooltip('Expand Channel list'), findsOneWidget);
       expect(find.byType(ChannelListPanel), findsNothing);
       expect(tester.takeException(), isNull);
     },
@@ -332,7 +332,7 @@ void main() {
     (tester) async {
       await pumpShell(tester, size: const Size(843, 808), immersive: false);
 
-      expect(find.byTooltip('Senderliste anzeigen'), findsOneWidget);
+      expect(find.byTooltip('Expand Channel list'), findsOneWidget);
       expect(find.byType(ChannelListPanel), findsNothing);
       expect(tester.takeException(), isNull);
     },
@@ -353,17 +353,17 @@ void main() {
         withCategories: true,
       );
 
-      expect(find.byTooltip('Kategorien anzeigen'), findsOneWidget);
+      expect(find.byTooltip('Expand Categories'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('live-category-edge-handle')),
         findsOneWidget,
       );
 
-      await tester.tap(find.byTooltip('Kategorien anzeigen'));
+      await tester.tap(find.byTooltip('Expand Categories'));
       await tester.pumpAndSettle();
 
       expect(find.byType(LiveCategorySidebar), findsOneWidget);
-      expect(find.byTooltip('Kategorien einklappen'), findsOneWidget);
+      expect(find.byTooltip('Collapse Categories'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -394,7 +394,7 @@ void main() {
         textScaleFactor: textScaleFactor,
       );
 
-      expect(find.byTooltip('Senderliste anzeigen'), findsOneWidget);
+      expect(find.byTooltip('Expand Channel list'), findsOneWidget);
       expect(find.byType(ChannelListPanel), findsNothing);
       expect(tester.takeException(), isNull);
     },
@@ -405,23 +405,23 @@ void main() {
     (tester) async {
       await pumpShell(tester, size: const Size(1348, 704), immersive: false);
 
-      expect(find.byTooltip('Senderliste einklappen'), findsOneWidget);
-      await tester.tap(find.byTooltip('Senderliste einklappen'));
+      expect(find.byTooltip('Collapse Channel list'), findsOneWidget);
+      await tester.tap(find.byTooltip('Collapse Channel list'));
       await tester.pump();
       expect(tester.takeException(), isNull);
       await tester.pump(const Duration(milliseconds: 140));
       expect(tester.takeException(), isNull);
       await tester.pump(LiveTabShell.layoutTransitionDuration);
-      expect(find.byTooltip('Senderliste anzeigen'), findsOneWidget);
+      expect(find.byTooltip('Expand Channel list'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      await tester.tap(find.byTooltip('Senderliste anzeigen'));
+      await tester.tap(find.byTooltip('Expand Channel list'));
       await tester.pump();
       expect(tester.takeException(), isNull);
       await tester.pump(const Duration(milliseconds: 140));
       expect(tester.takeException(), isNull);
       await tester.pump(LiveTabShell.layoutTransitionDuration);
-      expect(find.byTooltip('Senderliste einklappen'), findsOneWidget);
+      expect(find.byTooltip('Collapse Channel list'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -436,16 +436,16 @@ void main() {
         withCategories: true,
       );
 
-      expect(find.byTooltip('Kategorien einklappen'), findsOneWidget);
-      await tester.tap(find.byTooltip('Kategorien einklappen'));
+      expect(find.byTooltip('Collapse Categories'), findsOneWidget);
+      await tester.tap(find.byTooltip('Collapse Categories'));
       await tester.pump(LiveTabShell.layoutTransitionDuration);
-      expect(find.byTooltip('Kategorien anzeigen'), findsOneWidget);
+      expect(find.byTooltip('Expand Categories'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Senderliste einklappen'));
+      await tester.tap(find.byTooltip('Collapse Channel list'));
       await tester.pump(LiveTabShell.layoutTransitionDuration);
       expect(find.byType(ChannelListPanel), findsNothing);
-      expect(find.byTooltip('Kategorien anzeigen'), findsOneWidget);
-      expect(find.byTooltip('Senderliste anzeigen'), findsOneWidget);
+      expect(find.byTooltip('Expand Categories'), findsOneWidget);
+      expect(find.byTooltip('Expand Channel list'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -521,8 +521,8 @@ void main() {
     await pumpShell(tester, size: size, immersive: false, withCategories: true);
 
     expect(find.byType(M3PaneEdgeHandle), findsNWidgets(2));
-    expect(find.byTooltip('Kategorien einklappen'), findsOneWidget);
-    expect(find.byTooltip('Senderliste einklappen'), findsOneWidget);
+    expect(find.byTooltip('Collapse Categories'), findsOneWidget);
+    expect(find.byTooltip('Collapse Channel list'), findsOneWidget);
     expectSeams(categoryExpanded: true, senderExpanded: true);
     expect(
       find.descendant(
@@ -539,7 +539,7 @@ void main() {
       findsNothing,
     );
 
-    await tester.tap(find.byTooltip('Kategorien einklappen'));
+    await tester.tap(find.byTooltip('Collapse Categories'));
     await tester.pump();
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(milliseconds: 140));
@@ -558,26 +558,26 @@ void main() {
       0,
     );
     expect(tester.takeException(), isNull);
-    expect(find.byTooltip('Kategorien anzeigen'), findsOneWidget);
-    expect(find.byTooltip('Senderliste einklappen'), findsOneWidget);
+    expect(find.byTooltip('Expand Categories'), findsOneWidget);
+    expect(find.byTooltip('Collapse Channel list'), findsOneWidget);
     expectSeams(categoryExpanded: false, senderExpanded: true);
 
-    await tester.tap(find.byTooltip('Senderliste einklappen'));
+    await tester.tap(find.byTooltip('Collapse Channel list'));
     await pumpTransition();
-    expect(find.byTooltip('Kategorien anzeigen'), findsOneWidget);
-    expect(find.byTooltip('Senderliste anzeigen'), findsOneWidget);
+    expect(find.byTooltip('Expand Categories'), findsOneWidget);
+    expect(find.byTooltip('Expand Channel list'), findsOneWidget);
     expectSeams(categoryExpanded: false, senderExpanded: false);
 
-    await tester.tap(find.byTooltip('Kategorien anzeigen'));
+    await tester.tap(find.byTooltip('Expand Categories'));
     await pumpTransition();
-    expect(find.byTooltip('Kategorien einklappen'), findsOneWidget);
-    expect(find.byTooltip('Senderliste anzeigen'), findsOneWidget);
+    expect(find.byTooltip('Collapse Categories'), findsOneWidget);
+    expect(find.byTooltip('Expand Channel list'), findsOneWidget);
     expectSeams(categoryExpanded: true, senderExpanded: false);
 
-    await tester.tap(find.byTooltip('Senderliste anzeigen'));
+    await tester.tap(find.byTooltip('Expand Channel list'));
     await pumpTransition();
-    expect(find.byTooltip('Kategorien einklappen'), findsOneWidget);
-    expect(find.byTooltip('Senderliste einklappen'), findsOneWidget);
+    expect(find.byTooltip('Collapse Categories'), findsOneWidget);
+    expect(find.byTooltip('Collapse Channel list'), findsOneWidget);
     expectSeams(categoryExpanded: true, senderExpanded: true);
     expect(find.byKey(_playerKey), findsOneWidget);
     expect(tester.takeException(), isNull);

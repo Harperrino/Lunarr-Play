@@ -5,7 +5,7 @@ import 'package:drift/native.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/repository/app_state_repository.dart';
 import 'package:m3uxtream_player/features/channels/providers/category_pane_width_providers.dart';
-import 'package:m3uxtream_player/core/services/live_composition_geometry.dart';
+import 'package:m3uxtream_player/shared/layout/live_composition_geometry.dart';
 
 void main() {
   group('LiveCompositionGeometry windowed layouts', () {

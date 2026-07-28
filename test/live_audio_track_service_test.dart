@@ -70,7 +70,7 @@ void main() {
 
     test('labelFor renders special tracks and EAC3 codecs clearly', () {
       expect(LiveAudioTrackService.labelFor(AudioTrack.auto()), 'Auto');
-      expect(LiveAudioTrackService.labelFor(AudioTrack.no()), 'Keine');
+      expect(LiveAudioTrackService.labelFor(AudioTrack.no()), 'None');
       expect(LiveAudioTrackService.isSelectable(AudioTrack.auto()), isFalse);
       expect(LiveAudioTrackService.isSelectable(AudioTrack.no()), isFalse);
 

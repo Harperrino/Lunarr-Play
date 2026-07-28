@@ -32,7 +32,7 @@ void main() {
       ),
     );
 
-    expect(find.bySemanticsLabel('Zu Favoriten hinzufügen'), findsOneWidget);
+    expect(find.bySemanticsLabel('Add to favorites'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.tap(find.byKey(const ValueKey('channel-favorite-toggle-9')));
     expect(toggles, 1);

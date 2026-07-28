@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:m3uxtream_player/shared/theme/app_status_colors.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// Explicit current-time marker: status color plus icon and readable label.
 class EpgNowMarker extends StatelessWidget {
@@ -9,7 +10,7 @@ class EpgNowMarker extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = Theme.of(context).extension<AppStatusColors>()!;
     return Semantics(
-      label: 'Jetzt, aktuelle Zeit im Programm',
+      label: context.l10n.epgNowMarkerSemantics,
       child: ExcludeSemantics(
         child: SizedBox(
           width: 2,
@@ -40,7 +41,7 @@ class EpgNowMarker extends StatelessWidget {
                         ),
                         const SizedBox(width: 3),
                         Text(
-                          'JETZT',
+                          context.l10n.epgNowMarkerLabel,
                           style: TextStyle(
                             color: status.onLiveContainer,
                             fontSize: 8,

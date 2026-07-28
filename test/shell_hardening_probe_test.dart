@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 import 'package:m3uxtream_player/app/shell/standard_app_shell.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_sync_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_sync_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/vod_pre_buffer_settings_providers.dart';
 import 'package:m3uxtream_player/features/settings/providers/debug_mode_providers.dart';
-import 'package:m3uxtream_player/features/settings/providers/playlist_form_providers.dart';
-import 'package:m3uxtream_player/features/settings/widgets/settings_screen.dart';
+import 'package:m3uxtream_player/app/providers/playlist_form_providers.dart';
+import 'package:m3uxtream_player/app/composition/settings/widgets/settings_screen.dart';
 
 class _TestPlayerBufferSecondsNotifier extends PlayerBufferSecondsNotifier {
   @override

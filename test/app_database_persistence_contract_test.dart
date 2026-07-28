@@ -70,6 +70,7 @@ void main() {
           batch.insert(
             database.epgChannels,
             EpgChannelsCompanion.insert(
+              playlistId: playlistId,
               channelId: 'contract.epg',
               displayName: 'Contract channel',
             ),
@@ -77,6 +78,7 @@ void main() {
           batch.insert(
             database.epgEntries,
             EpgEntriesCompanion.insert(
+              playlistId: playlistId,
               channelId: 'contract.epg',
               title: 'Contract programme',
               startTime: startTime,
@@ -117,7 +119,8 @@ void main() {
         )..where((table) => table.id.equals(playlistId))).go();
 
         expect(await reopened.select(reopened.channels).get(), isEmpty);
-        expect(await reopened.select(reopened.epgEntries).get(), hasLength(1));
+        expect(await reopened.select(reopened.epgEntries).get(), isEmpty);
+        expect(await reopened.select(reopened.epgChannels).get(), isEmpty);
         expect(await reopened.select(reopened.appStates).get(), hasLength(1));
       },
     );
@@ -171,13 +174,13 @@ AppDatabase _openFileDatabase(File file) {
 }
 
 Future<void> _expectSchemaContract(AppDatabase database) async {
-  expect(database.schemaVersion, 9);
+  expect(database.schemaVersion, 10);
 
   final userVersion = await database
       .customSelect('PRAGMA user_version')
       .map((row) => row.read<int>('user_version'))
       .getSingle();
-  expect(userVersion, 9);
+  expect(userVersion, 10);
 
   final foreignKeys = await database
       .customSelect('PRAGMA foreign_keys')
@@ -237,6 +240,7 @@ Future<void> _expectSchemaContract(AppDatabase database) async {
   });
   await _expectColumns(database, 'epg_entries', {
     'id',
+    'playlist_id',
     'channel_id',
     'title',
     'description',
@@ -244,6 +248,7 @@ Future<void> _expectSchemaContract(AppDatabase database) async {
     'end_time',
   });
   await _expectColumns(database, 'epg_channels', {
+    'playlist_id',
     'channel_id',
     'display_name',
   });
@@ -301,11 +306,16 @@ Future<void> _expectSchemaContract(AppDatabase database) async {
   final indexSql = await database
       .customSelect(
         "SELECT sql FROM sqlite_master WHERE type = 'index' "
-        "AND name = 'idx_epg_channel_time'",
+        "AND name = 'idx_epg_playlist_channel_time'",
       )
       .map((row) => row.read<String>('sql'))
       .getSingle();
-  expect(indexSql, contains('epg_entries (channel_id, start_time, end_time)'));
+  expect(
+    indexSql,
+    contains(
+      'epg_entries (playlist_id, channel_id, start_time, end_time)',
+    ),
+  );
 
   final channelForeignKeys = await database
       .customSelect('PRAGMA foreign_key_list(channels)')

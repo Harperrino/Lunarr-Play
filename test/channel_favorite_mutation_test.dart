@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
 
 Channel _channel(int id, bool favorite) {
   return Channel(

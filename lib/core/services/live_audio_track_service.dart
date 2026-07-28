@@ -179,7 +179,7 @@ abstract final class LiveAudioTrackService {
       return 'Auto';
     }
     if (track.id == AudioTrack.no().id) {
-      return 'Keine';
+      return 'None';
     }
 
     final parts = <String>[];

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 import '../theme/app_component_metrics.dart';
 import 'app_surface_state_layer.dart';
@@ -9,16 +10,26 @@ import 'm3_slots.dart';
 /// Keeping the destination data next to the control prevents categories and
 /// the sender list from drifting apart in iconography, labels or semantics.
 enum M3PaneTarget {
-  categories(icon: Icons.layers_rounded, label: 'Kategorien'),
-  channels(icon: Icons.format_list_bulleted_rounded, label: 'Senderliste');
+  categories(icon: Icons.layers_rounded),
+  channels(icon: Icons.format_list_bulleted_rounded);
 
-  const M3PaneTarget({required this.icon, required this.label});
+  const M3PaneTarget({required this.icon});
 
   final IconData icon;
-  final String label;
+}
 
-  String actionLabel(bool expanded) =>
-      expanded ? '$label einklappen' : '$label anzeigen';
+extension M3PaneTargetLocalizations on M3PaneTarget {
+  String localizedLabel(BuildContext context) => switch (this) {
+    M3PaneTarget.categories => context.l10n.paneCategories,
+    M3PaneTarget.channels => context.l10n.paneChannels,
+  };
+
+  String localizedActionLabel(BuildContext context, bool expanded) {
+    final pane = localizedLabel(context);
+    return expanded
+        ? context.l10n.paneCollapseAction(pane)
+        : context.l10n.paneExpandAction(pane);
+  }
 }
 
 /// Presentation-only control for opening and closing a pane.
@@ -85,15 +96,21 @@ class _M3PaneToggleButtonState extends State<M3PaneToggleButton> {
     });
   }
 
-  String get _paneLabel => widget.target?.label ?? widget.paneLabel!;
-
-  String get _actionLabel {
+  String _paneLabel(BuildContext context) {
     final target = widget.target;
-    if (target != null) return target.actionLabel(widget.expanded);
-    final action = widget.expanded ? 'Collapse' : 'Expand';
+    if (target == null) return widget.paneLabel!;
+    return target.localizedLabel(context);
+  }
+
+  String _actionLabel(BuildContext context) {
+    final target = widget.target;
+    final paneLabel = _paneLabel(context);
+    if (target != null) {
+      return target.localizedActionLabel(context, widget.expanded);
+    }
     return widget.expanded
-        ? (widget.expandedTooltip ?? '$action $_paneLabel')
-        : (widget.collapsedTooltip ?? '$action $_paneLabel');
+        ? (widget.expandedTooltip ?? context.l10n.paneCollapseAction(paneLabel))
+        : (widget.collapsedTooltip ?? context.l10n.paneExpandAction(paneLabel));
   }
 
   bool get _hasVisibleLabel =>
@@ -102,7 +119,7 @@ class _M3PaneToggleButtonState extends State<M3PaneToggleButton> {
   @override
   Widget build(BuildContext context) {
     if (widget.target != null && !_hasVisibleLabel) {
-      return _buildCompactTargetAction(widget.target!);
+      return _buildCompactTargetAction(context, widget.target!);
     }
 
     if (widget.target != null) {
@@ -110,10 +127,10 @@ class _M3PaneToggleButtonState extends State<M3PaneToggleButton> {
     }
 
     final colors = Theme.of(context).colorScheme;
-    final actionLabel = widget.expanded ? 'Collapse' : 'Expand';
+    final paneLabel = _paneLabel(context);
     final accessibleLabel = widget.expanded
-        ? (widget.expandedTooltip ?? '$actionLabel ${widget.paneLabel}')
-        : (widget.collapsedTooltip ?? '$actionLabel ${widget.paneLabel}');
+        ? (widget.expandedTooltip ?? context.l10n.paneCollapseAction(paneLabel))
+        : (widget.collapsedTooltip ?? context.l10n.paneExpandAction(paneLabel));
 
     return M3ActionSlot(
       icon: widget.expanded
@@ -132,24 +149,26 @@ class _M3PaneToggleButtonState extends State<M3PaneToggleButton> {
     );
   }
 
-  Widget _buildCompactTargetAction(M3PaneTarget target) => M3ActionSlot(
-    icon: null,
-    tooltip: _actionLabel,
-    semanticLabel: _actionLabel,
-    toggled: widget.expanded,
-    selected: false,
-    focusNode: _focusNode,
-    focusOutlineKey: widget.focusOutlineKey,
-    focusOutlineStyle: widget.focusOutlineStyle,
-    onPressed: _handlePressed,
-    child: M3PaneTargetGlyph(
-      targetIcon: target.icon,
-      expanded: widget.expanded,
-    ),
-  );
+  Widget _buildCompactTargetAction(BuildContext context, M3PaneTarget target) =>
+      M3ActionSlot(
+        icon: null,
+        tooltip: _actionLabel(context),
+        semanticLabel: _actionLabel(context),
+        toggled: widget.expanded,
+        selected: false,
+        focusNode: _focusNode,
+        focusOutlineKey: widget.focusOutlineKey,
+        focusOutlineStyle: widget.focusOutlineStyle,
+        onPressed: _handlePressed,
+        child: M3PaneTargetGlyph(
+          targetIcon: target.icon,
+          expanded: widget.expanded,
+        ),
+      );
 
   Widget _buildLabeledTargetAction(BuildContext context, M3PaneTarget target) {
     final colors = Theme.of(context).colorScheme;
+    final targetLabel = _paneLabel(context);
     const shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(12)),
     );
@@ -179,7 +198,7 @@ class _M3PaneToggleButtonState extends State<M3PaneToggleButton> {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  target.label,
+                  targetLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -221,11 +240,11 @@ class _M3PaneToggleButtonState extends State<M3PaneToggleButton> {
       button: true,
       enabled: true,
       toggled: widget.expanded,
-      label: _actionLabel,
+      label: _actionLabel(context),
       onTap: _handlePressed,
       child: action,
     );
-    return Tooltip(message: _actionLabel, child: semantics);
+    return Tooltip(message: _actionLabel(context), child: semantics);
   }
 
   void _setHovered(bool value) {

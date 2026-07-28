@@ -4,9 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/search_catalog_entry.dart';
 import 'package:m3uxtream_player/core/repository/epg_repository.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_providers.dart';
 import 'package:m3uxtream_player/features/search/models/channel_search_result.dart';
-import 'package:m3uxtream_player/features/search/providers/category_search_providers.dart';
+import 'package:m3uxtream_player/app/composition/search/providers/category_search_providers.dart';
 
 class _CountingEpgRepository extends EpgRepository {
   _CountingEpgRepository(super.database, this.entries);
@@ -16,13 +16,13 @@ class _CountingEpgRepository extends EpgRepository {
   List<String>? queriedIds;
 
   @override
-  Stream<List<EpgEntry>> watchEntriesInRangeForChannelIds(
-    List<String> channelIds,
+  Stream<List<EpgEntry>> watchEntriesInRangeForPlaylistChannelIds(
+    Map<int, Set<String>> channelIdsByPlaylist,
     DateTime start,
     DateTime end,
   ) {
     bulkQueryCount++;
-    queriedIds = channelIds;
+    queriedIds = channelIdsByPlaylist.values.expand((ids) => ids).toList();
     return Stream.value(entries);
   }
 }
@@ -53,6 +53,7 @@ void main() {
       final epgRepository = _CountingEpgRepository(database, [
         EpgEntry(
           id: 1,
+          playlistId: 1,
           channelId: 'epg-1',
           title: 'News now',
           startTime: now.subtract(const Duration(minutes: 5)),

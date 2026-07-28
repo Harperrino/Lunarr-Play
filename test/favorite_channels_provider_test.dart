@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/features/favorites/providers/favorite_channels_providers.dart';
+import 'package:m3uxtream_player/app/composition/favorites/providers/favorite_channels_providers.dart';
 
 const _liveFavorite = Channel(
   providerOrder: 0,

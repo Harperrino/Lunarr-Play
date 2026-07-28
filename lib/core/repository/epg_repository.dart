@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
+import 'package:m3uxtream_player/core/imports/import_budget.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/core/parsers/epg_parser.dart';
 import 'package:m3uxtream_player/core/services/app_lifecycle_gate.dart';
@@ -27,61 +28,110 @@ class EpgRepository {
     }
   }
 
-  /// Reactive stream of EPG entries overlapping the given time window.
-  Stream<List<EpgEntry>> watchEntriesInRange(DateTime start, DateTime end) {
-    return _watchEntriesChunk(const [], start, end, scopedToChannelIds: false);
+  /// Reactive stream of EPG entries for the requested playlists and window.
+  Stream<List<EpgEntry>> watchEntriesInRangeForPlaylistIds(
+    Set<int> playlistIds,
+    DateTime start,
+    DateTime end,
+  ) {
+    if (playlistIds.isEmpty) return Stream.value(const []);
+    return (_db.select(_db.epgEntries)
+          ..where(
+            (tbl) =>
+                tbl.playlistId.isIn(playlistIds) &
+                tbl.endTime.isBiggerThanValue(start) &
+                tbl.startTime.isSmallerThanValue(end),
+          )
+          ..orderBy([
+            (tbl) => OrderingTerm.asc(tbl.playlistId),
+            (tbl) => OrderingTerm.asc(tbl.channelId),
+            (tbl) => OrderingTerm.asc(tbl.startTime),
+          ]))
+        .watch();
   }
 
-  /// Reactive stream scoped to [channelIds] within the time window (grid perf).
-  Stream<List<EpgEntry>> watchEntriesInRangeForChannelIds(
+  /// Reactive stream scoped to playlist-owned XMLTV channel IDs.
+  Stream<List<EpgEntry>> watchEntriesInRangeForPlaylistChannelIds(
+    Map<int, Set<String>> channelIdsByPlaylist,
+    DateTime start,
+    DateTime end,
+  ) {
+    final chunks = <({int playlistId, List<String> channelIds})>[];
+    for (final entry in channelIdsByPlaylist.entries) {
+      final uniqueIds = entry.value.toList(growable: false);
+      for (final chunk in _chunkChannelIds(uniqueIds)) {
+        chunks.add((playlistId: entry.key, channelIds: chunk));
+      }
+    }
+    if (chunks.isEmpty) return Stream.value(const []);
+    if (chunks.length == 1) {
+      final chunk = chunks.single;
+      return _watchEntriesChunk(chunk.playlistId, chunk.channelIds, start, end);
+    }
+    return _mergeEntryStreams(chunks, start, end);
+  }
+
+  /// One non-reactive EPG snapshot for a grid scope/window.
+  ///
+  /// SQLite-limit chunks are read in deterministic playlist/channel order and
+  /// appended once. There are no chunk watchers and no repeated whole-result
+  /// sort; callers publish the completed snapshot as one logical value.
+  Future<List<EpgEntry>> getEntriesSnapshotForPlaylistChannelIds(
+    Map<int, Set<String>> channelIdsByPlaylist,
+    DateTime start,
+    DateTime end,
+  ) async {
+    if (channelIdsByPlaylist.isEmpty) return const [];
+
+    final playlistIds = channelIdsByPlaylist.keys.toList()..sort();
+    final merged = <EpgEntry>[];
+    for (final playlistId in playlistIds) {
+      final channelIds =
+          channelIdsByPlaylist[playlistId]?.toList(growable: false) ??
+          const <String>[];
+      channelIds.sort();
+      for (final chunk in _chunkChannelIds(channelIds)) {
+        merged.addAll(await _getEntriesChunk(playlistId, chunk, start, end));
+      }
+    }
+    return List<EpgEntry>.unmodifiable(merged);
+  }
+
+  Future<List<EpgEntry>> _getEntriesChunk(
+    int playlistId,
     List<String> channelIds,
     DateTime start,
     DateTime end,
   ) {
-    final uniqueIds = channelIds.toSet().toList();
-    if (uniqueIds.isEmpty) {
-      return Stream.value(const []);
-    }
-
-    if (uniqueIds.length <= epgChannelIdQueryChunkSize) {
-      return _watchEntriesChunk(
-        uniqueIds,
-        start,
-        end,
-        scopedToChannelIds: true,
-      );
-    }
-
-    final chunks = <List<String>>[];
-    for (var i = 0; i < uniqueIds.length; i += epgChannelIdQueryChunkSize) {
-      final endIndex = i + epgChannelIdQueryChunkSize;
-      chunks.add(
-        uniqueIds.sublist(
-          i,
-          endIndex > uniqueIds.length ? uniqueIds.length : endIndex,
-        ),
-      );
-    }
-
-    return _mergeEntryStreams(chunks, start, end);
+    return (_db.select(_db.epgEntries)
+          ..where(
+            (tbl) =>
+                tbl.playlistId.equals(playlistId) &
+                tbl.endTime.isBiggerThanValue(start) &
+                tbl.startTime.isSmallerThanValue(end) &
+                tbl.channelId.isIn(channelIds),
+          )
+          ..orderBy([
+            (tbl) => OrderingTerm.asc(tbl.channelId),
+            (tbl) => OrderingTerm.asc(tbl.startTime),
+          ]))
+        .get();
   }
 
   Stream<List<EpgEntry>> _watchEntriesChunk(
+    int playlistId,
     List<String> channelIds,
     DateTime start,
-    DateTime end, {
-    required bool scopedToChannelIds,
-  }) {
+    DateTime end,
+  ) {
     return (_db.select(_db.epgEntries)
-          ..where((tbl) {
-            Expression<bool> predicate =
+          ..where(
+            (tbl) =>
+                tbl.playlistId.equals(playlistId) &
                 tbl.endTime.isBiggerThanValue(start) &
-                tbl.startTime.isSmallerThanValue(end);
-            if (scopedToChannelIds) {
-              predicate &= tbl.channelId.isIn(channelIds);
-            }
-            return predicate;
-          })
+                tbl.startTime.isSmallerThanValue(end) &
+                tbl.channelId.isIn(channelIds),
+          )
           ..orderBy([
             (tbl) => OrderingTerm.asc(tbl.channelId),
             (tbl) => OrderingTerm.asc(tbl.startTime),
@@ -90,7 +140,7 @@ class EpgRepository {
   }
 
   Stream<List<EpgEntry>> _mergeEntryStreams(
-    List<List<String>> chunks,
+    List<({int playlistId, List<String> channelIds})> chunks,
     DateTime start,
     DateTime end,
   ) {
@@ -106,6 +156,8 @@ class EpgRepository {
           merged.addAll(chunk!);
         }
         merged.sort((a, b) {
+          final byPlaylist = a.playlistId.compareTo(b.playlistId);
+          if (byPlaylist != 0) return byPlaylist;
           final byChannel = a.channelId.compareTo(b.channelId);
           if (byChannel != 0) return byChannel;
           return a.startTime.compareTo(b.startTime);
@@ -117,10 +169,10 @@ class EpgRepository {
         final chunkIndex = index;
         subscriptions.add(
           _watchEntriesChunk(
-            chunks[index],
+            chunks[index].playlistId,
+            chunks[index].channelIds,
             start,
             end,
-            scopedToChannelIds: true,
           ).listen((entries) {
             buffers[chunkIndex] = entries;
             emitMerged();
@@ -136,54 +188,74 @@ class EpgRepository {
     });
   }
 
-  /// All distinct XMLTV channel IDs present in cached programme data.
-  Stream<Set<String>> watchDistinctProgrammeChannelIds() {
+  /// All distinct XMLTV channel IDs grouped by owning playlist.
+  Stream<Map<int, Set<String>>> watchDistinctProgrammeChannelIds() {
     return _db
         .customSelect(
-          'SELECT DISTINCT channel_id AS channel_id FROM epg_entries',
+          'SELECT DISTINCT playlist_id, channel_id FROM epg_entries',
           readsFrom: {_db.epgEntries},
         )
         .watch()
-        .map(
-          (rows) => rows.map((row) => row.read<String>('channel_id')).toSet(),
-        );
+        .map((rows) {
+          final result = <int, Set<String>>{};
+          for (final row in rows) {
+            result
+                .putIfAbsent(row.read<int>('playlist_id'), () => <String>{})
+                .add(row.read<String>('channel_id'));
+          }
+          return result;
+        });
   }
 
-  /// XMLTV channel catalogue: channel id → display names from the last sync.
-  Stream<Map<String, List<String>>> watchEpgChannelDisplayNames() {
+  /// XMLTV channel catalogue grouped by playlist and channel ID.
+  Stream<Map<int, Map<String, List<String>>>> watchEpgChannelDisplayNames() {
     return (_db.select(_db.epgChannels)).watch().map((rows) {
-      final map = <String, List<String>>{};
+      final map = <int, Map<String, List<String>>>{};
       for (final row in rows) {
-        map.putIfAbsent(row.channelId, () => []).add(row.displayName);
+        map
+            .putIfAbsent(row.playlistId, () => <String, List<String>>{})
+            .putIfAbsent(row.channelId, () => <String>[])
+            .add(row.displayName);
       }
       return map;
     });
   }
 
-  /// Combined known channel IDs (programmes + catalogue).
-  Stream<Set<String>> watchKnownEpgChannelIds() {
+  /// Combined known channel IDs grouped by owning playlist.
+  Stream<Map<int, Set<String>>> watchKnownEpgChannelIds() {
     return _db
         .customSelect(
           '''
-SELECT channel_id AS channel_id FROM epg_entries
+SELECT playlist_id, channel_id FROM epg_entries
 UNION
-SELECT channel_id AS channel_id FROM epg_channels
+SELECT playlist_id, channel_id FROM epg_channels
 ''',
           readsFrom: {_db.epgEntries, _db.epgChannels},
         )
         .watch()
-        .map(
-          (rows) => rows.map((row) => row.read<String>('channel_id')).toSet(),
-        );
+        .map((rows) {
+          final result = <int, Set<String>>{};
+          for (final row in rows) {
+            result
+                .putIfAbsent(row.read<int>('playlist_id'), () => <String>{})
+                .add(row.read<String>('channel_id'));
+          }
+          return result;
+        });
   }
 
   /// Returns the program currently airing on [channelId] at [now], if any.
-  Future<EpgEntry?> getCurrentProgram(String channelId, DateTime now) async {
+  Future<EpgEntry?> getCurrentProgram(
+    int playlistId,
+    String channelId,
+    DateTime now,
+  ) async {
     try {
       final direct =
           await (_db.select(_db.epgEntries)
                 ..where(
                   (tbl) =>
+                      tbl.playlistId.equals(playlistId) &
                       tbl.channelId.equals(channelId) &
                       tbl.startTime.isSmallerOrEqualValue(now) &
                       tbl.endTime.isBiggerThanValue(now),
@@ -192,7 +264,11 @@ SELECT channel_id AS channel_id FROM epg_channels
               .getSingleOrNull();
       if (direct != null) return direct;
 
-      return await _getCurrentProgramCaseInsensitive(channelId, now);
+      return await _getCurrentProgramCaseInsensitive(
+        playlistId,
+        channelId,
+        now,
+      );
     } catch (e, stackTrace) {
       AppLogger.error(
         'EpgRepository: Failed fetching current program for channel "$channelId"',
@@ -204,20 +280,23 @@ SELECT channel_id AS channel_id FROM epg_channels
   }
 
   Future<EpgEntry?> _getCurrentProgramCaseInsensitive(
+    int playlistId,
     String channelId,
     DateTime now,
   ) async {
     final rows = await _db
         .customSelect(
           '''
-SELECT id, channel_id, title, description, start_time, end_time
+SELECT id, playlist_id, channel_id, title, description, start_time, end_time
 FROM epg_entries
-WHERE lower(channel_id) = lower(?)
+WHERE playlist_id = ?
+  AND lower(channel_id) = lower(?)
   AND start_time <= ?
   AND end_time > ?
 LIMIT 1
 ''',
           variables: [
+            Variable<int>(playlistId),
             Variable<String>(channelId),
             Variable<DateTime>(now),
             Variable<DateTime>(now),
@@ -230,6 +309,7 @@ LIMIT 1
     final row = rows.first;
     return EpgEntry(
       id: row.read<int>('id'),
+      playlistId: row.read<int>('playlist_id'),
       channelId: row.read<String>('channel_id'),
       title: row.read<String>('title'),
       description: row.readNullable<String>('description'),
@@ -240,6 +320,7 @@ LIMIT 1
 
   /// Returns all programs for [channelId] that overlap [start, end].
   Future<List<EpgEntry>> getProgramsForChannel(
+    int playlistId,
     String channelId,
     DateTime start,
     DateTime end,
@@ -249,6 +330,7 @@ LIMIT 1
           await (_db.select(_db.epgEntries)
                 ..where(
                   (tbl) =>
+                      tbl.playlistId.equals(playlistId) &
                       tbl.channelId.equals(channelId) &
                       tbl.endTime.isBiggerThanValue(start) &
                       tbl.startTime.isSmallerThanValue(end),
@@ -257,7 +339,12 @@ LIMIT 1
               .get();
       if (direct.isNotEmpty) return direct;
 
-      return await _getProgramsForChannelCaseInsensitive(channelId, start, end);
+      return await _getProgramsForChannelCaseInsensitive(
+        playlistId,
+        channelId,
+        start,
+        end,
+      );
     } catch (e, stackTrace) {
       AppLogger.error(
         'EpgRepository: Failed fetching programs for channel "$channelId"',
@@ -269,6 +356,7 @@ LIMIT 1
   }
 
   Future<List<EpgEntry>> _getProgramsForChannelCaseInsensitive(
+    int playlistId,
     String channelId,
     DateTime start,
     DateTime end,
@@ -276,14 +364,16 @@ LIMIT 1
     final rows = await _db
         .customSelect(
           '''
-SELECT id, channel_id, title, description, start_time, end_time
+SELECT id, playlist_id, channel_id, title, description, start_time, end_time
 FROM epg_entries
-WHERE lower(channel_id) = lower(?)
+WHERE playlist_id = ?
+  AND lower(channel_id) = lower(?)
   AND end_time > ?
   AND start_time < ?
 ORDER BY start_time ASC
 ''',
           variables: [
+            Variable<int>(playlistId),
             Variable<String>(channelId),
             Variable<DateTime>(start),
             Variable<DateTime>(end),
@@ -296,6 +386,7 @@ ORDER BY start_time ASC
         .map(
           (row) => EpgEntry(
             id: row.read<int>('id'),
+            playlistId: row.read<int>('playlist_id'),
             channelId: row.read<String>('channel_id'),
             title: row.read<String>('title'),
             description: row.readNullable<String>('description'),
@@ -307,16 +398,22 @@ ORDER BY start_time ASC
   }
 
   /// Removes cached channel catalogue rows for the given channel IDs before a re-sync.
-  Future<void> clearChannelCatalogForChannelIds(List<String> channelIds) async {
+  Future<void> clearChannelCatalogForChannelIds(
+    int playlistId,
+    List<String> channelIds,
+  ) async {
     if (channelIds.isEmpty) return;
     _ensureWritable();
 
     try {
       await _db.transaction(() async {
         for (final chunk in _chunkChannelIds(channelIds)) {
-          await (_db.delete(
-            _db.epgChannels,
-          )..where((tbl) => tbl.channelId.isIn(chunk))).go();
+          await (_db.delete(_db.epgChannels)..where(
+                (tbl) =>
+                    tbl.playlistId.equals(playlistId) &
+                    tbl.channelId.isIn(chunk),
+              ))
+              .go();
         }
       });
     } catch (e, stackTrace) {
@@ -331,6 +428,7 @@ ORDER BY start_time ASC
 
   /// Synchronizes parsed XMLTV channel display names inside Drift SQLite.
   Future<void> syncEpgChannels({
+    required int playlistId,
     required List<ParsedEpgChannel> channels,
   }) async {
     if (channels.isEmpty) return;
@@ -344,7 +442,7 @@ ORDER BY start_time ASC
       }
 
       final channelIds = channels.map((c) => c.channelId).toSet().toList();
-      await clearChannelCatalogForChannelIds(channelIds);
+      await clearChannelCatalogForChannelIds(playlistId, channelIds);
 
       final dedupedChannels = uniqueChannels.values.toList(growable: false);
       final droppedDuplicates = channels.length - dedupedChannels.length;
@@ -367,6 +465,7 @@ ORDER BY start_time ASC
           final companions = chunk
               .map(
                 (channel) => EpgChannelsCompanion.insert(
+                  playlistId: playlistId,
                   channelId: channel.channelId,
                   displayName: channel.displayName,
                 ),
@@ -393,7 +492,10 @@ ORDER BY start_time ASC
   }
 
   /// Removes all cached entries for the given channel IDs before a re-sync.
-  Future<void> clearEntriesForChannelIds(List<String> channelIds) async {
+  Future<void> clearEntriesForChannelIds(
+    int playlistId,
+    List<String> channelIds,
+  ) async {
     if (channelIds.isEmpty) return;
     _ensureWritable();
 
@@ -407,7 +509,10 @@ ORDER BY start_time ASC
       await _db.transaction(() async {
         for (final chunk in _chunkChannelIds(channelIds)) {
           final deleteQuery = _db.delete(_db.epgEntries)
-            ..where((tbl) => tbl.channelId.isIn(chunk));
+            ..where(
+              (tbl) =>
+                  tbl.playlistId.equals(playlistId) & tbl.channelId.isIn(chunk),
+            );
           deletedCount += await deleteQuery.go();
         }
       });
@@ -457,7 +562,10 @@ ORDER BY start_time ASC
   }
 
   /// Synchronizes parsed EPG program entries inside Drift SQLite.
-  Future<void> syncEpgEntries({required List<ParsedEpgEntry> entries}) async {
+  Future<void> syncEpgEntries({
+    required int playlistId,
+    required List<ParsedEpgEntry> entries,
+  }) async {
     if (entries.isEmpty) {
       AppLogger.info(
         'EpgRepository: No EPG entries to sync — skipping batch insert.',
@@ -482,6 +590,7 @@ ORDER BY start_time ASC
 
           final companions = chunk.map((entry) {
             return EpgEntriesCompanion.insert(
+              playlistId: playlistId,
               channelId: entry.channelId,
               title: entry.title,
               description: Value(entry.description),
@@ -509,6 +618,108 @@ ORDER BY start_time ASC
       );
       rethrow;
     }
+  }
+
+  /// Atomically replaces the imported programme and channel-catalogue rows.
+  ///
+  /// Limit/cancellation checks happen before and throughout the transaction;
+  /// any failure rolls back both tables together.
+  Future<void> replaceImportedEpgData({
+    required int playlistId,
+    required List<ParsedEpgEntry> entries,
+    required List<ParsedEpgChannel> channels,
+    required ImportBudget budget,
+    bool rowsCounted = false,
+  }) async {
+    _ensureWritable();
+
+    final uniqueChannels = <String, ParsedEpgChannel>{};
+    for (final channel in channels) {
+      final key = '${channel.channelId}\u0000${channel.displayName}';
+      uniqueChannels.putIfAbsent(key, () => channel);
+    }
+    final dedupedChannels = uniqueChannels.values.toList(growable: false);
+    if (!rowsCounted) {
+      budget.acceptPersistedRows(
+        entries.length + dedupedChannels.length,
+        phase: 'xmltv_persist',
+      );
+    }
+    budget.checkpoint('xmltv_persist');
+
+    final entryChannelIds = entries.map((entry) => entry.channelId).toSet();
+    final catalogueChannelIds = channels
+        .map((channel) => channel.channelId)
+        .toSet();
+
+    await _db.transaction(() async {
+      for (final chunk in _chunkChannelIds(entryChannelIds.toList())) {
+        budget.checkpoint('xmltv_persist');
+        await (_db.delete(_db.epgEntries)..where(
+              (table) =>
+                  table.playlistId.equals(playlistId) &
+                  table.channelId.isIn(chunk),
+            ))
+            .go();
+      }
+      for (final chunk in _chunkChannelIds(catalogueChannelIds.toList())) {
+        budget.checkpoint('xmltv_persist');
+        await (_db.delete(_db.epgChannels)..where(
+              (table) =>
+                  table.playlistId.equals(playlistId) &
+                  table.channelId.isIn(chunk),
+            ))
+            .go();
+      }
+
+      const batchSize = 1000;
+      for (var index = 0; index < entries.length; index += batchSize) {
+        budget.checkpoint('xmltv_persist');
+        final end = index + batchSize > entries.length
+            ? entries.length
+            : index + batchSize;
+        final companions = entries
+            .sublist(index, end)
+            .map(
+              (entry) => EpgEntriesCompanion.insert(
+                playlistId: playlistId,
+                channelId: entry.channelId,
+                title: entry.title,
+                description: Value(entry.description),
+                startTime: entry.startTime,
+                endTime: entry.endTime,
+              ),
+            )
+            .toList();
+        await _db.batch((batch) {
+          batch.insertAll(_db.epgEntries, companions);
+        });
+      }
+
+      for (var index = 0; index < dedupedChannels.length; index += batchSize) {
+        budget.checkpoint('xmltv_persist');
+        final end = index + batchSize > dedupedChannels.length
+            ? dedupedChannels.length
+            : index + batchSize;
+        final companions = dedupedChannels
+            .sublist(index, end)
+            .map(
+              (channel) => EpgChannelsCompanion.insert(
+                playlistId: playlistId,
+                channelId: channel.channelId,
+                displayName: channel.displayName,
+              ),
+            )
+            .toList();
+        await _db.batch((batch) {
+          batch.insertAll(
+            _db.epgChannels,
+            companions,
+            mode: InsertMode.insertOrIgnore,
+          );
+        });
+      }
+    });
   }
 
   void _ensureWritable() {

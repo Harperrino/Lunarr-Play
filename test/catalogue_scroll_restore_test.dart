@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/features/favorites/widgets/favorite_channel_list.dart';
-import 'package:m3uxtream_player/features/xtream/widgets/series_grid.dart';
-import 'package:m3uxtream_player/features/xtream/widgets/vod_grid.dart';
+import 'package:m3uxtream_player/app/composition/favorites/widgets/favorite_channel_list.dart';
+import 'package:m3uxtream_player/app/composition/xtream/widgets/series_grid.dart';
+import 'package:m3uxtream_player/app/composition/xtream/widgets/vod_grid.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 
 List<Channel> _channels(String type) => List<Channel>.generate(

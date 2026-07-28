@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
+import 'package:m3uxtream_player/core/imports/import_budget.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/core/models/search_catalog_entry.dart';
 import 'package:m3uxtream_player/core/parsers/m3u_parser.dart';
@@ -79,11 +80,17 @@ class PlaylistRepository {
   Future<void> syncM3uChannels({
     required int playlistId,
     required List<ParsedChannel> parsedChannels,
+    ImportBudget? budget,
   }) {
+    budget?.acceptPersistedRows(
+      parsedChannels.length,
+      phase: 'playlist_persist',
+    );
     return _runTracked(
       () => _syncM3uChannels(
         playlistId: playlistId,
         parsedChannels: parsedChannels,
+        budget: budget,
       ),
     );
   }
@@ -91,6 +98,7 @@ class PlaylistRepository {
   Future<void> _syncM3uChannels({
     required int playlistId,
     required List<ParsedChannel> parsedChannels,
+    ImportBudget? budget,
   }) async {
     _ensureWritable();
     final stopwatch = Stopwatch()..start();
@@ -145,6 +153,7 @@ class PlaylistRepository {
         // 2. Perform batched insert operations in chunks of 1000
         const int batchSize = 1000;
         for (int i = 0; i < parsedChannels.length; i += batchSize) {
+          budget?.checkpoint('playlist_persist');
           final chunk = parsedChannels.sublist(
             i,
             i + batchSize > parsedChannels.length

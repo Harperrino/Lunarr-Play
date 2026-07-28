@@ -3,6 +3,7 @@ import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/shared/widgets/group_accent.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_metadata_row.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_poster_frame.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 import 'vod_poster_image.dart';
 
@@ -35,7 +36,7 @@ class MovieCard extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             MediaPosterFrame(
-              semanticLabel: 'Film: ${channel.name}',
+              semanticLabel: context.l10n.movieCardSemantics(channel.name),
               isSelected: isSelected,
               onActivate: onTap,
               poster: VodPosterImage(logoUrl: channel.logo, accent: accent),

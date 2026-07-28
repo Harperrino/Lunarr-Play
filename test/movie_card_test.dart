@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/features/xtream/providers/playback_prep_providers.dart';
+import 'package:m3uxtream_player/app/composition/xtream/providers/playback_prep_providers.dart';
 import 'package:m3uxtream_player/features/xtream/widgets/movie_card.dart';
-import 'package:m3uxtream_player/features/xtream/widgets/vod_grid.dart';
+import 'package:m3uxtream_player/app/composition/xtream/widgets/vod_grid.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
@@ -91,7 +91,7 @@ void main() {
         ),
       );
 
-      final movie = find.bySemanticsLabel('Film: Expressive Film');
+      final movie = find.bySemanticsLabel('Movie: Expressive Film');
       expect(movie, findsOneWidget);
       await tester.tap(movie);
       expect(taps, 1);

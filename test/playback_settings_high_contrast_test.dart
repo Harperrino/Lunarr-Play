@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/vod_pre_buffer_settings_providers.dart';
-import 'package:m3uxtream_player/features/settings/widgets/playback_settings_card.dart';
+import 'package:m3uxtream_player/app/composition/settings/widgets/playback_settings_card.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 
@@ -82,18 +82,18 @@ void _expectRoles(WidgetTester tester, ColorScheme colors) {
     hasLength(2),
   );
   expect(
-    _description(tester, 'Wie viel Puffer').style?.color,
+    _description(tester, 'Choose how much content').style?.color,
     colors.onSurfaceVariant,
   );
   expect(
-    _description(tester, 'VOD pre-buffer loads').style?.color,
+    _description(tester, 'VOD pre-buffering loads').style?.color,
     colors.onSurfaceVariant,
   );
-  expect(_text(tester, 'Live-Startpuffer').style?.color, colors.onSurface);
+  expect(_text(tester, 'Live startup buffer').style?.color, colors.onSurface);
   expect(_text(tester, 'VOD pre-buffer').style?.color, colors.onSurface);
-  expect(_text(tester, 'Stereo erzwingen').style?.color, colors.onSurface);
+  expect(_text(tester, 'Force stereo').style?.color, colors.onSurface);
   expect(
-    _text(tester, 'Bevorzugte Audiosprache').style?.color,
+    _text(tester, 'Preferred audio language').style?.color,
     colors.onSurface,
   );
 

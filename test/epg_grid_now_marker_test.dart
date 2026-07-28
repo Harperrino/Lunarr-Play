@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_grid_providers.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_providers.dart';
-import 'package:m3uxtream_player/features/epg/widgets/epg_grid.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/widgets/epg_grid.dart';
 import 'package:m3uxtream_player/features/epg/widgets/epg_now_marker.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 
@@ -142,8 +142,8 @@ ProviderContainer _container({
       ),
       epgGridRowsProvider.overrideWithValue([_row(windowStart, windowEnd)]),
       epgGridNowMarkerProvider.overrideWithValue(now),
-      epgGridEntriesStreamProvider.overrideWith(
-        (ref) => Stream.value(const <EpgEntry>[]),
+      epgGridEntriesSnapshotProvider.overrideWith(
+        (ref) => const AsyncValue.data(<EpgEntry>[]),
       ),
     ],
   );
@@ -190,6 +190,7 @@ EpgGridRowData _row(DateTime windowStart, DateTime windowEnd) {
     programs: [
       EpgEntry(
         id: 1,
+        playlistId: 1,
         channelId: 'example.channel',
         title: 'Example programme',
         description: null,

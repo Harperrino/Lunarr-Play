@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:m3uxtream_player/core/imports/import_budget.dart';
+import 'package:m3uxtream_player/core/imports/import_limit_exception.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/core/services/m3u_channel_type_classifier.dart';
 
@@ -65,11 +67,22 @@ class M3uParser {
 
   /// Parses M3U content string and returns a list of [ParsedChannel] objects.
   /// This operation is optimized for O(N) parsing in a single pass.
-  static List<ParsedChannel> parse(String content) {
+  static List<ParsedChannel> parse(
+    String content, {
+    ImportBudget? budget,
+  }) {
     final stopwatch = Stopwatch()..start();
     final List<ParsedChannel> channels = [];
 
     final lines = const LineSplitter().convert(content);
+    budget?.acceptRecord(
+      ImportRecordKind.line,
+      count: lines.length,
+      phase: 'm3u_parse_lines',
+    );
+    for (final line in lines) {
+      budget?.checkField(line, phase: 'm3u_parse_line');
+    }
     if (lines.isEmpty) {
       AppLogger.warning('M3uParser: Empty content provided.');
       return channels;
@@ -122,10 +135,21 @@ class M3uParser {
               line,
               currentExtGrp,
               channels.length,
+              budget,
             );
             if (channel != null) {
+              budget?.acceptRecord(
+                ImportRecordKind.record,
+                phase: 'm3u_parse_records',
+              );
+              budget?.acceptRecord(
+                ImportRecordKind.channel,
+                phase: 'm3u_parse_records',
+              );
               channels.add(channel);
             }
+          } on ImportLimitException {
+            rethrow;
           } catch (e, stackTrace) {
             // Defensive error handling: log and skip corrupt lines
             AppLogger.warning(
@@ -153,6 +177,7 @@ class M3uParser {
     String url,
     String? extGrpGroup,
     int providerOrder,
+    ImportBudget? budget,
   ) {
     if (url.isEmpty) return null;
 
@@ -174,6 +199,19 @@ class M3uParser {
 
     // Extract display name (everything after the comma)
     final name = _parseChannelName(extInfLine);
+    for (final field in <String?>[
+      name,
+      url,
+      tvgId,
+      tvgName,
+      tvgLogo,
+      groupName,
+      channelNumber,
+    ]) {
+      if (field != null) {
+        budget?.checkField(field, phase: 'm3u_parse_field');
+      }
+    }
 
     // Auto-classify channel category ('live', 'vod', 'series')
     final channelType = M3uChannelTypeClassifier.classify(

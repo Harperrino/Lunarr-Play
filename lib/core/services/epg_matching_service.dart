@@ -315,6 +315,61 @@ class EpgMatchingIndex {
   }
 }
 
+/// Playlist-owned collection of otherwise unchanged EPG matching indexes.
+///
+/// XMLTV identifiers are only meaningful inside their owning playlist. This
+/// facade keeps all existing matching heuristics while preventing a channel
+/// from matching another playlist's catalogue.
+class PlaylistEpgMatchingIndex {
+  PlaylistEpgMatchingIndex({
+    required Map<int, Set<String>> knownEpgChannelIdsByPlaylist,
+    Map<int, Map<String, List<String>>> displayNamesByPlaylist = const {},
+  }) : _indexes = {
+         for (final entry in knownEpgChannelIdsByPlaylist.entries)
+           entry.key: EpgMatchingIndex(
+             knownEpgChannelIds: entry.value,
+             displayNamesByChannelId:
+                 displayNamesByPlaylist[entry.key] ?? const {},
+           ),
+         for (final entry in displayNamesByPlaylist.entries)
+           if (!knownEpgChannelIdsByPlaylist.containsKey(entry.key))
+             entry.key: EpgMatchingIndex(
+               knownEpgChannelIds: const {},
+               displayNamesByChannelId: entry.value,
+             ),
+       };
+
+  final Map<int, EpgMatchingIndex> _indexes;
+
+  EpgMatchingIndex? forPlaylist(int playlistId) => _indexes[playlistId];
+
+  /// Total memoized signatures across all playlist-owned indexes.
+  @visibleForTesting
+  int get memoizedMatchCount => _indexes.values.fold(
+    0,
+    (total, index) => total + index.memoizedMatchCount,
+  );
+
+  EpgChannelMatchResult matchChannel(Channel channel) {
+    return _indexes[channel.playlistId]?.matchChannel(channel) ??
+        const EpgChannelMatchResult(matchStatus: EpgMatchStatus.noMatch);
+  }
+
+  EpgChannelMatchResult matchCatalogEntry(SearchCatalogEntry entry) {
+    return _indexes[entry.playlistId]?.matchCatalogEntry(entry) ??
+        const EpgChannelMatchResult(matchStatus: EpgMatchStatus.noMatch);
+  }
+
+  EpgChannelMatchResult matchProjection({
+    required int playlistId,
+    required String name,
+    String? tvgId,
+  }) {
+    return _indexes[playlistId]?.matchProjection(name: name, tvgId: tvgId) ??
+        const EpgChannelMatchResult(matchStatus: EpgMatchStatus.noMatch);
+  }
+}
+
 /// Pure EPG channel-ID resolution — no Flutter or Riverpod dependencies.
 class EpgMatchingService {
   EpgMatchingService._();

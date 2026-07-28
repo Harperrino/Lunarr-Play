@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' hide isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/parsers/epg_parser.dart';
@@ -168,9 +169,20 @@ void main() {
     setUp(() async {
       db = AppDatabase.executor(NativeDatabase.memory());
       epgRepository = EpgRepository(db);
+      await db
+          .into(db.playlists)
+          .insert(
+            const PlaylistsCompanion(
+              id: Value(1),
+              name: Value('EPG test playlist'),
+              type: Value('m3u'),
+              urlOrHost: Value('fixture.m3u'),
+            ),
+          );
 
       final now = DateTime.now();
       await epgRepository.syncEpgEntries(
+        playlistId: 1,
         entries: [
           ParsedEpgEntry(
             channelId: 'de.rtl',
@@ -205,6 +217,7 @@ void main() {
       expect(resolvedId, 'de.rtl');
 
       final program = await epgRepository.getCurrentProgram(
+        1,
         resolvedId!,
         DateTime.now(),
       );

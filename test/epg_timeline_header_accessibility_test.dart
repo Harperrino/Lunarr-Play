@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_grid_providers.dart';
-import 'package:m3uxtream_player/features/epg/widgets/epg_timeline_header.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/widgets/epg_timeline_header.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 
 void main() {
@@ -40,13 +40,13 @@ void main() {
     );
     await tester.pump();
 
-    final handle = find.bySemanticsLabel('Zeitspaltenbreite anpassen').first;
+    final handle = find.bySemanticsLabel('Adjust time column width').first;
     final semanticsData = tester.getSemantics(handle).getSemanticsData();
     expect(semanticsData.hasAction(SemanticsAction.increase), isTrue);
     expect(semanticsData.hasAction(SemanticsAction.decrease), isTrue);
 
     tester.semantics.increase(
-      find.semantics.byLabel('Zeitspaltenbreite anpassen').first,
+      find.semantics.byLabel('Adjust time column width').first,
     );
     await tester.pump();
     expect(
@@ -55,7 +55,7 @@ void main() {
     );
 
     tester.semantics.decrease(
-      find.semantics.byLabel('Zeitspaltenbreite anpassen').first,
+      find.semantics.byLabel('Adjust time column width').first,
     );
     await tester.pump();
     expect(

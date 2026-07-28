@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 class PlayerStageLoading extends StatelessWidget {
   const PlayerStageLoading({super.key});
@@ -125,7 +126,7 @@ class WindowedPlayerEmptyState extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Select a channel to play',
+                  context.l10n.playerEmptyTitle,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: colors.onSurface,
@@ -134,7 +135,7 @@ class WindowedPlayerEmptyState extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Tap a channel in the list or use the arrow keys.',
+                  context.l10n.playerEmptySubtitle,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/services/player_buffer_service.dart';
+import 'package:m3uxtream_player/l10n/generated/app_localizations.dart';
+import 'package:m3uxtream_player/l10n/generated/app_localizations_en.dart';
 
 const preferredAudioLanguageAutoValue = 'auto';
 
@@ -41,11 +43,19 @@ int normalizeLiveStartupBufferSeconds(int seconds) {
   return best;
 }
 
-String labelForLiveStartupBufferSeconds(int seconds) {
+final AppLocalizations _englishL10n = AppLocalizationsEn();
+
+String labelForLiveStartupBufferSeconds(
+  int seconds, [
+  AppLocalizations? localizations,
+]) {
+  final l10n = localizations ?? _englishL10n;
   final normalized = normalizeLiveStartupBufferSeconds(seconds);
-  if (normalized == 0) return 'Aus';
-  if (normalized == 120) return '120 Sekunden (maximal)';
-  return '$normalized Sekunden';
+  if (normalized == 0) return l10n.liveStartupBufferOff;
+  if (normalized == 120) {
+    return l10n.liveStartupBufferSecondsMaximum(normalized);
+  }
+  return l10n.liveStartupBufferSeconds(normalized);
 }
 
 Duration liveStartupBufferTimeoutForSeconds(int seconds) {

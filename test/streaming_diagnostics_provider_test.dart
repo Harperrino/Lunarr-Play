@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/models/streaming_diagnostics.dart';
-import 'package:m3uxtream_player/features/diagnostics/providers/streaming_diagnostics_providers.dart';
+import 'package:m3uxtream_player/core/providers/streaming_diagnostics_providers.dart';
 
 StreamingDiagnosticEvent _event(int index, {bool failed = false}) {
   return StreamingDiagnosticEvent(

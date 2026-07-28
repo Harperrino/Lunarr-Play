@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/app/shell/shell_tab_labels.dart';
-import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
+import 'package:m3uxtream_player/l10n/generated/app_localizations_en.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 
 void main() {
+  final l10n = AppLocalizationsEn();
   group('shell tab catalog', () {
     test('keeps stable numeric identities and catalog order', () {
       expect(shellLiveTabIndex, 0);
@@ -56,12 +58,20 @@ void main() {
 
     test('returns diagnostics header copy only when visible', () {
       expect(
-        shellHeaderTitle(shellDiagnosticsTabIndex, debugModeEnabled: false),
+        shellHeaderTitle(
+          shellDiagnosticsTabIndex,
+          debugModeEnabled: false,
+          l10n: l10n,
+        ),
         'Settings',
       );
 
       expect(
-        shellHeaderTitle(shellDiagnosticsTabIndex, debugModeEnabled: true),
+        shellHeaderTitle(
+          shellDiagnosticsTabIndex,
+          debugModeEnabled: true,
+          l10n: l10n,
+        ),
         'Diagnostics / Logs',
       );
     });
