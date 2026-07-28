@@ -28,8 +28,12 @@ import 'package:m3uxtream_player/features/player/services/live_open_coordinator.
 import 'package:m3uxtream_player/features/player/services/player_diagnostics_reporter.dart';
 import 'package:m3uxtream_player/features/player/services/player_playback_policies.dart';
 import 'package:m3uxtream_player/features/player/services/player_session_lifecycle.dart';
+import 'package:m3uxtream_player/features/player/services/vod_playback_coordinator.dart';
 import 'package:m3uxtream_player/features/player/vod/vod_main_video_surface_gate.dart';
 import 'package:m3uxtream_player/features/player/providers/vod_pre_buffer_settings_providers.dart';
+
+export 'package:m3uxtream_player/features/player/services/vod_playback_coordinator.dart'
+    show VodPreBufferWaitStatus;
 
 final selectedChannelProvider = StateProvider<Channel?>((ref) => null);
 
@@ -384,8 +388,6 @@ Future<LiveAudioWarmupResult> waitForLiveAudioWarmup({
   }
 }
 
-enum VodPreBufferWaitStatus { waiting, reached, cancelled, timedOut }
-
 Future<LivePlaybackFinalizationResult> finalizePreparedLiveCandidatePlayback({
   required bool shouldAutoSelectAudioTrack,
   required bool shouldEvaluateAudioDecode,
@@ -418,16 +420,14 @@ VodPreBufferWaitStatus classifyVodPreBufferWait({
   required bool isDisposed,
   required bool isCurrentSession,
 }) {
-  if (isDisposed || !isCurrentSession) {
-    return VodPreBufferWaitStatus.cancelled;
-  }
-  if (targetSeconds <= 0 || buffered.inSeconds >= targetSeconds) {
-    return VodPreBufferWaitStatus.reached;
-  }
-  if (!now.isBefore(deadline)) {
-    return VodPreBufferWaitStatus.timedOut;
-  }
-  return VodPreBufferWaitStatus.waiting;
+  return const VodPlaybackCoordinator().classifyPreBufferWait(
+    buffered: buffered,
+    targetSeconds: targetSeconds,
+    now: now,
+    deadline: deadline,
+    isDisposed: isDisposed,
+    isCurrentSession: isCurrentSession,
+  );
 }
 
 /// Result of waiting for the user-configured live startup buffer.
@@ -582,6 +582,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
   final LiveOpenCoordinator _liveOpenCoordinator = const LiveOpenCoordinator();
   final LiveAudioRecoveryCoordinator _liveAudioRecovery =
       LiveAudioRecoveryCoordinator();
+  final VodPlaybackCoordinator _vodPlaybackCoordinator =
+      const VodPlaybackCoordinator();
   final PlayerDiagnosticsReporter _diagnosticsReporter =
       const PlayerDiagnosticsReporter();
 
@@ -739,7 +741,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     final current = state.asData?.value;
     if (current == null || !_hasActiveStream) return;
     if (!isSeekableChannel(ref.read(selectedChannelProvider))) return;
-    await current.player.play();
+    await _vodPlaybackCoordinator.resumePrepared(current.player);
   }
 
   @override
@@ -1039,14 +1041,13 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
 
   PlayerState _applyVodForwardBuffer(PlayerState s, Duration buffer) {
     final cacheMs = buffer.inMilliseconds;
-    if (cacheMs <= 0) {
-      return s.copyWith(vodForwardBufferMs: 0);
-    }
-    if (s.isBuffering) {
+    if (cacheMs <= 0 || s.isBuffering) {
       return s.copyWith(
-        vodForwardBufferMs: cacheMs.clamp(
-          0,
-          PlayerBufferService.vodPreBufferCacheSeconds * 1000,
+        vodForwardBufferMs: _vodPlaybackCoordinator.nextForwardBufferMs(
+          currentForwardBufferMs: s.vodForwardBufferMs,
+          isBuffering: s.isBuffering,
+          buffer: buffer,
+          maximumBufferMs: PlayerBufferService.vodPreBufferCacheSeconds * 1000,
         ),
       );
     }
@@ -2999,37 +3000,29 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     final target =
         ref.read(vodPreBufferTargetSecondsProvider).valueOrNull ??
         VodPreBufferTargetSecondsNotifier.defaultSeconds;
-    final deadline = DateTime.now().add(const Duration(seconds: 120));
-    while (true) {
-      final status = classifyVodPreBufferWait(
-        buffered: player.state.buffer,
-        targetSeconds: target,
-        now: DateTime.now(),
-        deadline: deadline,
-        isDisposed: _sessionLifecycle.isDisposed,
-        isCurrentSession: _isLiveOpenSessionCurrent(sessionToken),
-      );
-      switch (status) {
-        case VodPreBufferWaitStatus.reached:
-          AppLogger.info(
-            'PlayerNotifier: VOD pre-buffer reached ${player.state.buffer.inSeconds}s.',
-          );
-          return status;
-        case VodPreBufferWaitStatus.cancelled:
-          AppLogger.info(
-            'PlayerNotifier: VOD pre-buffer cancelled by stop, dispose, or a newer session.',
-          );
-          return status;
-        case VodPreBufferWaitStatus.timedOut:
-          AppLogger.info(
-            'PlayerNotifier: VOD pre-buffer timed out at ${player.state.buffer.inSeconds}s.',
-          );
-          return status;
-        case VodPreBufferWaitStatus.waiting:
-          break;
-      }
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+    final status = await _vodPlaybackCoordinator.waitForPreBuffer(
+      currentBuffer: () => player.state.buffer,
+      targetSeconds: target,
+      isDisposed: () => _sessionLifecycle.isDisposed,
+      isCurrentSession: () => _isLiveOpenSessionCurrent(sessionToken),
+    );
+    switch (status) {
+      case VodPreBufferWaitStatus.reached:
+        AppLogger.info(
+          'PlayerNotifier: VOD pre-buffer reached ${player.state.buffer.inSeconds}s.',
+        );
+      case VodPreBufferWaitStatus.cancelled:
+        AppLogger.info(
+          'PlayerNotifier: VOD pre-buffer cancelled by stop, dispose, or a newer session.',
+        );
+      case VodPreBufferWaitStatus.timedOut:
+        AppLogger.info(
+          'PlayerNotifier: VOD pre-buffer timed out at ${player.state.buffer.inSeconds}s.',
+        );
+      case VodPreBufferWaitStatus.waiting:
+        throw StateError('VOD pre-buffer coordinator returned waiting.');
     }
+    return status;
   }
 }
 
