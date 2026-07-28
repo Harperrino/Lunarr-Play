@@ -48,9 +48,11 @@ void normalizeSelectedPlaylist(
   final current = ref.read(selectedPlaylistIdProvider);
   final exists =
       current != null && playlists.any((playlist) => playlist.id == current);
-  final isActive = current != null && exists && !inactiveIds.contains(current);
 
-  if (isActive) return;
+  // Catalogue selection and active membership are independent. An inactive
+  // playlist may remain selected for temporary browsing; only a missing
+  // playlist needs a fallback.
+  if (exists) return;
 
   final fallback = firstActivePlaylistId(playlists, inactiveIds);
   if (current != fallback) {

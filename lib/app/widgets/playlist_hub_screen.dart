@@ -48,7 +48,9 @@ class PlaylistHubScreen extends ConsumerWidget {
           return _EmptyPlaylists(onAdd: () => showPlaylistAddDialog(context));
         }
 
-        final activeId = selectedId != null && !inactiveIds.contains(selectedId)
+        final selectedRowId =
+            selectedId != null &&
+                playlists.any((playlist) => playlist.id == selectedId)
             ? selectedId
             : firstActivePlaylistId(playlists, inactiveIds);
         final managementId = managementPlaylistId(
@@ -166,7 +168,7 @@ class PlaylistHubScreen extends ConsumerWidget {
                                 const SizedBox(height: 8),
                             itemBuilder: (context, index) {
                               final playlist = playlists[index];
-                              final isActive = playlist.id == activeId;
+                              final isSelected = playlist.id == selectedRowId;
                               final isInactive = inactiveIds.contains(
                                 playlist.id,
                               );
@@ -181,7 +183,7 @@ class PlaylistHubScreen extends ConsumerWidget {
                               );
                               return _PlaylistTile(
                                 playlist: playlist,
-                                isActive: isActive,
+                                isSelected: isSelected,
                                 isInactive: isInactive,
                                 syncState: syncState,
                                 epgJob: epgJobs[playlist.id],
@@ -630,7 +632,7 @@ class _ContentTypeFilterChip extends StatelessWidget {
 class _PlaylistTile extends StatelessWidget {
   const _PlaylistTile({
     required this.playlist,
-    required this.isActive,
+    required this.isSelected,
     required this.isInactive,
     required this.syncState,
     required this.epgJob,
@@ -648,7 +650,7 @@ class _PlaylistTile extends StatelessWidget {
   });
 
   final Playlist playlist;
-  final bool isActive;
+  final bool isSelected;
   final bool isInactive;
   final AsyncValue<void> syncState;
   final EpgSyncJob? epgJob;
@@ -673,7 +675,7 @@ class _PlaylistTile extends StatelessWidget {
     return M3MediaListItem(
       title: playlist.name,
       elevation: AppElevation.level1,
-      selected: isActive,
+      selected: isSelected,
       onActivate: onTap,
       leading: AppSurface(
         level: AppSurfaceLevel.high,

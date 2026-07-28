@@ -48,7 +48,7 @@ final playlistCatalogPlaylistIdsProvider =
         ];
       }
       final playlistId = scope.playlistId;
-      if (playlistId == null || inactive.contains(playlistId)) return const [];
+      if (playlistId == null) return const [];
       return playlists.any((playlist) => playlist.id == playlistId)
           ? [playlistId]
           : const [];
