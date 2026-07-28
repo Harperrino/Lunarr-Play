@@ -23,6 +23,7 @@ import 'package:m3uxtream_player/core/services/stream_log_redactor.dart';
 
 import 'package:m3uxtream_player/features/player/models/playback_media_info.dart';
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
+import 'package:m3uxtream_player/features/player/services/live_open_coordinator.dart';
 import 'package:m3uxtream_player/features/player/services/player_diagnostics_reporter.dart';
 import 'package:m3uxtream_player/features/player/services/player_playback_policies.dart';
 import 'package:m3uxtream_player/features/player/services/player_session_lifecycle.dart';
@@ -250,19 +251,15 @@ bool shouldQuickSwitchToTsDeliveryCandidate({
   required bool hasStreamError,
   required bool hasLaterTsCandidate,
 }) {
-  if (canSeek) return false;
-  if (delivery != LiveStreamDelivery.continuous) return false;
-  if (!LiveStreamUrl.isExtensionlessContinuousLiveUrl(playbackUrl)) {
-    return false;
-  }
-  if (selectableTracks.isNotEmpty) return false;
-  if (rawTracks.isEmpty ||
-      !rawTracks.every(LiveAudioTrackService.isSpecialTrack)) {
-    return false;
-  }
-  if (hasStreamError) return false;
-  if (!hasLaterTsCandidate) return false;
-  return true;
+  return const LiveOpenCoordinator().shouldQuickSwitchToTsDeliveryCandidate(
+    canSeek: canSeek,
+    delivery: delivery,
+    playbackUrl: playbackUrl,
+    rawTracks: rawTracks,
+    selectableTracks: selectableTracks,
+    hasStreamError: hasStreamError,
+    hasLaterTsCandidate: hasLaterTsCandidate,
+  );
 }
 
 bool shouldRunDeferredHlsProbe({
@@ -273,24 +270,18 @@ bool shouldRunDeferredHlsProbe({
   required List<StreamingFallbackAttempt> attempts,
   required int currentIndex,
 }) {
-  if (!autoFallbackEnabled || alreadyChecked) return false;
-  if (sourceDelivery != LiveStreamDelivery.continuous) return false;
-  if (!LiveStreamUrl.isExtensionlessContinuousLiveUrl(sourceUrl)) return false;
-  if (currentIndex <= 0 || currentIndex >= attempts.length) return false;
-
-  return attempts[currentIndex - 1].headerProfile ==
-          LiveStreamHeaderProfile.appMpv &&
-      attempts[currentIndex].headerProfile != LiveStreamHeaderProfile.appMpv;
+  return const LiveOpenCoordinator().shouldRunDeferredHlsProbe(
+    autoFallbackEnabled: autoFallbackEnabled,
+    alreadyChecked: alreadyChecked,
+    sourceDelivery: sourceDelivery,
+    sourceUrl: sourceUrl,
+    attempts: attempts,
+    currentIndex: currentIndex,
+  );
 }
 
 StreamingFallbackAttempt deferredHlsAttemptFor(String sourceUrl) {
-  return StreamingFallbackAttempt(
-    sourceUrl: sourceUrl,
-    playbackUrl: sourceUrl,
-    label: 'App/mpv deferred-hls',
-    headerProfile: LiveStreamHeaderProfile.appMpv,
-    deliveryType: LiveStreamDelivery.hls.diagnosticLabel,
-  );
+  return const LiveOpenCoordinator().deferredHlsAttemptFor(sourceUrl);
 }
 
 bool shouldReportSelectedTrackWithoutDecodedAudio({
@@ -587,6 +578,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
 
   final PlayerSessionLifecycle<PlayerState> _sessionLifecycle =
       PlayerSessionLifecycle<PlayerState>();
+  final LiveOpenCoordinator _liveOpenCoordinator = const LiveOpenCoordinator();
   final PlayerDiagnosticsReporter _diagnosticsReporter =
       const PlayerDiagnosticsReporter();
 
@@ -1313,12 +1305,13 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
             ref.read(playerBufferSecondsProvider).valueOrNull ??
             PlayerBufferSecondsNotifier.defaultSeconds;
         final liveStartupBufferEnabled = liveStartupBufferSeconds > 0;
-        final allAttempts = LiveStreamUrl.playbackAttempts(url);
-        final sourceDelivery = LiveStreamUrl.deliveryFor(url);
-        final sourcePlaybackUrl = url.trim();
-        final attempts = settings.autoFallbackEnabled
-            ? allAttempts.toList(growable: true)
-            : allAttempts.take(1).toList(growable: false);
+        final liveOpenPlan = _liveOpenCoordinator.createPlan(
+          sourceUrl: url,
+          autoFallbackEnabled: settings.autoFallbackEnabled,
+        );
+        final sourceDelivery = liveOpenPlan.sourceDelivery;
+        final sourcePlaybackUrl = liveOpenPlan.sourceUrl;
+        final attempts = liveOpenPlan.attempts;
         var hlsProbeChecked = false;
         StreamConnectionProbeResult? hlsProbeResult;
         // Auto-demuxer audio recovery is allowed once per header profile so the
@@ -1412,13 +1405,14 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
           // fallback list. This avoids the expensive full analyzeduration window
           // and late-audio wait on the first candidate when a .ts variant is
           // likely to expose audio faster.
-          final quickSwitchStructurallyEligible =
-              !canSeek &&
-              effectiveDelivery == LiveStreamDelivery.continuous &&
-              LiveStreamUrl.isExtensionlessContinuousLiveUrl(
-                attemptPlaybackUri,
-              ) &&
-              LiveStreamUrl.hasLaterTsCandidate(attempts, attemptIndex);
+          final quickSwitchStructurallyEligible = _liveOpenCoordinator
+              .isQuickSwitchStructurallyEligible(
+                canSeek: canSeek,
+                delivery: effectiveDelivery,
+                playbackUrl: attemptPlaybackUri,
+                attempts: attempts,
+                currentIndex: attemptIndex,
+              );
 
           if (probedThisAttempt && probe?.looksLikeHls == true) {
             final hintSuffix = probe?.hlsHintSummary == null
@@ -1443,13 +1437,15 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
               () async {
                 final opened = await _openStreamInternal(
                   current: current,
-                  sourceUrl: url,
-                  playbackUrl: attemptPlaybackUri,
+                  attemptContext: _liveOpenCoordinator.attemptContext(
+                    plan: liveOpenPlan,
+                    playbackUrl: attemptPlaybackUri,
+                    sessionToken: sessionToken,
+                  ),
                   canSeek: canSeek,
                   startPosition: startPosition,
                   startPaused: startPaused,
                   preBuffer: preBuffer,
-                  sessionToken: sessionToken,
                   httpHeaders: attempt.headers,
                   liveStartupBuffer: false,
                   liveDelivery: effectiveDelivery,
@@ -1622,13 +1618,15 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                   () async {
                     final opened = await _openStreamInternal(
                       current: current,
-                      sourceUrl: url,
-                      playbackUrl: attemptPlaybackUri,
+                      attemptContext: _liveOpenCoordinator.attemptContext(
+                        plan: liveOpenPlan,
+                        playbackUrl: attemptPlaybackUri,
+                        sessionToken: sessionToken,
+                      ),
                       canSeek: canSeek,
                       startPosition: startPosition,
                       startPaused: startPaused,
                       preBuffer: preBuffer,
-                      sessionToken: sessionToken,
                       httpHeaders: attempt.headers,
                       liveStartupBuffer: false,
                       liveDelivery: effectiveDelivery,
@@ -2078,13 +2076,15 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
               () async {
                 final opened = await _openStreamInternal(
                   current: current,
-                  sourceUrl: url,
-                  playbackUrl: bestEffortAttempt.playbackUrl,
+                  attemptContext: _liveOpenCoordinator.attemptContext(
+                    plan: liveOpenPlan,
+                    playbackUrl: bestEffortAttempt.playbackUrl,
+                    sessionToken: sessionToken,
+                  ),
                   canSeek: canSeek,
                   startPosition: startPosition,
                   startPaused: startPaused,
                   preBuffer: preBuffer,
-                  sessionToken: sessionToken,
                   httpHeaders: bestEffortAttempt.headers,
                   liveStartupBuffer: false,
                   liveDelivery: bestEffortDelivery,
@@ -2206,10 +2206,12 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
 
     await _openStreamInternal(
       current: current,
-      sourceUrl: url,
-      playbackUrl: url,
+      attemptContext: PlaybackAttemptContext(
+        sourceUrl: url,
+        playbackUrl: url,
+        sessionToken: sessionToken,
+      ),
       canSeek: canSeek,
-      sessionToken: sessionToken,
       httpHeaders: canSeek ? kVodStreamHttpHeaders : kLiveStreamHttpHeaders,
       startPosition: startPosition,
       startPaused: startPaused,
@@ -2221,12 +2223,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
   /// caller decides the candidate is ready to be released.
   Future<bool> _openStreamInternal({
     required PlayerState current,
-    required String sourceUrl,
-
-    // ignore: unused_element_parameter — kept for future telemetry of original DB URL.
-    required String playbackUrl,
+    required PlaybackAttemptContext attemptContext,
     required bool canSeek,
-    required int sessionToken,
     required Map<String, String> httpHeaders,
     LiveStreamDelivery? liveDelivery,
     bool liveAudioRecovery = false,
@@ -2239,6 +2237,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     bool liveStartupBuffer = false,
     bool openPaused = false,
   }) async {
+    final playbackUrl = attemptContext.playbackUrl;
+    final sessionToken = attemptContext.sessionToken;
     try {
       AppLogger.info(
         'PlayerNotifier: Opening stream — ${redactStreamUrl(playbackUrl)}',
