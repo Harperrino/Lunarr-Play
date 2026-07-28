@@ -25,7 +25,7 @@ import 'package:m3uxtream_player/features/player/models/playback_media_info.dart
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
 import 'package:m3uxtream_player/features/player/services/live_audio_recovery_coordinator.dart';
 import 'package:m3uxtream_player/features/player/services/live_open_coordinator.dart';
-import 'package:m3uxtream_player/features/player/services/player_diagnostics_reporter.dart';
+import 'package:m3uxtream_player/features/player/services/player_diagnostics_adapter.dart';
 import 'package:m3uxtream_player/features/player/services/player_playback_policies.dart';
 import 'package:m3uxtream_player/features/player/services/player_session_lifecycle.dart';
 import 'package:m3uxtream_player/features/player/services/vod_playback_coordinator.dart';
@@ -584,8 +584,9 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
       LiveAudioRecoveryCoordinator();
   final VodPlaybackCoordinator _vodPlaybackCoordinator =
       const VodPlaybackCoordinator();
-  final PlayerDiagnosticsReporter _diagnosticsReporter =
-      const PlayerDiagnosticsReporter();
+  late final PlayerDiagnosticsAdapter _diagnostics = PlayerDiagnosticsAdapter(
+    readSink: () => ref.read(diagnosticSinkProvider),
+  );
 
   DateTime? _lastSuccessfulOpenAt;
   String? _lastAudioTrackSignature;
@@ -621,7 +622,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
   }
 
   StreamingDiagnosticsSettings _streamingDiagnosticsSettings() {
-    return ref.read(diagnosticSinkProvider).streamingSettings;
+    return _diagnostics.streamingSettings;
   }
 
   void _recordStreamingDiagnostic({
@@ -636,35 +637,26 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     Duration duration = Duration.zero,
     String? diagnosisNote,
   }) {
-    ref
-        .read(diagnosticSinkProvider)
-        .recordStreaming(
-          _diagnosticsReporter.createStreamingEvent(
-            timestamp: DateTime.now(),
-            phase: phase,
-            channel: channel,
-            attempt: attempt,
-            deliveryType: deliveryType ?? attempt.deliveryType,
-            httpStatus: httpStatus,
-            contentType: contentType,
-            mpvError: mpvError,
-            failureKind: failureKind,
-            duration: duration,
-            diagnosisNote: diagnosisNote,
-          ),
-        );
+    _diagnostics.recordStreaming(
+      phase: phase,
+      channel: channel,
+      attempt: attempt,
+      failureKind: failureKind,
+      mpvError: mpvError,
+      httpStatus: httpStatus,
+      contentType: contentType,
+      deliveryType: deliveryType,
+      duration: duration,
+      diagnosisNote: diagnosisNote,
+    );
   }
 
   void _logStreamingFailureToUi(String message) {
-    ref
-        .read(diagnosticSinkProvider)
-        .addText(redactStreamText('Streaming: $message'));
+    _diagnostics.logStreamingFailure(message);
   }
 
   void _logAudioWarningToUi(String message) {
-    ref
-        .read(diagnosticSinkProvider)
-        .addText(redactStreamText('Audio: $message'));
+    _diagnostics.logAudioWarning(message);
   }
 
   String _audioTrackSignature(Iterable<AudioTrack> tracks) {
@@ -685,7 +677,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     required LiveStreamDelivery delivery,
   }) {
     final current = state.asData?.value;
-    _diagnosticsReporter.logAudioSnapshot(
+    _diagnostics.logAudioSnapshot(
       player: player,
       stage: stage,
       rawTracks: rawTracks,
@@ -2416,8 +2408,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
       case LiveAudioDecodeDecision.confirmed:
         AppLogger.info(
           'PlayerNotifier: Decoded audio parameters already available after track selection '
-          '(${_diagnosticsReporter.audioParamsLabel(mediaInfo)}, '
-          'bitrate=${_diagnosticsReporter.audioBitrateLabel(mediaInfo)}).',
+          '(${_diagnostics.audioParamsLabel(mediaInfo)}, '
+          'bitrate=${_diagnostics.audioBitrateLabel(mediaInfo)}).',
         );
         final compatibilityHint = decodedAudioCompatibilityHint(mediaInfo);
         if (compatibilityHint != null) {
