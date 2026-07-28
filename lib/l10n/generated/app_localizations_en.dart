@@ -163,15 +163,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playlistDialogAutomaticUrlTitle => 'Detected automatically';
 
   @override
-  String get playlistDialogNoAutomaticUrl =>
-      'No URL was detected from the source.';
+  String get playlistDialogNoAutomaticUrl => 'No URL was detected from the source.';
 
   @override
   String get playlistDialogEpgOverrideField => 'EPG override (optional)';
 
   @override
-  String get playlistDialogEpgOverrideHint =>
-      'Leave empty to use the automatic URL';
+  String get playlistDialogEpgOverrideHint => 'Leave empty to use the automatic URL';
 
   @override
   String playlistDialogEffectiveUrl(String url) {
@@ -193,8 +191,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playlistHubTitle => 'Playlists';
 
   @override
-  String get playlistHubSubtitle =>
-      'Activate, sync, and manage each playlist separately.';
+  String get playlistHubSubtitle => 'Activate, sync, and manage each playlist separately.';
 
   @override
   String get playlistHubAdd => 'Add playlist';
@@ -203,12 +200,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playlistHubCategoryVisibilityTitle => 'Category visibility';
 
   @override
-  String get playlistHubCategoryVisibilitySubtitle =>
-      'Pin what matters, hide what you do not need, and keep the same order everywhere.';
+  String get playlistHubCategoryVisibilitySubtitle => 'Pin what matters, hide what you do not need, and keep the same order everywhere.';
 
   @override
-  String get playlistHubSyncToLoadCategories =>
-      'Sync the playlist to load categories.';
+  String get playlistHubSyncToLoadCategories => 'Sync the playlist to load categories.';
 
   @override
   String get playlistHubVisibleCategoriesSection => 'Visible categories';
@@ -253,20 +248,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playlistHubContentFilterSeries => 'Series';
 
   @override
-  String get playlistHubEmptyCategoriesAll =>
-      'No categories found in this playlist.';
+  String get playlistHubEmptyCategoriesAll => 'No categories found in this playlist.';
 
   @override
-  String get playlistHubEmptyCategoriesLive =>
-      'No live categories found in this playlist.';
+  String get playlistHubEmptyCategoriesLive => 'No live categories found in this playlist.';
 
   @override
-  String get playlistHubEmptyCategoriesVod =>
-      'No VOD categories found in this playlist.';
+  String get playlistHubEmptyCategoriesVod => 'No VOD categories found in this playlist.';
 
   @override
-  String get playlistHubEmptyCategoriesSeries =>
-      'No series categories found in this playlist.';
+  String get playlistHubEmptyCategoriesSeries => 'No series categories found in this playlist.';
 
   @override
   String get playlistHubStatusInactive => 'Inactive';
@@ -334,12 +325,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playlistHubEpgIntervalHours24 => 'Every 24 hours';
 
   @override
-  String get playlistHubCategoryVisibleDescription =>
-      'Visible in all category sidebars';
+  String get playlistHubCategoryVisibleDescription => 'Visible in all category sidebars';
 
   @override
-  String get playlistHubCategoryHiddenDescription =>
-      'Hidden from sidebar lists';
+  String get playlistHubCategoryHiddenDescription => 'Hidden from sidebar lists';
 
   @override
   String get playlistHubUnpinCategoryTooltip => 'Unpin category';
@@ -387,8 +376,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playlistHubEmptyTitle => 'No playlists yet';
 
   @override
-  String get playlistHubEmptySubtitle =>
-      'Add your first source and manage it here.';
+  String get playlistHubEmptySubtitle => 'Add your first source and manage it here.';
 
   @override
   String get diagnosticsConsoleTitle => 'SYSTEM REAL-TIME DIAGNOSTICS';
@@ -397,8 +385,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsConsoleClear => 'Clear';
 
   @override
-  String get diagnosticsConsoleKeyboardHelp =>
-      'Press [Space] to play or pause, [F] for fullscreen, [+/-] for volume, and [Arrow keys] to change channels.';
+  String get diagnosticsConsoleKeyboardHelp => 'Press [Space] to play or pause, [F] for fullscreen, [+/-] for volume, and [Arrow keys] to change channels.';
 
   @override
   String get channelFavoriteRemove => 'Remove from favorites';
@@ -419,15 +406,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playerEmptyTitle => 'Select a channel to play';
 
   @override
-  String get playerEmptySubtitle =>
-      'Select a channel from the list or use the arrow keys.';
+  String get playerEmptySubtitle => 'Select a channel from the list or use the arrow keys.';
 
   @override
   String get playbackAudioRawNone => 'No raw audio tracks detected';
 
   @override
-  String get playbackAudioNoneSelectable =>
-      'Audio tracks detected, but none are currently selectable';
+  String get playbackAudioNoneSelectable => 'Audio tracks detected, but none are currently selectable';
 
   @override
   String playbackAudioTrackCounts(int rawCount, int selectableCount) {
@@ -435,8 +420,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get playbackAudioNotExposed =>
-      'Audio track not exposed by stream or demuxer';
+  String get playbackAudioNotExposed => 'Audio track not exposed by stream or demuxer';
 
   @override
   String get playbackAudioNone => 'None';
@@ -583,8 +567,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playlistFormTitle => 'ADD PLAYLIST';
 
   @override
-  String get playlistFormDescription =>
-      'Create a new source and keep the flow focused on setup, sync, and playback.';
+  String get playlistFormDescription => 'Create a new source and keep the flow focused on setup, sync, and playback.';
 
   @override
   String get playlistFormNameLabel => 'Name';
@@ -608,8 +591,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playlistFormEpgOverrideLabel => 'EPG override (optional)';
 
   @override
-  String get playlistFormEpgOverrideHint =>
-      'Leave empty to use the automatic URL';
+  String get playlistFormEpgOverrideHint => 'Leave empty to use the automatic URL';
 
   @override
   String get playlistFormWorking => 'Working…';
@@ -621,8 +603,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearanceTitle => 'Appearance';
 
   @override
-  String get appearanceDescription =>
-      'Adjust the accent and neutral surfaces independently.';
+  String get appearanceDescription => 'Adjust the accent and neutral surfaces independently.';
 
   @override
   String get appearanceRestoreDefaults => 'Restore defaults';
@@ -656,8 +637,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get debugModeTitle => 'DEBUG MODE';
 
   @override
-  String get debugModeDescription =>
-      'Shows the Diagnostics / Logs tab and keeps collecting logs even when hidden.';
+  String get debugModeDescription => 'Shows the Diagnostics / Logs tab and keeps collecting logs even when hidden.';
 
   @override
   String get debugModeDiagnosticsOn => 'Diagnostics on';
@@ -693,15 +673,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get favoritesNoPlaylistTitle => 'No playlist selected';
 
   @override
-  String get favoritesNoPlaylistSubtitle =>
-      'Select a playlist to see your favorites.';
+  String get favoritesNoPlaylistSubtitle => 'Select a playlist to see your favorites.';
 
   @override
   String get favoritesEmptyTitle => 'No live favorites yet';
 
   @override
-  String get favoritesEmptySubtitle =>
-      'Favorites from your active playlist will appear here.';
+  String get favoritesEmptySubtitle => 'Favorites from your active playlist will appear here.';
 
   @override
   String favoriteChannelSemantics(String title) {
@@ -730,12 +708,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get watchLaterEmptyTitle => 'Nothing saved for later yet';
 
   @override
-  String get watchLaterEmptySubtitle =>
-      'Bookmark movies or series to keep them here.';
+  String get watchLaterEmptySubtitle => 'Bookmark movies or series to keep them here.';
 
   @override
-  String get catalogNoPlaylistSubtitle =>
-      'Select a playlist in the Playlists tab or Settings.';
+  String get catalogNoPlaylistSubtitle => 'Select a playlist in the Playlists tab or Settings.';
 
   @override
   String get catalogResetFilters => 'Reset filters';
@@ -765,12 +741,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vodNoMoviesFound => 'No movies found';
 
   @override
-  String get vodClearSearchSubtitle =>
-      'Clear the search field to show all movies again.';
+  String get vodClearSearchSubtitle => 'Clear the search field to show all movies again.';
 
   @override
-  String get vodHiddenByFiltersSubtitle =>
-      'Your VOD catalogue is loaded, but filters or hidden categories are hiding the visible list.';
+  String get vodHiddenByFiltersSubtitle => 'Your VOD catalogue is loaded, but filters or hidden categories are hiding the visible list.';
 
   @override
   String get vodSyncSubtitle => 'Sync your Xtream playlist to load VOD movies.';
@@ -791,12 +765,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get seriesNoSeriesFound => 'No series found';
 
   @override
-  String get seriesClearSearchSubtitle =>
-      'Clear the search field to show all series again.';
+  String get seriesClearSearchSubtitle => 'Clear the search field to show all series again.';
 
   @override
-  String get seriesHiddenByFiltersSubtitle =>
-      'Your series catalogue is loaded, but filters or hidden categories are hiding the visible list.';
+  String get seriesHiddenByFiltersSubtitle => 'Your series catalogue is loaded, but filters or hidden categories are hiding the visible list.';
 
   @override
   String get seriesSyncSubtitle => 'Sync your Xtream playlist to load series.';
@@ -816,19 +788,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get epgNoChannelsTitle => 'No channels loaded';
 
   @override
-  String get epgNoChannelsSubtitle =>
-      'Select a playlist and sync channels on the Live tab or in Settings.';
+  String get epgNoChannelsSubtitle => 'Select a playlist and sync channels on the Live tab or in Settings.';
 
   @override
   String get epgNoDataTitle => 'No EPG data for this time window';
 
   @override
-  String get epgUpdateGuideSubtitle =>
-      'Update the TV programme guide for your active playlist.';
+  String get epgUpdateGuideSubtitle => 'Update the TV programme guide for your active playlist.';
 
   @override
-  String get epgConfigureUrlSubtitle =>
-      'Configure an EPG URL in Settings or sync an M3U playlist with a url-tvg header.';
+  String get epgConfigureUrlSubtitle => 'Configure an EPG URL in Settings or sync an M3U playlist with a url-tvg header.';
 
   @override
   String get epgUpdateAction => 'Update EPG';
@@ -837,15 +806,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playbackSettingsTitle => 'PLAYBACK';
 
   @override
-  String get playbackSettingsDescription =>
-      'Choose how much content is buffered before live playback starts. Higher values delay startup but reduce stuttering on unstable streams.';
+  String get playbackSettingsDescription => 'Choose how much content is buffered before live playback starts. Higher values delay startup but reduce stuttering on unstable streams.';
 
   @override
   String get playbackSettingsLiveBufferLabel => 'Live startup buffer';
 
   @override
-  String get playbackSettingsVodBufferDescription =>
-      'VOD pre-buffering loads media before playback for smoother seeking. Higher values require more time and bandwidth.';
+  String get playbackSettingsVodBufferDescription => 'VOD pre-buffering loads media before playback for smoother seeking. Higher values require more time and bandwidth.';
 
   @override
   String get playbackSettingsVodBufferLabel => 'VOD pre-buffer';
@@ -854,16 +821,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playbackSettingsForceStereoTitle => 'Force stereo';
 
   @override
-  String get playbackSettingsForceStereoDescription =>
-      'Helps with external sound cards, mixing consoles, or channels with multichannel audio.';
+  String get playbackSettingsForceStereoDescription => 'Helps with external sound cards, mixing consoles, or channels with multichannel audio.';
 
   @override
-  String get playbackSettingsPreferredLanguageTitle =>
-      'Preferred audio language';
+  String get playbackSettingsPreferredLanguageTitle => 'Preferred audio language';
 
   @override
-  String get playbackSettingsPreferredLanguageDescription =>
-      'When multiple audio tracks are available, this language is preferred.';
+  String get playbackSettingsPreferredLanguageDescription => 'When multiple audio tracks are available, this language is preferred.';
 
   @override
   String get playbackSettingsLanguageAutomatic => 'Automatic';
@@ -911,15 +875,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get seriesNoEpisodes => 'No episodes found.';
 
   @override
-  String get channelRefreshFailedRetained =>
-      'Channels could not be refreshed. The last loaded channels remain visible.';
+  String get channelRefreshFailedRetained => 'Channels could not be refreshed. The last loaded channels remain visible.';
 
   @override
   String get channelLoadFailed => 'Could not load channels';
 
   @override
-  String get channelNoPlaylistSubtitle =>
-      'Add and sync a playlist to see channels here.';
+  String get channelNoPlaylistSubtitle => 'Add and sync a playlist to see channels here.';
 
   @override
   String get channelNoSearchResults => 'No channels match your search';
@@ -928,12 +890,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelNoChannelsFound => 'No channels found';
 
   @override
-  String get channelClearSearchSubtitle =>
-      'Clear the search field to show all channels again.';
+  String get channelClearSearchSubtitle => 'Clear the search field to show all channels again.';
 
   @override
-  String get channelSyncOrFilterSubtitle =>
-      'Sync your playlist or try a different category filter.';
+  String get channelSyncOrFilterSubtitle => 'Sync your playlist or try a different category filter.';
 
   @override
   String channelSyncFailed(String error) {
@@ -1001,8 +961,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelNoEpg => 'No EPG';
 
   @override
-  String get channelEpgNotUpdated =>
-      'The TV programme guide (EPG) has not been updated yet.';
+  String get channelEpgNotUpdated => 'The TV programme guide (EPG) has not been updated yet.';
 
   @override
   String get channelEpgUpdating => 'Updating…';
@@ -1102,8 +1061,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get epgTimelineResizeSemantics => 'Adjust time column width';
 
   @override
-  String get epgTimelineResizeHint =>
-      'Use the arrow keys to adjust it step by step';
+  String get epgTimelineResizeHint => 'Use the arrow keys to adjust it step by step';
 
   @override
   String diagnosticsSettingsLoadFailed(String error) {
@@ -1126,15 +1084,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsAutoFallbackTitle => 'Use fallback automatically';
 
   @override
-  String get diagnosticsAutoFallbackSubtitle =>
-      'Automatically try the live fallback matrix before showing an error.';
+  String get diagnosticsAutoFallbackSubtitle => 'Automatically try the live fallback matrix before showing an error.';
 
   @override
   String get diagnosticsShowOnErrorTitle => 'Show diagnostics on error';
 
   @override
-  String get diagnosticsShowOnErrorSubtitle =>
-      'Writes a short diagnostic entry to the UI logs when live playback fails to start.';
+  String get diagnosticsShowOnErrorSubtitle => 'Writes a short diagnostic entry to the UI logs when live playback fails to start.';
 
   @override
   String get diagnosticsCopyLastFailure => 'Copy last failure';
@@ -1296,15 +1252,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playerSelectChannelTitle => 'Select a channel';
 
   @override
-  String get playerSelectChannelFullscreenSubtitle =>
-      'Exit fullscreen (F / Esc) and select a channel from the list.';
+  String get playerSelectChannelFullscreenSubtitle => 'Exit fullscreen (F / Esc) and select a channel from the list.';
 
   @override
   String get playerPlaybackFailedTitle => 'Playback failed';
 
   @override
-  String get playerVideoInitializationFailed =>
-      'Could not initialize video output.';
+  String get playerVideoInitializationFailed => 'Could not initialize video output.';
 
   @override
   String get playbackPrepEpisodeTitle => 'Prepare episode';
@@ -1313,12 +1267,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playbackPrepMovieTitle => 'Prepare movie';
 
   @override
-  String get playbackPrepEpisodeSubtitle =>
-      'Pre-buffered start for a smoother episode handoff.';
+  String get playbackPrepEpisodeSubtitle => 'Pre-buffered start for a smoother episode handoff.';
 
   @override
-  String get playbackPrepMovieSubtitle =>
-      'Pre-buffered start for smoother seeking and faster resume.';
+  String get playbackPrepMovieSubtitle => 'Pre-buffered start for smoother seeking and faster resume.';
 
   @override
   String playbackPrepBufferingProgress(int percent) {
@@ -1340,12 +1292,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get playbackPrepEpisodeExplanation =>
-      'Buffer the episode before playback for smoother seeking and resume.';
+  String get playbackPrepEpisodeExplanation => 'Buffer the episode before playback for smoother seeking and resume.';
 
   @override
-  String get playbackPrepMovieExplanation =>
-      'Buffer before playback for smoother forward and backward seeking.';
+  String get playbackPrepMovieExplanation => 'Buffer before playback for smoother forward and backward seeking.';
 
   @override
   String get playbackPrepLoadingAction => 'Loading…';
@@ -1365,12 +1315,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get playbackPrepEpisodeDetail =>
-      'Buffer the episode before playback for smoother seeking within the episode.';
+  String get playbackPrepEpisodeDetail => 'Buffer the episode before playback for smoother seeking within the episode.';
 
   @override
-  String get playbackPrepMovieDetail =>
-      'Buffer before playback for smoother forward and backward seeking.';
+  String get playbackPrepMovieDetail => 'Buffer before playback for smoother forward and backward seeking.';
 
   @override
   String get playbackPrepToggleTitle => 'Pre-buffer';
@@ -1418,19 +1366,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stepperIncreaseValue => 'Increase value';
 
   @override
-  String get databaseFatalSemanticLabel =>
-      'Database connection interrupted. Restart the application.';
+  String get databaseFatalSemanticLabel => 'Database connection interrupted. Restart the application.';
 
   @override
-  String get databaseFatalMessage =>
-      'Database connection interrupted — please restart the application.';
+  String get databaseFatalMessage => 'Database connection interrupted — please restart the application.';
 
   @override
   String get comingSoonTitle => 'Feature — Coming Soon';
 
   @override
-  String get comingSoonDescription =>
-      'This section is planned for a future milestone.';
+  String get comingSoonDescription => 'This section is planned for a future milestone.';
 
   @override
   String get playbackSettingsLanguageEnglish => 'English';
@@ -1457,71 +1402,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shellTabLiveTitle => 'Live TV';
 
   @override
-  String get shellTabLiveSubtitle =>
-      'Watch live channels — select a playlist and tap to play.';
+  String get shellTabLiveSubtitle => 'Watch live channels — select a playlist and tap to play.';
 
   @override
   String get shellTabMediaLibraryTitle => 'Media Library';
 
   @override
-  String get shellTabMediaLibrarySubtitle =>
-      'Movies, series, and Watch Later in one shared media library.';
+  String get shellTabMediaLibrarySubtitle => 'Movies, series, and Watch Later in one shared media library.';
 
   @override
   String get shellTabFavoritesTitle => 'Favorites';
 
   @override
-  String get shellTabFavoritesSubtitle =>
-      'Quick access to your favorite live channels.';
+  String get shellTabFavoritesSubtitle => 'Quick access to your favorite live channels.';
 
   @override
   String get shellTabPlaylistsTitle => 'Playlists';
 
   @override
-  String get shellTabPlaylistsSubtitle =>
-      'Switch playlists and manage which categories are visible.';
+  String get shellTabPlaylistsSubtitle => 'Switch playlists and manage which categories are visible.';
 
   @override
   String get shellTabEpgTitle => 'EPG Guide';
 
   @override
-  String get shellTabEpgSubtitle =>
-      'TV program guide for the active playlist — select a show to watch live.';
+  String get shellTabEpgSubtitle => 'TV program guide for the active playlist — select a show to watch live.';
 
   @override
   String get shellTabVodTitle => 'VOD Movies';
 
   @override
-  String get shellTabVodSubtitle =>
-      'Browse movies from your active playlist — select one to play on the Live tab.';
+  String get shellTabVodSubtitle => 'Browse movies from your active playlist — select one to play on the Live tab.';
 
   @override
   String get shellTabSeriesTitle => 'Series';
 
   @override
-  String get shellTabSeriesSubtitle =>
-      'Browse series — open a show for episodes and resume where you left off.';
+  String get shellTabSeriesSubtitle => 'Browse series — open a show for episodes and resume where you left off.';
 
   @override
   String get shellTabDiagnosticsTitle => 'Diagnostics / Logs';
 
   @override
-  String get shellTabDiagnosticsSubtitle =>
-      'Debug-only log console and runtime diagnostics.';
+  String get shellTabDiagnosticsSubtitle => 'Debug-only log console and runtime diagnostics.';
 
   @override
   String get shellTabSettingsTitle => 'Settings';
 
   @override
-  String get shellTabSettingsSubtitle =>
-      'Add, sync, and manage M3U and Xtream playlists.';
+  String get shellTabSettingsSubtitle => 'Add, sync, and manage M3U and Xtream playlists.';
 
   @override
   String get shellFallbackTitle => 'Neural Control Center';
 
   @override
-  String get shellFallbackSubtitle =>
-      'Material 3 media workspace (Drift & Riverpod)';
+  String get shellFallbackSubtitle => 'Material 3 media workspace (Drift & Riverpod)';
 
   @override
   String get shellSidebarLabel => 'Sidebar';
@@ -1582,8 +1517,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get playbackPrepVideoSurfaceTimeout =>
-      'Video output was not ready in time. Please start playback again.';
+  String get playbackPrepVideoSurfaceTimeout => 'Video output was not ready in time. Please start playback again.';
 
   @override
   String get globalSearchTargetLive => 'Live TV';
@@ -1595,11 +1529,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get globalSearchTargetSeries => 'Series';
 
   @override
-  String globalSearchCategoryVisibleLabel(
-    String category,
-    String target,
-    String playlist,
-  ) {
+  String globalSearchCategoryVisibleLabel(String category, String target, String playlist) {
     return '$category · $target · $playlist';
   }
 
@@ -1609,6 +1539,5 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get playbackAudioMultichannelHint =>
-      'Multichannel audio decoded. If no sound is audible, try Force stereo.';
+  String get playbackAudioMultichannelHint => 'Multichannel audio decoded. If no sound is audible, try Force stereo.';
 }
