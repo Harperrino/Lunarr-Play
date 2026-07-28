@@ -83,3 +83,27 @@ the Wave-0 value because this run deliberately retains all three import
 datasets instead of only the M3U dataset. The reference run verifies that the
 calibrated production limits accept the target fixtures; Windows profile frame
 timings remain a Wave-10 release gate.
+
+## 2026-07-28 Wave-10 automated release reference
+
+The final synthetic production-budget run completed with:
+
+| Probe | Records | Duration |
+| --- | ---: | ---: |
+| M3U import | 20,000 | 212 ms |
+| Xtream aggregate import | 20,000 | 64 ms |
+| XMLTV import | 10,000 | 608 ms |
+| Alphabetical sort | 100,000 | 328 ms |
+| Numeric sort | 100,000 | 290 ms |
+
+Observed combined RSS delta: 128,835,584 bytes.
+
+The indexed 50,000-channel scope-switch probe executed 20 cold and 20 warm
+switches:
+
+- cold p95: 147.531 ms, maximum 180 ms;
+- warm p95: 0.342 ms, maximum below 1 ms.
+
+Both latency targets pass in the automated Windows debug-JIT probe. This does
+not replace the final interactive Windows profile capture for raster/frame
+timings; the “no frame over 50 ms” acceptance remains a manual release step.
