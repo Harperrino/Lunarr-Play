@@ -23,6 +23,7 @@ import 'package:m3uxtream_player/core/services/stream_log_redactor.dart';
 
 import 'package:m3uxtream_player/features/player/models/playback_media_info.dart';
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
+import 'package:m3uxtream_player/features/player/services/live_audio_recovery_coordinator.dart';
 import 'package:m3uxtream_player/features/player/services/live_open_coordinator.dart';
 import 'package:m3uxtream_player/features/player/services/player_diagnostics_reporter.dart';
 import 'package:m3uxtream_player/features/player/services/player_playback_policies.dart';
@@ -579,6 +580,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
   final PlayerSessionLifecycle<PlayerState> _sessionLifecycle =
       PlayerSessionLifecycle<PlayerState>();
   final LiveOpenCoordinator _liveOpenCoordinator = const LiveOpenCoordinator();
+  final LiveAudioRecoveryCoordinator _liveAudioRecovery =
+      LiveAudioRecoveryCoordinator();
   final PlayerDiagnosticsReporter _diagnosticsReporter =
       const PlayerDiagnosticsReporter();
 
@@ -589,15 +592,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
   String? _manualAudioTrackId;
   String? _lastAudioWarning;
   DateTime? _lastAudioWarningAt;
-  bool _audioDisabledByWatchdog = false;
   bool _forceStereoEnabled = false;
   String? _preferredAudioLanguage;
-
-  // Live audio stabilization indicators, reset per live open session.
-  bool _liveAudioInitialAutoOnly = false;
-  bool _liveAudioHadNoAudioState = false;
-  bool _liveAudioTrackSwitchedDuringPrep = false;
-  String? _liveAudioSelectedTrackId;
 
   Future<void> _applyAudioCompatibility(Player player) async {
     final forceStereoEnabled = await ref.read(
@@ -810,7 +806,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
       onTracks: (tracks) {
         if (!_hasCurrentPlayback) return;
 
-        if (_audioDisabledByWatchdog) {
+        if (_liveAudioRecovery.disabledByWatchdog) {
           AppLogger.info(
             'PlayerNotifier: Audio auto-selection skipped (disabled by watchdog).',
           );
@@ -874,13 +870,15 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
         // Detect a track switch that happened while we were still preparing the
         // live candidate (e.g. late audio PID exposed a different track).
         final selectedId = player.state.track.audio.id;
-        if (_liveAudioSelectedTrackId != null &&
-            selectedId != _liveAudioSelectedTrackId &&
-            !LiveAudioTrackService.isSpecialTrack(player.state.track.audio)) {
-          _liveAudioTrackSwitchedDuringPrep = true;
+        if (_liveAudioRecovery.observePreparationTrack(
+          selectedTrackId: selectedId,
+          isSpecialTrack: LiveAudioTrackService.isSpecialTrack(
+            player.state.track.audio,
+          ),
+        )) {
           AppLogger.info(
             'PlayerNotifier: Audio track switched during live preparation '
-            '(was $_liveAudioSelectedTrackId, now $selectedId)',
+            '(was ${_liveAudioRecovery.selectedTrackId}, now $selectedId)',
           );
         }
       },
@@ -1217,11 +1215,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     _lastAppliedDemuxerLavfFormat = null;
     _lastAudioWarning = null;
     _lastAudioWarningAt = null;
-    _audioDisabledByWatchdog = false;
-    _liveAudioInitialAutoOnly = false;
-    _liveAudioHadNoAudioState = false;
-    _liveAudioTrackSwitchedDuringPrep = false;
-    _liveAudioSelectedTrackId = null;
+    _liveAudioRecovery.resetSession();
 
     await current.player.stop();
 
@@ -1279,11 +1273,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     _lastAppliedDemuxerLavfFormat = null;
     _lastAudioWarning = null;
     _lastAudioWarningAt = null;
-    _audioDisabledByWatchdog = false;
-    _liveAudioInitialAutoOnly = false;
-    _liveAudioHadNoAudioState = false;
-    _liveAudioTrackSwitchedDuringPrep = false;
-    _liveAudioSelectedTrackId = null;
+    _liveAudioRecovery.resetSession();
     _update(
       (s) => s.copyWith(
         audioTracks: const [],
@@ -1470,8 +1460,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
 
             if (settled) {
               var sawAnyRealTrack = false;
-              _liveAudioInitialAutoOnly = false;
-              _liveAudioHadNoAudioState = false;
+              _liveAudioRecovery.resetCandidateDiscovery();
 
               // Use a short probe window for quick-switch candidates; otherwise
               // keep the existing analyzeduration-based window so normal channels
@@ -1490,10 +1479,9 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                   onProgress: (tracks, selectableTracks) {
                     if (!_isLiveOpenSessionCurrent(sessionToken)) return;
                     if (selectableTracks.isEmpty) {
-                      _liveAudioHadNoAudioState = true;
-                      if (!sawAnyRealTrack) {
-                        _liveAudioInitialAutoOnly = true;
-                      }
+                      _liveAudioRecovery.markNoAudioState(
+                        initialAutoOnly: !sawAnyRealTrack,
+                      );
                     } else {
                       sawAnyRealTrack = true;
                     }
@@ -1539,8 +1527,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                 );
                 // Reset per-candidate audio indicators so the .ts candidate gets
                 // a clean stabilization decision.
-                _liveAudioInitialAutoOnly = false;
-                _liveAudioHadNoAudioState = false;
+                _liveAudioRecovery.resetCandidateDiscovery();
                 _recordStreamingDiagnostic(
                   phase: StreamingDiagnosticPhase.failure,
                   channel: channel,
@@ -1718,10 +1705,10 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                               return;
                             }
                             if (selectableTracks.isEmpty) {
-                              _liveAudioHadNoAudioState = true;
-                            } else {
-                              _liveAudioInitialAutoOnly = false;
-                            }
+                              _liveAudioRecovery.markNoAudioState(
+                                initialAutoOnly: false,
+                              );
+                            } else {}
                             unawaited(
                               _logAudioDiagnosticsSnapshotAsync(
                                 player: current.player,
@@ -1893,8 +1880,9 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                           preferStereo: _forceStereoEnabled,
                           preferredLanguage: _preferredAudioLanguage,
                         );
-                        _liveAudioSelectedTrackId =
-                            current.player.state.track.audio.id;
+                        _liveAudioRecovery.recordSelectedTrack(
+                          current.player.state.track.audio.id,
+                        );
                       }
                     },
                     classifyDecodedAudio: () {
@@ -1918,10 +1906,12 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                           attempt: attempt,
                           deliveryType: effectiveDelivery.diagnosticLabel,
                           audioRecoveryWasNeeded: audioRecoveryNote != null,
-                          liveAudioInitialAutoOnly: _liveAudioInitialAutoOnly,
-                          liveAudioHadNoAudioState: _liveAudioHadNoAudioState,
+                          liveAudioInitialAutoOnly:
+                              _liveAudioRecovery.initialAutoOnly,
+                          liveAudioHadNoAudioState:
+                              _liveAudioRecovery.hadNoAudioState,
                           liveAudioTrackSwitchedDuringPrep:
-                              _liveAudioTrackSwitchedDuringPrep,
+                              _liveAudioRecovery.trackSwitchedDuringPreparation,
                           timing: timing,
                           successOutcome: LiveStartupOutcome.success,
                           attemptStartedAt: startedAt,
@@ -2115,10 +2105,10 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                   attempt: bestEffortAttempt,
                   deliveryType: bestEffortDelivery.diagnosticLabel,
                   audioRecoveryWasNeeded: true,
-                  liveAudioInitialAutoOnly: _liveAudioInitialAutoOnly,
-                  liveAudioHadNoAudioState: _liveAudioHadNoAudioState,
+                  liveAudioInitialAutoOnly: _liveAudioRecovery.initialAutoOnly,
+                  liveAudioHadNoAudioState: _liveAudioRecovery.hadNoAudioState,
                   liveAudioTrackSwitchedDuringPrep:
-                      _liveAudioTrackSwitchedDuringPrep,
+                      _liveAudioRecovery.trackSwitchedDuringPreparation,
                   timing: timing,
                   successOutcome: LiveStartupOutcome.bestEffortSuccess,
                   attemptStartedAt: bestEffortStartedAt,
@@ -2647,7 +2637,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
       if (selectable.isNotEmpty &&
           hadDecodeWarning &&
           !mediaInfo.hasAudioInfo) {
-        _audioDisabledByWatchdog = true;
+        _liveAudioRecovery.disableByWatchdog();
         try {
           await player.setAudioTrack(AudioTrack.no());
         } catch (e) {
