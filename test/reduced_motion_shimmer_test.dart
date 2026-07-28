@@ -3,24 +3,23 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
 import 'package:m3uxtream_player/core/parsers/xtream_parser.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_sort_providers.dart';
-import 'package:m3uxtream_player/features/channels/widgets/channel_list_panel.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_grid_providers.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_providers.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
-import 'package:m3uxtream_player/features/epg/widgets/epg_screen.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_sort_providers.dart';
+import 'package:m3uxtream_player/app/composition/channels/widgets/channel_list_panel.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_sync_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/widgets/epg_screen.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/group_visibility_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_sync_providers.dart';
-import 'package:m3uxtream_player/features/settings/widgets/settings_playlist_section.dart';
-import 'package:m3uxtream_player/features/xtream/providers/series_providers.dart';
-import 'package:m3uxtream_player/features/xtream/widgets/series_detail_screen.dart';
+import 'package:m3uxtream_player/app/composition/xtream/providers/series_providers.dart';
+import 'package:m3uxtream_player/app/composition/xtream/widgets/series_detail_screen.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -95,20 +94,6 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('settings sync shimmer respects reduced motion', (tester) async {
-    await _pumpSettingsPlaylist(tester, disableAnimations: true);
-
-    expect(_shimmer(tester).enabled, isFalse);
-  });
-
-  testWidgets('settings sync shimmer animates when motion is enabled', (
-    tester,
-  ) async {
-    await _pumpSettingsPlaylist(tester, disableAnimations: false);
-
-    expect(_shimmer(tester).enabled, isTrue);
-  });
-
   testWidgets('series episode shimmer respects reduced motion', (tester) async {
     await _pumpSeriesDetail(tester, disableAnimations: true);
 
@@ -134,7 +119,7 @@ Future<void> _pumpEpg(
   WidgetTester tester, {
   required bool disableAnimations,
 }) async {
-  final knownIds = StreamController<Set<String>>();
+  final knownIds = StreamController<Map<int, Set<String>>>();
   addTearDown(knownIds.close);
 
   await tester.pumpWidget(
@@ -153,8 +138,8 @@ Future<void> _pumpEpg(
         ),
         epgSyncNotifierProvider.overrideWith(_ReadyEpgSyncNotifier.new),
         knownEpgChannelIdsProvider.overrideWith((ref) => knownIds.stream),
-        epgGridEntriesStreamProvider.overrideWith(
-          (ref) => Stream.value(const <EpgEntry>[]),
+        epgGridEntriesSnapshotProvider.overrideWith(
+          (ref) => const AsyncValue.data(<EpgEntry>[]),
         ),
         epgGridChannelsProvider.overrideWith(
           (ref) => const <Channel>[_liveChannel],
@@ -230,31 +215,6 @@ Future<void> _pumpChannelList(
     ),
   );
   await tester.pump();
-  await tester.pump();
-}
-
-Future<void> _pumpSettingsPlaylist(
-  WidgetTester tester, {
-  required bool disableAnimations,
-}) async {
-  await tester.pumpWidget(
-    _motionHost(
-      disableAnimations: disableAnimations,
-      child: SizedBox(
-        width: 640,
-        height: 500,
-        child: SettingsPlaylistSection(
-          items: const <SettingsPlaylistItem>[_settingsItem],
-          isLoading: false,
-          errorMessage: null,
-          isSyncing: true,
-          isEpgSyncing: false,
-          isBusy: true,
-          compact: false,
-        ),
-      ),
-    ),
-  );
   await tester.pump();
 }
 
@@ -379,21 +339,3 @@ const _seriesChannel = Channel(
   duration: null,
   lastWatchedAt: null,
 );
-
-const _settingsItem = SettingsPlaylistItem(
-  name: 'Test playlist',
-  type: 'm3u',
-  isActive: true,
-  lastSyncedAt: null,
-  epgUrl: null,
-  epgLastSyncedAt: null,
-  onSync: _noop,
-  onEpgSync: _noop,
-  onEdit: _noop,
-  onActiveChanged: _ignoreBool,
-  onDelete: _noop,
-);
-
-void _noop() {}
-
-void _ignoreBool(bool value) {}

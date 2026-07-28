@@ -10,10 +10,20 @@ void main() {
   group('EpgRepository', () {
     late AppDatabase db;
     late EpgRepository repository;
+    late int playlistId;
 
-    setUp(() {
+    setUp(() async {
       db = AppDatabase.executor(NativeDatabase.memory());
       repository = EpgRepository(db);
+      playlistId = await db
+          .into(db.playlists)
+          .insert(
+            PlaylistsCompanion.insert(
+              name: 'EPG test',
+              type: 'm3u',
+              urlOrHost: 'https://example.invalid/test.m3u',
+            ),
+          );
     });
 
     tearDown(() async {
@@ -22,6 +32,7 @@ void main() {
 
     Future<void> seedEntries() async {
       await repository.syncEpgEntries(
+        playlistId: playlistId,
         entries: [
           ParsedEpgEntry(
             channelId: 'de.rtl',
@@ -49,6 +60,7 @@ void main() {
       await seedEntries();
 
       final current = await repository.getCurrentProgram(
+        playlistId,
         'de.rtl',
         DateTime.utc(2030, 5, 21, 12, 30),
       );
@@ -61,6 +73,7 @@ void main() {
       await seedEntries();
 
       final programs = await repository.getProgramsForChannel(
+        playlistId,
         'de.rtl',
         DateTime.utc(2030, 5, 21, 0, 0),
         DateTime.utc(2030, 5, 21, 23, 59),
@@ -79,7 +92,11 @@ void main() {
       final windowStart = DateTime.utc(2030, 5, 21, 11, 0);
       final windowEnd = DateTime.utc(2030, 5, 21, 14, 0);
 
-      final stream = repository.watchEntriesInRange(windowStart, windowEnd);
+      final stream = repository.watchEntriesInRangeForPlaylistIds(
+        {playlistId},
+        windowStart,
+        windowEnd,
+      );
       final first = await stream.first;
 
       expect(first.length, 2);
@@ -87,11 +104,45 @@ void main() {
       expect(first.any((e) => e.title == 'CNN Newsroom'), isTrue);
     });
 
+    test(
+      'snapshot reads SQLite-limit chunks once in deterministic order',
+      () async {
+        final start = DateTime.utc(2030, 5, 21, 12);
+        final channelIds = List<String>.generate(
+          epgChannelIdQueryChunkSize + 1,
+          (index) => 'channel-${index.toString().padLeft(4, '0')}',
+        );
+        await repository.syncEpgEntries(
+          playlistId: playlistId,
+          entries: [
+            for (final channelId in channelIds)
+              ParsedEpgEntry(
+                channelId: channelId,
+                title: channelId,
+                startTime: start,
+                endTime: start.add(const Duration(hours: 1)),
+              ),
+          ],
+        );
+
+        final snapshot = await repository
+            .getEntriesSnapshotForPlaylistChannelIds(
+              {playlistId: channelIds.reversed.toSet()},
+              start.subtract(const Duration(minutes: 1)),
+              start.add(const Duration(hours: 2)),
+            );
+
+        expect(snapshot, hasLength(channelIds.length));
+        expect(snapshot.map((entry) => entry.channelId), channelIds);
+      },
+    );
+
     test('clearEntriesForChannelIds deduplicates on re-sync', () async {
       await seedEntries();
 
-      await repository.clearEntriesForChannelIds(['de.rtl']);
+      await repository.clearEntriesForChannelIds(playlistId, ['de.rtl']);
       await repository.syncEpgEntries(
+        playlistId: playlistId,
         entries: [
           ParsedEpgEntry(
             channelId: 'de.rtl',
@@ -116,6 +167,7 @@ void main() {
 
     test('syncEpgChannels ignores duplicate display-name rows', () async {
       await repository.syncEpgChannels(
+        playlistId: playlistId,
         channels: [
           const ParsedEpgChannel(channelId: 'de.rtl', displayName: 'RTL HD'),
           const ParsedEpgChannel(channelId: 'de.rtl', displayName: 'RTL HD'),
@@ -153,6 +205,7 @@ void main() {
             .into(db.epgEntries)
             .insert(
               EpgEntriesCompanion.insert(
+                playlistId: playlistId,
                 channelId: seedChannelId,
                 title: 'Chunk Seed',
                 startTime: DateTime.utc(2030, 5, 21, 12, 0),
@@ -164,7 +217,7 @@ void main() {
           1001,
           (index) => 'channel-$index',
         )..add(seedChannelId);
-        await repository.clearEntriesForChannelIds(largeChannelIds);
+        await repository.clearEntriesForChannelIds(playlistId, largeChannelIds);
 
         final remaining = await db.select(db.epgEntries).get();
         expect(remaining, isEmpty);
@@ -179,6 +232,7 @@ void main() {
             .into(db.epgChannels)
             .insert(
               EpgChannelsCompanion.insert(
+                playlistId: playlistId,
                 channelId: seedChannelId,
                 displayName: 'Chunk Catalog Seed',
               ),
@@ -188,11 +242,70 @@ void main() {
           1001,
           (index) => 'catalog-$index',
         )..add(seedChannelId);
-        await repository.clearChannelCatalogForChannelIds(largeChannelIds);
+        await repository.clearChannelCatalogForChannelIds(
+          playlistId,
+          largeChannelIds,
+        );
 
         final remaining = await db.select(db.epgChannels).get();
         expect(remaining, isEmpty);
       },
     );
+
+    test('identical XMLTV IDs stay isolated between playlists', () async {
+      final secondPlaylistId = await db
+          .into(db.playlists)
+          .insert(
+            PlaylistsCompanion.insert(
+              name: 'Second EPG test',
+              type: 'm3u',
+              urlOrHost: 'https://example.invalid/second.m3u',
+            ),
+          );
+      final start = DateTime.utc(2030, 5, 21, 12);
+      final end = DateTime.utc(2030, 5, 21, 13);
+
+      await repository.syncEpgEntries(
+        playlistId: playlistId,
+        entries: [
+          ParsedEpgEntry(
+            channelId: 'shared.id',
+            title: 'Playlist one',
+            startTime: start,
+            endTime: end,
+          ),
+        ],
+      );
+      await repository.syncEpgEntries(
+        playlistId: secondPlaylistId,
+        entries: [
+          ParsedEpgEntry(
+            channelId: 'shared.id',
+            title: 'Playlist two',
+            startTime: start,
+            endTime: end,
+          ),
+        ],
+      );
+
+      await repository.clearEntriesForChannelIds(playlistId, ['shared.id']);
+
+      expect(
+        await repository.getCurrentProgram(
+          playlistId,
+          'shared.id',
+          start.add(const Duration(minutes: 30)),
+        ),
+        isNull,
+      );
+      expect(
+        (await repository.getCurrentProgram(
+          secondPlaylistId,
+          'shared.id',
+          start.add(const Duration(minutes: 30)),
+        ))?.title,
+        'Playlist two',
+      );
+    });
   });
 }

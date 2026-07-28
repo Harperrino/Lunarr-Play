@@ -1,11 +1,11 @@
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_sync_providers.dart';
-import 'package:m3uxtream_player/features/settings/providers/playlist_form_providers.dart';
+import 'package:m3uxtream_player/app/providers/playlist_form_providers.dart';
 
 class _NoOpPlaylistSyncNotifier extends PlaylistSyncNotifier {
   @override

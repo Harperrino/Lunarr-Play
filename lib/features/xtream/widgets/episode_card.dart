@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_metadata_row.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// Tonal, interactive presentation for a single series episode.
 ///
@@ -40,7 +41,7 @@ class _EpisodeCardState extends State<EpisodeCard> {
 
     return Semantics(
       button: true,
-      label: 'Episode: ${widget.title}',
+      label: context.l10n.episodeCardSemantics(widget.title),
       onTap: widget.onTap,
       child: AppSurface(
         level: AppSurfaceLevel.low,

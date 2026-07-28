@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:m3uxtream_player/shared/widgets/m3_slots.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// Provider-free favorite action shared by Live and Favorites lists.
 class ChannelFavoriteButton extends StatelessWidget {
@@ -20,8 +21,8 @@ class ChannelFavoriteButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = isFavorite
-        ? 'Aus Favoriten entfernen'
-        : 'Zu Favoriten hinzufügen';
+        ? context.l10n.channelFavoriteRemove
+        : context.l10n.channelFavoriteAdd;
     final colorScheme = Theme.of(context).colorScheme;
 
     return M3ActionSlot(

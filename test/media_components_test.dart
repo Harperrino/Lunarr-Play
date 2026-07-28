@@ -5,7 +5,6 @@ import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_metadata_row.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_poster_frame.dart';
-import 'package:m3uxtream_player/shared/widgets/media/media_progress_indicator.dart';
 
 Widget _host(Widget child) => MaterialApp(
   theme: AppTheme.darkTheme,
@@ -181,38 +180,4 @@ void main() {
       expect(find.bySemanticsLabel('2026'), findsOneWidget);
     },
   );
-
-  testWidgets('progress represents empty partial and complete resume states', (
-    tester,
-  ) async {
-    final semantics = tester.ensureSemantics();
-    await tester.pumpWidget(
-      _host(
-        const Column(
-          children: <Widget>[
-            MediaProgressIndicator(progress: 0),
-            MediaProgressIndicator(
-              progress: 0.5,
-              semanticLabel: 'Half watched',
-            ),
-            MediaProgressIndicator(progress: 1),
-          ],
-        ),
-      ),
-    );
-
-    final indicators = tester.widgetList<LinearProgressIndicator>(
-      find.byType(LinearProgressIndicator),
-    );
-    expect(indicators.map((indicator) => indicator.value), <double?>[
-      0,
-      0.5,
-      1,
-    ]);
-    expect(
-      tester.getSemantics(find.byType(MediaProgressIndicator).at(1)),
-      matchesSemantics(label: 'Half watched', value: '50%'),
-    );
-    semantics.dispose();
-  });
 }

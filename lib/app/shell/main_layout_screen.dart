@@ -3,31 +3,32 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:m3uxtream_player/app/providers/fullscreen_providers.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
+import 'package:m3uxtream_player/shared/providers/app_shell_state_providers.dart';
 import 'package:m3uxtream_player/app/providers/app_shutdown_providers.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/app/bootstrap/desktop_window_bootstrap.dart';
 import 'package:m3uxtream_player/app/shell/shell_tab_labels.dart';
-import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 import 'package:m3uxtream_player/app/shell/standard_app_shell.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/core/services/channel_navigation.dart';
 import 'package:m3uxtream_player/core/services/database_health_controller.dart';
 import 'package:m3uxtream_player/core/services/fullscreen_toggle.dart';
-import 'package:m3uxtream_player/core/shortcuts/global_shortcuts.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
-import 'package:m3uxtream_player/features/diagnostics/providers/ui_logs_providers.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
+import 'package:m3uxtream_player/shared/shortcuts/global_shortcuts.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/core/providers/ui_logs_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_sync_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_ui_command_providers.dart';
 import 'package:m3uxtream_player/features/player/services/player_ui_command_runner.dart';
 import 'package:m3uxtream_player/features/player/vod/vod_playback_video_overlay.dart';
-import 'package:m3uxtream_player/features/player/widgets/live_tab_shell.dart';
+import 'package:m3uxtream_player/app/widgets/live_tab_shell.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
-import 'package:m3uxtream_player/features/playlists/widgets/top_bar_playlist_menu.dart';
-import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
+import 'package:m3uxtream_player/app/widgets/top_bar_playlist_menu.dart';
+import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/features/settings/providers/debug_mode_providers.dart';
 import 'package:m3uxtream_player/features/xtream/providers/media_library_providers.dart';
 import 'package:m3uxtream_player/shared/widgets/custom_app_bar.dart';
@@ -390,10 +391,12 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
                         headerTitle: shellHeaderTitle(
                           activeIndex,
                           debugModeEnabled: debugModeEnabled,
+                          l10n: context.l10n,
                         ),
                         headerSubtitle: shellHeaderSubtitle(
                           activeIndex,
                           debugModeEnabled: debugModeEnabled,
+                          l10n: context.l10n,
                         ),
                         headerExtras: null,
                         onToggleFullscreen: _toggleFullscreen,
@@ -454,7 +457,7 @@ class _DatabaseFatalStatus extends StatelessWidget {
     return Semantics(
       liveRegion: true,
       container: true,
-      label: 'Datenbankverbindung unterbrochen. Anwendung neu starten.',
+      label: context.l10n.databaseFatalSemanticLabel,
       child: Material(
         color: colors.errorContainer,
         borderRadius: BorderRadius.circular(14),
@@ -467,7 +470,7 @@ class _DatabaseFatalStatus extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Datenbankverbindung unterbrochen – bitte Anwendung neu starten.',
+                  context.l10n.databaseFatalMessage,
                   style: TextStyle(
                     color: colors.onErrorContainer,
                     fontWeight: FontWeight.w700,

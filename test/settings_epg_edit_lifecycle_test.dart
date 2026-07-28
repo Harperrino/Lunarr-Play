@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/features/playlists/providers/playlist_form_providers.dart';
-import 'package:m3uxtream_player/features/playlists/widgets/playlist_management_dialogs.dart';
+import 'package:m3uxtream_player/app/providers/playlist_form_providers.dart';
+import 'package:m3uxtream_player/app/widgets/playlist_management_dialogs.dart';
 
 class _PlaylistForm extends PlaylistFormNotifier {
   @override
@@ -70,16 +70,16 @@ void main() {
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Playlist XTREAM bearbeiten'), findsOneWidget);
+    expect(find.text('Edit XTREAM playlist'), findsOneWidget);
     expect(find.text('https://example.invalid/auto.xml'), findsOneWidget);
     await tester.enterText(
       find.byType(TextField).last,
       'https://example.invalid/override.xml',
     );
-    await tester.tap(find.text('Speichern'));
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Playlist XTREAM bearbeiten'), findsNothing);
+    expect(find.text('Edit XTREAM playlist'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

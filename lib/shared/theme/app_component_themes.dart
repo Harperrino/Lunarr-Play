@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/services/live_composition_geometry.dart';
+import '../layout/live_composition_geometry.dart';
 import 'app_elevation.dart';
 import 'app_shapes.dart';
 import 'app_status_colors.dart';

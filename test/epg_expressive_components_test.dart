@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_grid_providers.dart';
-import 'package:m3uxtream_player/features/epg/widgets/epg_grid.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/widgets/epg_grid.dart';
 import 'package:m3uxtream_player/features/epg/widgets/epg_grid_frame.dart';
 import 'package:m3uxtream_player/features/epg/widgets/epg_now_marker.dart';
-import 'package:m3uxtream_player/features/epg/widgets/epg_program_cell.dart';
+import 'package:m3uxtream_player/app/composition/epg/widgets/epg_program_cell.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 
@@ -19,6 +19,7 @@ Widget _host(Widget child) => MaterialApp(
 
 EpgEntry _entry() => EpgEntry(
   id: 1,
+  playlistId: 1,
   channelId: 'example.channel',
   title: 'Aktuelle Sendung',
   description: null,
@@ -73,7 +74,7 @@ void main() {
       expect(find.byType(AppSurface), findsOneWidget);
       expect(find.text('LIVE'), findsOneWidget);
       expect(
-        find.bySemanticsLabel(RegExp('Live jetzt: Aktuelle Sendung')),
+        find.bySemanticsLabel(RegExp('Live now: Aktuelle Sendung')),
         findsOneWidget,
       );
 
@@ -87,16 +88,56 @@ void main() {
     },
   );
 
+  testWidgets('short programme keeps exact width and exposes a tooltip', (
+    tester,
+  ) async {
+    final entry = EpgEntry(
+      id: 3,
+      playlistId: 1,
+      channelId: 'example.channel',
+      title: 'Short update',
+      description: null,
+      startTime: DateTime(2026, 7, 13, 10),
+      endTime: DateTime(2026, 7, 13, 10, 5),
+    );
+
+    await tester.pumpWidget(
+      _host(
+        SizedBox(
+          width: 200,
+          height: 80,
+          child: Stack(
+            children: [
+              EpgProgramCell(
+                entry: entry,
+                windowStart: DateTime(2026, 7, 13, 10),
+                windowEnd: DateTime(2026, 7, 13, 11),
+                pixelsPerMinute: epgGridPixelsPerMinuteMin,
+                onTap: () {},
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.getSize(find.byType(Tooltip)).width, 3.75);
+    expect(
+      tester.widget<Tooltip>(find.byType(Tooltip)).message,
+      contains('Short update'),
+    );
+  });
+
   testWidgets('current time marker carries text and semantic meaning', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
     await tester.pumpWidget(_host(const EpgNowMarker()));
 
-    expect(find.text('JETZT'), findsOneWidget);
+    expect(find.text('NOW'), findsOneWidget);
     expect(
       tester.getSemantics(find.byType(EpgNowMarker)),
-      matchesSemantics(label: 'Jetzt, aktuelle Zeit im Programm'),
+      matchesSemantics(label: 'Now, current time in the programme'),
     );
     semantics.dispose();
   });
@@ -107,6 +148,7 @@ void main() {
     final now = DateTime.now();
     final entry = EpgEntry(
       id: 2,
+      playlistId: 1,
       channelId: 'example.channel',
       title: 'Laufende Sendung',
       description: null,

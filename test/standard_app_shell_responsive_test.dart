@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/app/shell/standard_app_shell.dart';
 import 'package:m3uxtream_player/app/shell/shell_command_area.dart';
-import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 
 Widget _shell({required double textScale}) => ProviderScope(
   child: MaterialApp(

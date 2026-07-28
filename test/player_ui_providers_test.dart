@@ -3,7 +3,7 @@ import 'package:media_kit/media_kit.dart' hide PlayerState;
 
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
-import 'package:m3uxtream_player/features/player/providers/player_ui_providers.dart';
+import 'package:m3uxtream_player/app/composition/player/providers/player_ui_providers.dart';
 
 class _FakePlayer extends Fake implements Player {}
 
@@ -170,8 +170,8 @@ void main() {
       );
 
       expect(viewModel.showOverlay, isTrue);
-      expect(viewModel.title, 'Stream wird vorbereitet');
-      expect(viewModel.subtitle, 'Verbindung wird hergestellt…');
+      expect(viewModel.title, 'Preparing stream');
+      expect(viewModel.subtitle, 'Establishing connection…');
     },
   );
 
@@ -192,8 +192,8 @@ void main() {
     );
 
     expect(viewModel.showOverlay, isTrue);
-    expect(viewModel.title, 'Audio wird synchronisiert');
-    expect(viewModel.subtitle, 'Audiospur stabilisieren…');
+    expect(viewModel.title, 'Synchronizing audio');
+    expect(viewModel.subtitle, 'Stabilizing audio track…');
   });
 
   test('preparation overlay stays visible while audio warm-up is playing', () {
@@ -211,7 +211,7 @@ void main() {
     );
 
     expect(viewModel.showOverlay, isTrue);
-    expect(viewModel.title, 'Audio wird synchronisiert');
+    expect(viewModel.title, 'Synchronizing audio');
   });
 
   test(
@@ -231,8 +231,8 @@ void main() {
       );
 
       expect(viewModel.showOverlay, isTrue);
-      expect(viewModel.title, 'Audio wird erkannt');
-      expect(viewModel.subtitle, 'Audiospur wird erkannt…');
+      expect(viewModel.title, 'Detecting audio');
+      expect(viewModel.subtitle, 'Detecting audio track…');
     },
   );
 
@@ -251,7 +251,7 @@ void main() {
     );
 
     expect(viewModel.showOverlay, isTrue);
-    expect(viewModel.title, 'Live-Puffer wird aufgebaut');
+    expect(viewModel.title, 'Building live buffer');
     expect(viewModel.progressValue, closeTo(7 / 15, 0.001));
   });
 
@@ -274,8 +274,8 @@ void main() {
       );
 
       expect(viewModel.showOverlay, isTrue);
-      expect(viewModel.title, 'Stream wird vorbereitet');
-      expect(viewModel.subtitle, 'Audio wird erkannt…');
+      expect(viewModel.title, 'Preparing stream');
+      expect(viewModel.subtitle, 'Detecting audio…');
     },
   );
 
@@ -296,8 +296,8 @@ void main() {
       );
 
       expect(viewModel.showOverlay, isTrue);
-      expect(viewModel.title, 'Stream wird vorbereitet');
-      expect(viewModel.subtitle, 'Verbindung wird hergestellt…');
+      expect(viewModel.title, 'Preparing stream');
+      expect(viewModel.subtitle, 'Establishing connection…');
     },
   );
 

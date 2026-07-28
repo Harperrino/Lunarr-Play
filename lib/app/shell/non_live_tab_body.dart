@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
-import 'package:m3uxtream_player/features/diagnostics/widgets/diagnostics_screen.dart';
-import 'package:m3uxtream_player/features/epg/widgets/epg_screen.dart';
-import 'package:m3uxtream_player/features/favorites/widgets/favorites_screen.dart';
-import 'package:m3uxtream_player/features/playlists/widgets/playlist_hub_screen.dart';
-import 'package:m3uxtream_player/features/settings/widgets/settings_screen.dart';
-import 'package:m3uxtream_player/features/xtream/widgets/series_screen.dart';
-import 'package:m3uxtream_player/features/xtream/widgets/vod_screen.dart';
-import 'package:m3uxtream_player/features/xtream/widgets/media_library_screen.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
+import 'package:m3uxtream_player/app/composition/diagnostics/widgets/diagnostics_screen.dart';
+import 'package:m3uxtream_player/app/composition/epg/widgets/epg_screen.dart';
+import 'package:m3uxtream_player/app/composition/favorites/widgets/favorites_screen.dart';
+import 'package:m3uxtream_player/app/widgets/playlist_hub_screen.dart';
+import 'package:m3uxtream_player/app/composition/settings/widgets/settings_screen.dart';
+import 'package:m3uxtream_player/app/composition/xtream/widgets/series_screen.dart';
+import 'package:m3uxtream_player/app/composition/xtream/widgets/vod_screen.dart';
+import 'package:m3uxtream_player/app/composition/xtream/widgets/media_library_screen.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 
 /// Feature body for sidebar indices 1â€“6 (non-live tabs).
@@ -70,14 +71,14 @@ class _ComingSoonPlaceholder extends StatelessWidget {
             Icon(Icons.construction, size: 48, color: colors.outline),
             const SizedBox(height: 16),
             Text(
-              'Feature — Coming Soon',
+              context.l10n.comingSoonTitle,
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontSize: 18),
             ),
             const SizedBox(height: 8),
             Text(
-              'This section is planned for a future milestone.',
+              context.l10n.comingSoonDescription,
               style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant),
             ),
           ],

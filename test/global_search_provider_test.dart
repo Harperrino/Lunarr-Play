@@ -1,14 +1,14 @@
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/search_catalog_entry.dart';
 import 'package:m3uxtream_player/core/repository/app_state_repository.dart';
 import 'package:m3uxtream_player/core/repository/playlist_repository.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
 import 'package:m3uxtream_player/core/parsers/m3u_parser.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/group_visibility_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
@@ -16,7 +16,7 @@ import 'package:m3uxtream_player/features/search/models/category_search_result.d
 import 'package:m3uxtream_player/features/search/models/channel_search_result.dart';
 import 'package:m3uxtream_player/features/search/models/global_search_results.dart';
 import 'package:m3uxtream_player/features/search/models/search_overlay_filter.dart';
-import 'package:m3uxtream_player/features/search/providers/category_search_providers.dart';
+import 'package:m3uxtream_player/app/composition/search/providers/category_search_providers.dart';
 import 'package:m3uxtream_player/features/search/providers/search_providers.dart';
 
 Future<
@@ -96,7 +96,7 @@ _buildSearchFixture() async {
       playlistRepositoryProvider.overrideWithValue(repository),
       appStateRepositoryProvider.overrideWithValue(appState),
       epgMatchingIndexProvider.overrideWithValue(
-        EpgMatchingIndex(knownEpgChannelIds: const {}),
+        PlaylistEpgMatchingIndex(knownEpgChannelIdsByPlaylist: const {}),
       ),
     ],
   );

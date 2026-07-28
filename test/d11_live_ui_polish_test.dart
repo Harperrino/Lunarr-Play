@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/app/shell/shell_command_area.dart';
 import 'package:m3uxtream_player/features/search/providers/search_providers.dart';
-import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
+import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/shared/theme/app_color_roles.dart';
 import 'package:m3uxtream_player/shared/theme/app_component_themes.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';

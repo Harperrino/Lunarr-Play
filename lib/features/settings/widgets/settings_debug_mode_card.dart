@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_status_pill.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_settings_section_header.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 class SettingsDebugModeCard extends StatelessWidget {
   const SettingsDebugModeCard({
@@ -40,11 +41,12 @@ class SettingsDebugModeCard extends StatelessWidget {
               M3SettingsSectionHeader(
                 icon: Icons.terminal_rounded,
                 iconColor: colors.tertiary,
-                title: 'DEBUG MODE',
-                description:
-                    'Shows the Diagnostics / Logs tab and keeps collecting logs even when hidden.',
+                title: context.l10n.debugModeTitle,
+                description: context.l10n.debugModeDescription,
                 titleSuffix: M3StatusPill(
-                  label: isEnabled ? 'Diagnostics on' : 'Hidden',
+                  label: isEnabled
+                      ? context.l10n.debugModeDiagnosticsOn
+                      : context.l10n.debugModeHidden,
                   accent: isEnabled
                       ? colors.secondary
                       : colors.onSurfaceVariant,
@@ -89,7 +91,9 @@ class _DebugModeControls extends StatelessWidget {
         children: [
           Switch(value: isEnabled, onChanged: isLoading ? null : onChanged),
           Text(
-            isEnabled ? 'Enabled' : 'Disabled',
+            isEnabled
+                ? context.l10n.debugModeEnabled
+                : context.l10n.debugModeDisabled,
             style: TextStyle(
               fontSize: compact ? 10.5 : 11,
               color: colors.onSurfaceVariant,

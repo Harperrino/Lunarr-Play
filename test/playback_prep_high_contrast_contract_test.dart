@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/features/player/models/playback_media_info.dart';
 import 'package:m3uxtream_player/features/player/providers/vod_pre_buffer_settings_providers.dart';
-import 'package:m3uxtream_player/features/xtream/providers/playback_prep_providers.dart';
-import 'package:m3uxtream_player/features/xtream/widgets/playback_prep_panel.dart';
+import 'package:m3uxtream_player/app/composition/xtream/providers/playback_prep_providers.dart';
+import 'package:m3uxtream_player/app/composition/xtream/widgets/playback_prep_panel.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 
@@ -47,7 +47,7 @@ void main() {
       );
       expect(track.backgroundColor, colors.surfaceContainerLow);
       expect(
-        tester.widget<Text>(find.text('Puffert... 50 %')).style?.color,
+        tester.widget<Text>(find.text('Buffering… 50%')).style?.color,
         colors.onSurfaceVariant,
       );
     },
@@ -110,12 +110,12 @@ void _expectPanelRoles(WidgetTester tester, ColorScheme colors) {
   expect(find.byType(AppSurface), findsNWidgets(4));
 
   final headerSubtitle = tester.widget<Text>(
-    find.text('Pre-buffered start for smoother scrubbing and faster resume.'),
+    find.text('Pre-buffered start for smoother seeking and faster resume.'),
   );
   expect(headerSubtitle.style?.color, colors.onSurfaceVariant);
 
   final detailSubtitles = tester.widgetList<Text>(
-    find.text('Vor dem Abspielen puffern - verbessert Vor- und Zuruckspulen.'),
+    find.text('Buffer before playback for smoother forward and backward seeking.'),
   );
   expect(detailSubtitles, isNotEmpty);
   expect(
@@ -133,11 +133,11 @@ void _expectPanelRoles(WidgetTester tester, ColorScheme colors) {
     tester.widget<Text>(find.text('Movies')).style?.color,
     colors.onSurfaceVariant,
   );
-  expect(find.text('Direkt starten'), findsOneWidget);
+  expect(find.text('Start immediately'), findsOneWidget);
   expect(find.byIcon(Icons.bolt_rounded), findsOneWidget);
   expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
   expect(find.byType(FilledButton), findsNWidgets(2));
-  expect(find.byTooltip('Zuruck'), findsOneWidget);
+  expect(find.byTooltip('Back'), findsOneWidget);
 }
 
 class _IdlePlaybackPrepController extends PlaybackPrepController {

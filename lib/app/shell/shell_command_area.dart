@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:m3uxtream_player/app/shell/shell_layout.dart';
-import 'package:m3uxtream_player/core/services/live_layout_geometry.dart';
-import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
+import 'package:m3uxtream_player/shared/layout/live_layout_geometry.dart';
+import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/shared/theme/app_spacing.dart';
 
 /// Presentation-only command area for standard shell screens.

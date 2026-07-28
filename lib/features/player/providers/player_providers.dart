@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:m3uxtream_player/l10n/generated/app_localizations.dart';
+import 'package:m3uxtream_player/l10n/generated/app_localizations_en.dart';
 
 import 'package:media_kit/media_kit.dart';
 
@@ -10,6 +12,7 @@ import 'package:m3uxtream_player/core/database/app_database.dart';
 
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/core/models/streaming_diagnostics.dart';
+import 'package:m3uxtream_player/core/providers/diagnostic_sink_provider.dart';
 
 import 'package:m3uxtream_player/core/services/live_audio_track_service.dart';
 import 'package:m3uxtream_player/core/services/live_startup_timing.dart';
@@ -18,13 +21,11 @@ import 'package:m3uxtream_player/core/services/player_buffer_service.dart';
 import 'package:m3uxtream_player/core/services/stream_diagnostics_service.dart';
 import 'package:m3uxtream_player/core/services/stream_log_redactor.dart';
 
-import 'package:m3uxtream_player/features/diagnostics/providers/streaming_diagnostics_providers.dart';
-import 'package:m3uxtream_player/features/diagnostics/providers/ui_logs_providers.dart';
 import 'package:m3uxtream_player/features/player/models/playback_media_info.dart';
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
 import 'package:m3uxtream_player/features/player/services/player_diagnostics_reporter.dart';
-import 'package:m3uxtream_player/features/player/services/player_event_bindings.dart';
 import 'package:m3uxtream_player/features/player/services/player_playback_policies.dart';
+import 'package:m3uxtream_player/features/player/services/player_session_lifecycle.dart';
 import 'package:m3uxtream_player/features/player/vod/vod_main_video_surface_gate.dart';
 import 'package:m3uxtream_player/features/player/providers/vod_pre_buffer_settings_providers.dart';
 
@@ -321,9 +322,14 @@ bool hasDecodedMultichannelAudio(PlaybackMediaInfo mediaInfo) {
   return layout.contains('5.1') || layout.contains('7.1');
 }
 
-String? decodedAudioCompatibilityHint(PlaybackMediaInfo mediaInfo) {
+final AppLocalizations _playerEnglishL10n = AppLocalizationsEn();
+
+String? decodedAudioCompatibilityHint(
+  PlaybackMediaInfo mediaInfo, [
+  AppLocalizations? localizations,
+]) {
   if (!hasDecodedMultichannelAudio(mediaInfo)) return null;
-  return 'Mehrkanalton dekodiert. Wenn kein Ton hoerbar ist, "Stereo erzwingen" testen.';
+  return (localizations ?? _playerEnglishL10n).playbackAudioMultichannelHint;
 }
 
 enum LivePlaybackFinalizationResult { released, decodeFailed, staleSession }
@@ -579,9 +585,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
 
   double? _volumeBeforeMute;
 
-  VideoController? _videoController;
-
-  final PlayerEventBindings _eventBindings = PlayerEventBindings();
+  final PlayerSessionLifecycle<PlayerState> _sessionLifecycle =
+      PlayerSessionLifecycle<PlayerState>();
   final PlayerDiagnosticsReporter _diagnosticsReporter =
       const PlayerDiagnosticsReporter();
 
@@ -590,13 +595,9 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
   LiveStreamDelivery? _lastAppliedLiveDelivery;
   String? _lastAppliedDemuxerLavfFormat;
   String? _manualAudioTrackId;
-  int _liveOpenSessionToken = 0;
-  Future<void>? _disposeFuture;
-  Future<PlayerState>? _initFuture;
   String? _lastAudioWarning;
   DateTime? _lastAudioWarningAt;
   bool _audioDisabledByWatchdog = false;
-  bool _isDisposed = false;
   bool _forceStereoEnabled = false;
   String? _preferredAudioLanguage;
 
@@ -605,10 +606,6 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
   bool _liveAudioHadNoAudioState = false;
   bool _liveAudioTrackSwitchedDuringPrep = false;
   String? _liveAudioSelectedTrackId;
-
-  void _invalidateVideoController() {
-    _videoController = null;
-  }
 
   Future<void> _applyAudioCompatibility(Player player) async {
     final forceStereoEnabled = await ref.read(
@@ -626,22 +623,15 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
   }
 
   int _beginLiveOpenSession() {
-    _liveOpenSessionToken += 1;
-    return _liveOpenSessionToken;
+    return _sessionLifecycle.beginSession();
   }
 
   bool _isLiveOpenSessionCurrent(int sessionToken) {
-    return sessionToken == _liveOpenSessionToken;
+    return _sessionLifecycle.isSessionCurrent(sessionToken);
   }
 
   StreamingDiagnosticsSettings _streamingDiagnosticsSettings() {
-    return ref.read(streamingDiagnosticsSettingsProvider).valueOrNull ??
-        const StreamingDiagnosticsSettings(
-          autoFallbackEnabled:
-              StreamingDiagnosticsSettingsNotifier.defaultAutoFallbackEnabled,
-          showOnErrorEnabled:
-              StreamingDiagnosticsSettingsNotifier.defaultShowOnErrorEnabled,
-        );
+    return ref.read(diagnosticSinkProvider).streamingSettings;
   }
 
   void _recordStreamingDiagnostic({
@@ -657,8 +647,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     String? diagnosisNote,
   }) {
     ref
-        .read(streamingDiagnosticsProvider.notifier)
-        .record(
+        .read(diagnosticSinkProvider)
+        .recordStreaming(
           _diagnosticsReporter.createStreamingEvent(
             timestamp: DateTime.now(),
             phase: phase,
@@ -677,14 +667,14 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
 
   void _logStreamingFailureToUi(String message) {
     ref
-        .read(uiLogsProvider.notifier)
-        .addLog(redactStreamText('Streaming: $message'));
+        .read(diagnosticSinkProvider)
+        .addText(redactStreamText('Streaming: $message'));
   }
 
   void _logAudioWarningToUi(String message) {
     ref
-        .read(uiLogsProvider.notifier)
-        .addLog(redactStreamText('Audio: $message'));
+        .read(diagnosticSinkProvider)
+        .addText(redactStreamText('Audio: $message'));
   }
 
   String _audioTrackSignature(Iterable<AudioTrack> tracks) {
@@ -734,7 +724,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
         'PlayerNotifier: Audio diagnostics could not read the force stereo flag: ${redactStreamText(e.toString())}',
       );
     }
-    if (_isDisposed) return;
+    if (_sessionLifecycle.isDisposed) return;
     _logAudioDiagnosticsSnapshot(
       player: player,
       stage: stage,
@@ -746,41 +736,14 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
   }
 
   VideoController videoControllerFor(Player player) {
-    _videoController ??= VideoController(player);
-    return _videoController!;
+    return _sessionLifecycle.videoControllerFor(player);
   }
 
   Future<void> disposeResources() {
-    final existing = _disposeFuture;
-    if (existing != null) return existing;
-
-    final future = _disposeResourcesImpl();
-    _disposeFuture = future;
-    return future;
-  }
-
-  Future<void> _disposeResourcesImpl() async {
-    if (_isDisposed) return;
-    _isDisposed = true;
-
-    _beginLiveOpenSession();
-
-    await _eventBindings.dispose();
-
-    _invalidateVideoController();
-
-    final current = state.asData?.value;
-    if (current != null) {
-      try {
-        await current.player.dispose();
-      } catch (e, stackTrace) {
-        AppLogger.error(
-          'PlayerNotifier: Failed to dispose media_kit player',
-          e,
-          stackTrace,
-        );
-      }
-    }
+    return _sessionLifecycle.dispose(
+      state.asData?.value.player,
+      onBegin: _beginLiveOpenSession,
+    );
   }
 
   /// Resumes VOD/series after prep — does not recreate the video controller.
@@ -793,8 +756,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
 
   @override
   Future<PlayerState> build() async {
-    _initFuture ??= _initializePlayer();
-    return _initFuture!;
+    return _sessionLifecycle.initializeOnce(_initializePlayer);
   }
 
   Future<PlayerState> _initializePlayer() async {
@@ -821,7 +783,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     );
     await _applyAudioCompatibility(player);
 
-    _eventBindings.bind(
+    _sessionLifecycle.bind(
       player,
       onPlaying: (playing) {
         _update((s) => s.copyWith(isPlaying: playing));
@@ -1041,7 +1003,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
   }
 
   void _update(PlayerState Function(PlayerState current) transform) {
-    if (_isDisposed) return;
+    if (_sessionLifecycle.isDisposed) return;
     final current = state.asData?.value;
 
     if (current != null) {
@@ -1172,8 +1134,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
           stackTrace,
         );
         ref
-            .read(uiLogsProvider.notifier)
-            .addLog('Audio track switch failed: Auto');
+            .read(diagnosticSinkProvider)
+            .addText('Audio track switch failed: Auto');
       }
       return;
     }
@@ -1185,8 +1147,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
         'Track $trackId not available.',
       );
       ref
-          .read(uiLogsProvider.notifier)
-          .addLog('Audio track switch failed: Track not available');
+          .read(diagnosticSinkProvider)
+          .addText('Audio track switch failed: Track not available');
       return;
     }
 
@@ -1206,8 +1168,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
         stackTrace,
       );
       ref
-          .read(uiLogsProvider.notifier)
-          .addLog(
+          .read(diagnosticSinkProvider)
+          .addText(
             'Audio track switch failed: ${LiveAudioTrackService.labelFor(track)}',
           );
     }
@@ -1272,7 +1234,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     await current.player.stop();
 
     resetVodMainVideoSurfaceReady(ref);
-    _invalidateVideoController();
+    _sessionLifecycle.invalidateVideoController();
 
     ref.read(selectedChannelProvider.notifier).state = null;
 
@@ -1302,8 +1264,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     bool startPaused = false,
     bool preBuffer = false,
   }) async {
-    if (state.isLoading && _initFuture != null) {
-      await _initFuture;
+    if (state.isLoading && _sessionLifecycle.initialization != null) {
+      await _sessionLifecycle.initialization;
     }
 
     final current = state.asData?.value;
@@ -2170,8 +2132,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                     'Best-effort video-only playback; waiting for late audio tracks';
                 AppLogger.info('PlayerNotifier: $note');
                 _logAudioWarningToUi(
-                  'Keine Audiospur erkannt – Wiedergabe ohne Ton gestartet, '
-                  'Ton wird automatisch übernommen sobald erkannt',
+                  'No audio track detected — playback started without sound; '
+                  'audio will be selected automatically when detected',
                 );
                 _recordStreamingDiagnostic(
                   phase: StreamingDiagnosticPhase.success,
@@ -2285,7 +2247,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
       if (canSeek) {
         resetVodMainVideoSurfaceReady(ref);
       }
-      _invalidateVideoController();
+      _sessionLifecycle.invalidateVideoController();
       _lastSuccessfulOpenAt = null;
 
       final bufferSeconds =
@@ -2694,7 +2656,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
           );
         }
         const message =
-            'Audiospur nicht dekodierbar (PMT codec mismatch) – Wiedergabe ohne Ton';
+            'Audio track is not decodable (PMT codec mismatch) — playback continues without sound';
         AppLogger.info('PlayerNotifier: $message');
         _logAudioWarningToUi(message);
         return;
@@ -3054,7 +3016,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
         targetSeconds: target,
         now: DateTime.now(),
         deadline: deadline,
-        isDisposed: _isDisposed,
+        isDisposed: _sessionLifecycle.isDisposed,
         isCurrentSession: _isLiveOpenSessionCurrent(sessionToken),
       );
       switch (status) {

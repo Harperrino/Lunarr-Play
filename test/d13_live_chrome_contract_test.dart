@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/app/shell/shell_command_area.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/repository/app_state_repository.dart';
 import 'package:m3uxtream_player/core/repository/playlist_repository.dart';
-import 'package:m3uxtream_player/core/services/live_composition_geometry.dart';
-import 'package:m3uxtream_player/core/services/live_layout_geometry.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
-import 'package:m3uxtream_player/features/channels/widgets/channel_list_panel.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
+import 'package:m3uxtream_player/shared/layout/live_composition_geometry.dart';
+import 'package:m3uxtream_player/shared/layout/live_layout_geometry.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/app/composition/channels/widgets/channel_list_panel.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_sync_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/group_visibility_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_sync_providers.dart';
-import 'package:m3uxtream_player/features/search/widgets/global_search_field.dart';
+import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/theme/app_spacing.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
@@ -174,8 +174,8 @@ void main() {
           expect(rect.top, greaterThanOrEqualTo(panel.top));
           expect(rect.bottom, lessThanOrEqualTo(panel.bottom));
         }
-        expect(find.bySemanticsLabel('Kategorien einklappen'), findsOneWidget);
-        expect(find.bySemanticsLabel('Senderliste einklappen'), findsOneWidget);
+        expect(find.bySemanticsLabel('Collapse Categories'), findsOneWidget);
+        expect(find.bySemanticsLabel('Collapse Channel list'), findsOneWidget);
         expect(tester.takeException(), isNull);
       }
     },
@@ -210,10 +210,10 @@ void main() {
 
     expect(find.byIcon(Icons.layers_rounded), findsOneWidget);
     expect(find.byIcon(Icons.format_list_bulleted_rounded), findsOneWidget);
-    expect(find.byTooltip('Kategorien anzeigen'), findsOneWidget);
-    expect(find.byTooltip('Senderliste einklappen'), findsOneWidget);
-    expect(find.text('Kategorien'), findsNothing);
-    expect(find.text('Senderliste'), findsOneWidget);
+    expect(find.byTooltip('Expand Categories'), findsOneWidget);
+    expect(find.byTooltip('Collapse Channel list'), findsOneWidget);
+    expect(find.text('Categories'), findsNothing);
+    expect(find.text('Channel list'), findsOneWidget);
     expect(tester.getSize(find.byType(M3ActionSlot).first), const Size(48, 48));
     expect(tester.takeException(), isNull);
   });
@@ -246,7 +246,7 @@ void main() {
 
     expect(activations, 1);
     expect(focusNode.hasFocus, isTrue);
-    expect(find.bySemanticsLabel('Senderliste anzeigen'), findsOneWidget);
+    expect(find.bySemanticsLabel('Expand Channel list'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/core/shortcuts/global_shortcuts.dart';
+import 'package:m3uxtream_player/shared/shortcuts/global_shortcuts.dart';
 
 void main() {
   group('isTextInputFocused', () {

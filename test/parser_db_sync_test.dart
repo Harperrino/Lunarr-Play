@@ -455,12 +455,21 @@ http://stream.provider.com/hbo.m3u8
         await tempFile.writeAsBytes(gzippedBytes);
 
         try {
+          final playlistId = await repository.insertPlaylist(
+            const PlaylistsCompanion(
+              name: Value('XMLTV test playlist'),
+              type: Value('m3u'),
+              urlOrHost: Value('fixture.m3u'),
+            ),
+          );
+
           // 3. ACT: Pre-populate the SQLite database with 1 expired EpgEntry directly
           // to verify that EpgSyncService's purging logic executes successfully.
           await db
               .into(db.epgEntries)
               .insert(
                 EpgEntriesCompanion.insert(
+                  playlistId: playlistId,
                   channelId: 'de.rtl',
                   title: 'Stale Pre-existing Entry',
                   description: const Value('Should be purged'),
@@ -474,7 +483,10 @@ http://stream.provider.com/hbo.m3u8
           expect(prePurgeEntries.length, equals(1));
 
           // 4. ACT: Trigger background Isolate EPG download, GZIP decompression, and batch insertion
-          await epgSyncService.syncEpg(urlOrFilePath: tempFile.path);
+          await epgSyncService.syncEpg(
+            playlistId: playlistId,
+            urlOrFilePath: tempFile.path,
+          );
 
           // 5. ASSERT: Fetch records from Drift to verify correct purging and synchronization
           final currentEntries = await db.select(db.epgEntries).get();

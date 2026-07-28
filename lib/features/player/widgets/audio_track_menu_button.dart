@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
 import 'package:m3uxtream_player/core/services/live_audio_track_service.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 class AudioTrackMenuButton extends ConsumerWidget {
   const AudioTrackMenuButton({
@@ -26,7 +27,9 @@ class AudioTrackMenuButton extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
 
     return PopupMenuButton<String>(
-      tooltip: hasTracks ? 'Audio-Spur wählen' : 'Keine Audio-Spuren erkannt',
+      tooltip: hasTracks
+          ? context.l10n.audioTrackChooseTooltip
+          : context.l10n.audioTrackNoneDetectedTooltip,
       enabled: hasTracks,
       offset: const Offset(0, 12),
       color: colors.surfaceContainerHigh,
@@ -41,7 +44,7 @@ class AudioTrackMenuButton extends ConsumerWidget {
         _menuItem(
           context: context,
           value: AudioTrack.auto().id,
-          label: 'Auto',
+          label: context.l10n.audioTrackAutomatic,
           selected: selectedTrackId == null,
         ),
         for (var index = 0; index < tracks.length; index++)

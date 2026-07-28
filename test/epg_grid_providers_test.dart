@@ -1,11 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:m3uxtream_player/core/database/app_database.dart';
+import 'package:m3uxtream_player/core/models/playlist_epg_channel_key.dart';
 
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
 
-import 'package:m3uxtream_player/features/epg/providers/epg_grid_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
 import 'package:m3uxtream_player/features/epg/controllers/epg_scroll_coordinator.dart';
+import 'package:m3uxtream_player/l10n/generated/app_localizations_en.dart';
 
 Channel _channel({
   int id = 1,
@@ -58,6 +60,7 @@ EpgEntry _entry({
 }) {
   return EpgEntry(
     id: channelId.hashCode,
+    playlistId: 1,
 
     channelId: channelId,
 
@@ -72,6 +75,7 @@ EpgEntry _entry({
 }
 
 void main() {
+  final l10n = AppLocalizationsEn();
   group('EPG grid providers (pure logic)', () {
     final windowStart = DateTime(2025, 6, 1, 0);
 
@@ -111,10 +115,12 @@ void main() {
       ];
 
       final grouped = groupEpgEntriesByChannelId(entries);
+      const rtlKey = PlaylistEpgChannelKey(playlistId: 1, channelId: 'de.rtl');
+      const cnnKey = PlaylistEpgChannelKey(playlistId: 1, channelId: 'us.cnn');
 
-      expect(grouped.keys, containsAll(['de.rtl', 'us.cnn']));
+      expect(grouped.keys, containsAll([rtlKey, cnnKey]));
 
-      expect(grouped['de.rtl']!.map((e) => e.title), [
+      expect(grouped[rtlKey]!.map((e) => e.title), [
         'Morning Show',
         'Late News',
       ]);
@@ -133,7 +139,10 @@ void main() {
         ),
       ]);
 
-      expect(programsForResolvedId(data, 'de.rtl').single.title, 'RTL Aktuell');
+      expect(
+        programsForResolvedId(data, 1, 'de.rtl').single.title,
+        'RTL Aktuell',
+      );
     });
 
     test('buildEpgGridRows maps programmes by channel db id', () {
@@ -253,6 +262,47 @@ void main() {
       expect(layout.width, greaterThan(0));
     });
 
+    test(
+      'consecutive short programmes keep exact temporal widths at every zoom',
+      () {
+        final fiveMinute = _entry(
+          channelId: 'de.rtl',
+          title: 'Five',
+          start: windowStart,
+          end: windowStart.add(const Duration(minutes: 5)),
+        );
+        final fifteenMinute = _entry(
+          channelId: 'de.rtl',
+          title: 'Fifteen',
+          start: windowStart.add(const Duration(minutes: 5)),
+          end: windowStart.add(const Duration(minutes: 20)),
+        );
+
+        for (final zoom in const [
+          epgGridPixelsPerMinuteMin,
+          epgGridPixelsPerMinuteDefault,
+          epgGridPixelsPerMinuteMax,
+        ]) {
+          final first = epgProgrammeLayout(
+            windowStart: windowStart,
+            windowEnd: windowEnd,
+            entry: fiveMinute,
+            pixelsPerMinute: zoom,
+          );
+          final second = epgProgrammeLayout(
+            windowStart: windowStart,
+            windowEnd: windowEnd,
+            entry: fifteenMinute,
+            pixelsPerMinute: zoom,
+          );
+
+          expect(first.width, 5 * zoom);
+          expect(second.width, 15 * zoom);
+          expect(first.left + first.width, second.left);
+        }
+      },
+    );
+
     test('channel without match has empty programmes', () {
       final rows = buildEpgGridRows(
         channels: [_channel(name: 'Unknown', tvgId: null)],
@@ -291,8 +341,9 @@ void main() {
             programs: programs,
           ),
           now,
+          l10n,
         ),
-        'Jetzt: Dokumentation',
+        'Now: Dokumentation',
       );
     });
 

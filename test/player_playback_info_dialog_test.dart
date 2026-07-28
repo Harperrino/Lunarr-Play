@@ -20,7 +20,7 @@ void main() {
       );
       expect(
         audioTrackExposureStatusLabel(2, 0),
-        'Audio tracks detected, none currently selectable',
+        'Audio tracks detected, but none are currently selectable',
       );
       expect(audioTrackExposureStatusLabel(2, 2), '2 raw / 2 selectable');
     },
@@ -35,7 +35,7 @@ void main() {
           rawCount: 0,
           selectableCount: 0,
         ),
-        'Audio track not exposed by stream/demuxer',
+        'Audio track not exposed by stream or demuxer',
       );
 
       expect(
@@ -44,7 +44,7 @@ void main() {
           rawCount: 2,
           selectableCount: 0,
         ),
-        'Audio tracks detected, none currently selectable',
+        'Audio tracks detected, but none are currently selectable',
       );
 
       expect(
@@ -62,7 +62,7 @@ void main() {
           rawCount: 2,
           selectableCount: 2,
         ),
-        'Keine',
+        'None',
       );
     },
   );
@@ -76,7 +76,7 @@ void main() {
           audioChannelsLabel: '5.1(side)',
         ),
       ),
-      contains('Stereo erzwingen'),
+      contains('Force stereo'),
     );
 
     expect(
@@ -140,10 +140,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Wiedergabe-Informationen'), findsOneWidget);
-    expect(find.textContaining('Audio-Track-Status'), findsOneWidget);
-    expect(find.textContaining('Audio dekodiert'), findsOneWidget);
-    expect(find.textContaining('Stereo erzwingen'), findsOneWidget);
+    expect(find.text('Playback information'), findsOneWidget);
+    expect(find.textContaining('Audio track status'), findsOneWidget);
+    expect(find.textContaining('Audio decoded'), findsOneWidget);
+    expect(find.textContaining('Force stereo'), findsOneWidget);
 
     final colors = AppTheme.highContrastDarkTheme.colorScheme;
     expect(
@@ -151,7 +151,7 @@ void main() {
       AppSurfaceLevel.high,
     );
     expect(
-      tester.widget<Text>(find.text('Titel')).style?.color,
+      tester.widget<Text>(find.text('Title')).style?.color,
       colors.onSurfaceVariant,
     );
     expect(

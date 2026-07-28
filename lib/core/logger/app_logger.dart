@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:logger/logger.dart';
+import 'package:m3uxtream_player/core/diagnostics/diagnostic_sanitizer.dart';
 
 /// Central logging class for the IP-TV Player.
 /// Adheres to the 'Striktes Logging' architectural guideline to trace database,
@@ -87,12 +88,19 @@ class AppLogger {
     dynamic error,
     StackTrace? stackTrace,
   }) {
+    final safeMessage = DiagnosticSanitizer.sanitizeText(message).value;
+    final safeError = error == null
+        ? null
+        : DiagnosticSanitizer.sanitizeError(error);
+    final safeStackTrace = stackTrace == null
+        ? null
+        : DiagnosticSanitizer.sanitizeStackTrace(stackTrace);
     final entry = AppLogEntry(
       timestamp: DateTime.now(),
       level: level,
-      message: message,
-      error: error,
-      stackTrace: stackTrace,
+      message: safeMessage,
+      error: safeError,
+      stackTrace: safeStackTrace,
     );
 
     _recentEntries.add(entry);
@@ -108,16 +116,16 @@ class AppLogger {
 
     switch (level) {
       case AppLogLevel.debug:
-        _logger.d(message, error: error, stackTrace: stackTrace);
+        _logger.d(safeMessage, error: safeError, stackTrace: safeStackTrace);
         break;
       case AppLogLevel.info:
-        _logger.i(message, error: error, stackTrace: stackTrace);
+        _logger.i(safeMessage, error: safeError, stackTrace: safeStackTrace);
         break;
       case AppLogLevel.warning:
-        _logger.w(message, error: error, stackTrace: stackTrace);
+        _logger.w(safeMessage, error: safeError, stackTrace: safeStackTrace);
         break;
       case AppLogLevel.error:
-        _logger.e(message, error: error, stackTrace: stackTrace);
+        _logger.e(safeMessage, error: safeError, stackTrace: safeStackTrace);
         break;
     }
   }

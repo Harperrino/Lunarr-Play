@@ -55,7 +55,24 @@ Future<void> _ensureChannelCatalogIndex(Migrator m) async {
     Index(
       'channels',
       'CREATE INDEX IF NOT EXISTS idx_channels_playlist_type_order '
-      'ON channels (playlist_id, channel_type, provider_order);',
+          'ON channels (playlist_id, channel_type, provider_order);',
+    ),
+  );
+}
+
+Future<void> _ensureEpgPlaylistIndexes(Migrator m) async {
+  await m.createIndex(
+    Index(
+      'epg_entries',
+      'CREATE INDEX IF NOT EXISTS idx_epg_playlist_channel_time '
+          'ON epg_entries (playlist_id, channel_id, start_time, end_time);',
+    ),
+  );
+  await m.createIndex(
+    Index(
+      'epg_channels',
+      'CREATE INDEX IF NOT EXISTS idx_epg_channels_playlist_channel '
+          'ON epg_channels (playlist_id, channel_id);',
     ),
   );
 }
@@ -135,6 +152,8 @@ class Channels extends Table {
 // ==========================================
 class EpgEntries extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get playlistId =>
+      integer().references(Playlists, #id, onDelete: KeyAction.cascade)();
   TextColumn get channelId =>
       text()(); // Matches tvgId in Channels or channel-id in XMLTV
   TextColumn get title => text()();
@@ -147,11 +166,13 @@ class EpgEntries extends Table {
 // 3b. EPG CHANNEL CATALOG (XMLTV display-name → channel id)
 // ==========================================
 class EpgChannels extends Table {
+  IntColumn get playlistId =>
+      integer().references(Playlists, #id, onDelete: KeyAction.cascade)();
   TextColumn get channelId => text()();
   TextColumn get displayName => text()();
 
   @override
-  Set<Column<Object>> get primaryKey => {channelId, displayName};
+  Set<Column<Object>> get primaryKey => {playlistId, channelId, displayName};
 }
 
 // ==========================================
@@ -187,7 +208,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void>? _closeFuture;
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   Future<void> close() {
@@ -208,13 +229,7 @@ class AppDatabase extends _$AppDatabase {
           // Construct all defined tables inside the database context
           await m.createAll();
 
-          // Performance Tuning: Custom SQLite index for EPG-channel queries
-          await m.createIndex(
-            Index(
-              'epg_entries',
-              'CREATE INDEX IF NOT EXISTS idx_epg_channel_time ON epg_entries (channel_id, start_time, end_time);',
-            ),
-          );
+          await _ensureEpgPlaylistIndexes(m);
           await _ensureChannelCatalogIndex(m);
           await ensureSearchSchema(m.database);
           AppLogger.info(
@@ -346,6 +361,29 @@ class AppDatabase extends _$AppDatabase {
             await _ensureChannelCatalogIndex(m);
             AppLogger.info(
               'Database Migration: Ensured idx_channels_playlist_type_order (v8 → v9).',
+            );
+          }
+          if (from < 10) {
+            // EPG is a derived cache. Legacy rows have no reliable playlist
+            // owner, so rebuilding the two cache tables is safer than
+            // heuristically assigning programmes to the wrong playlist.
+            await m.database.customStatement(
+              'DROP TABLE IF EXISTS epg_entries',
+            );
+            await m.database.customStatement(
+              'DROP TABLE IF EXISTS epg_channels',
+            );
+            await m.createTable(epgEntries);
+            await m.createTable(epgChannels);
+            await _ensureEpgPlaylistIndexes(m);
+            await m.database.customStatement(
+              'UPDATE playlists SET epg_last_synced_at = NULL '
+              'WHERE (epg_url IS NOT NULL AND trim(epg_url) <> \'\') '
+              'OR (epg_url_override IS NOT NULL '
+              'AND trim(epg_url_override) <> \'\')',
+            );
+            AppLogger.info(
+              'Database Migration: Rebuilt playlist-scoped EPG cache tables and reset EPG sync timestamps (v9 → v10).',
             );
           }
           AppLogger.info(

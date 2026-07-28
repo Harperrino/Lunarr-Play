@@ -1,7 +1,10 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/core/models/channel_sort_mode.dart';
 import 'package:m3uxtream_player/core/services/channel_sorting.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_sort_providers.dart';
+import 'package:m3uxtream_player/features/playlists/providers/playlist_catalog_providers.dart';
 
 Channel _channel(
   int id,
@@ -79,4 +82,53 @@ void main() {
       'Beta',
     ]);
   });
+
+  test('compact DTO sorting returns IDs and reuses Channel instances', () {
+    final channels = [
+      _channel(10, 'Channel 10', providerOrder: 10),
+      _channel(2, 'Channel 2', providerOrder: 2),
+    ];
+
+    final orderedIds = sortChannelIds(
+      channels.map(ChannelSortDto.fromChannel),
+      ChannelSortMode.alphabetical,
+    );
+    final sorted = sortChannels(channels, ChannelSortMode.alphabetical);
+
+    expect(orderedIds, [2, 10]);
+    expect(identical(sorted.first, channels[1]), isTrue);
+    expect(identical(sorted.last, channels[0]), isTrue);
+  });
+
+  test(
+    'sorted provider runs DTO sort off-main and reuses catalogue rows',
+    () async {
+      final channels = [
+        _channel(10, 'Channel 10', providerOrder: 10),
+        _channel(2, 'Channel 2', providerOrder: 2),
+      ];
+      const scope = PlaylistCatalogScope.single(1);
+      final container = ProviderContainer(
+        overrides: [
+          filteredChannelsProvider.overrideWithValue(channels),
+          effectivePlaylistCatalogScopeProvider.overrideWithValue(scope),
+          channelSortModeProvider(
+            1,
+          ).overrideWith((ref) => ChannelSortModeNotifier.test(1)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container
+          .read(channelSortModeProvider(1).notifier)
+          .setMode(ChannelSortMode.alphabetical);
+      final sorted = await container.read(
+        sortedFilteredChannelsProvider.future,
+      );
+
+      expect(sorted.map((channel) => channel.id), [2, 10]);
+      expect(identical(sorted.first, channels[1]), isTrue);
+      expect(identical(sorted.last, channels[0]), isTrue);
+    },
+  );
 }

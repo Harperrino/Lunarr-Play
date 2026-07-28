@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 import '../theme/app_elevation.dart';
 import '../theme/app_shapes.dart';
@@ -109,8 +110,8 @@ class _M3PaneResizeEdgeState extends State<M3PaneResizeEdge> {
           onDoubleTap: widget.onDoubleTap,
           child: Semantics(
             container: true,
-            label: 'Kategorienbreite ändern',
-            hint: 'Ziehen zum Ändern, doppelt klicken zum Zurücksetzen',
+            label: context.l10n.categoryPaneResizeLabel,
+            hint: context.l10n.categoryPaneResizeHint,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 120),
               width: M3PaneResizeEdge.hitWidth,
@@ -198,7 +199,10 @@ class _M3PaneEdgeHandleState extends State<M3PaneEdgeHandle> {
     final colors = Theme.of(context).colorScheme;
     final shapes =
         Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
-    final actionLabel = widget.target.actionLabel(widget.expanded);
+    final actionLabel = widget.target.localizedActionLabel(
+      context,
+      widget.expanded,
+    );
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(shapes.full),
       side: BorderSide(color: colors.outlineVariant, width: 1),

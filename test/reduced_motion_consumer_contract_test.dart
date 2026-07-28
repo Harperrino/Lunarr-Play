@@ -4,9 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/features/player/models/playback_media_info.dart';
 import 'package:m3uxtream_player/features/player/providers/vod_pre_buffer_settings_providers.dart';
-import 'package:m3uxtream_player/features/settings/widgets/settings_playlist_form.dart';
-import 'package:m3uxtream_player/features/xtream/providers/playback_prep_providers.dart';
-import 'package:m3uxtream_player/features/xtream/widgets/playback_prep_panel.dart';
+import 'package:m3uxtream_player/features/playlists/widgets/playlist_form.dart';
+import 'package:m3uxtream_player/app/composition/xtream/providers/playback_prep_providers.dart';
+import 'package:m3uxtream_player/app/composition/xtream/widgets/playback_prep_panel.dart';
 import 'package:m3uxtream_player/shared/theme/app_motion.dart';
 import 'package:m3uxtream_player/shared/widgets/category_sidebar.dart';
 
@@ -55,7 +55,7 @@ void main() {
     },
   );
 
-  testWidgets('Settings playlist mode selector resolves reduced motion', (
+  testWidgets('Playlist Hub form mode selector resolves reduced motion', (
     tester,
   ) async {
     final controllers = List<TextEditingController>.generate(
@@ -68,8 +68,8 @@ void main() {
       }
     });
 
-    Widget form() => SettingsPlaylistForm(
-      mode: SettingsPlaylistFormMode.m3u,
+    Widget form() => PlaylistForm(
+      mode: PlaylistFormMode.m3u,
       nameController: controllers[0],
       urlController: controllers[1],
       hostController: controllers[2],

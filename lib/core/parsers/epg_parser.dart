@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:xml/xml.dart';
 import 'package:xml/xml_events.dart';
+import 'package:m3uxtream_player/core/imports/import_budget.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 
 /// Structured EPG Program Entry extracted from an XMLTV data source.
@@ -54,6 +55,7 @@ class EpgParser {
   static Future<EpgParseResult> parse({
     required Stream<List<int>> byteStream,
     required bool isGzipped,
+    ImportBudget? budget,
   }) async {
     final stopwatch = Stopwatch()..start();
     AppLogger.info(
@@ -63,13 +65,29 @@ class EpgParser {
     final parsedEntries = <ParsedEpgEntry>[];
     final parsedChannels = <ParsedEpgChannel>[];
 
-    final Stream<String> stringStream = isGzipped
-        ? byteStream.transform(gzip.decoder).transform(utf8.decoder)
-        : byteStream.transform(utf8.decoder);
+    final expandedByteStream = isGzipped
+        ? byteStream.transform(gzip.decoder)
+        : byteStream;
+    final budgetedExpandedByteStream = expandedByteStream.map((chunk) {
+      budget?.consumeDecodedBytes(chunk.length, phase: 'xmltv_expand');
+      return chunk;
+    });
+    final Stream<String> stringStream = budgetedExpandedByteStream.transform(
+      utf8.decoder,
+    );
 
     try {
-      final xmlNodeStream = stringStream
-          .toXmlEvents()
+      var xmlDepth = 0;
+      final xmlEvents = stringStream.toXmlEvents().map((event) {
+        if (event is XmlStartElementEvent) {
+          xmlDepth++;
+          budget?.checkXmlDepth(xmlDepth, phase: 'xmltv_parse');
+        } else if (event is XmlEndElementEvent) {
+          xmlDepth--;
+        }
+        return event;
+      });
+      final xmlNodeStream = xmlEvents
           .normalizeEvents()
           .selectSubtreeEvents(
             (event) => event.name == 'programme' || event.name == 'channel',
@@ -81,9 +99,9 @@ class EpgParser {
           if (node is! XmlElement) continue;
 
           if (node.name.local == 'channel') {
-            _parseChannelElement(node, parsedChannels);
+            _parseChannelElement(node, parsedChannels, budget);
           } else if (node.name.local == 'programme') {
-            _parseProgrammeElement(node, parsedEntries);
+            _parseProgrammeElement(node, parsedEntries, budget);
           }
         }
       }
@@ -109,6 +127,7 @@ class EpgParser {
   static void _parseChannelElement(
     XmlElement node,
     List<ParsedEpgChannel> out,
+    ImportBudget? budget,
   ) {
     final channelId = node.getAttribute('id')?.trim();
     if (channelId == null || channelId.isEmpty) return;
@@ -116,6 +135,12 @@ class EpgParser {
     for (final displayNameEl in node.findElements('display-name')) {
       final displayName = displayNameEl.innerText.trim();
       if (displayName.isEmpty) continue;
+      budget?.checkField(channelId, phase: 'xmltv_parse_channel_field');
+      budget?.checkField(displayName, phase: 'xmltv_parse_channel_field');
+      budget?.acceptRecord(
+        ImportRecordKind.channel,
+        phase: 'xmltv_parse_channels',
+      );
       out.add(ParsedEpgChannel(channelId: channelId, displayName: displayName));
     }
   }
@@ -123,6 +148,7 @@ class EpgParser {
   static void _parseProgrammeElement(
     XmlElement node,
     List<ParsedEpgEntry> out,
+    ImportBudget? budget,
   ) {
     final startStr = node.getAttribute('start');
     final stopStr = node.getAttribute('stop');
@@ -146,6 +172,15 @@ class EpgParser {
 
     final descElement = node.getElement('desc');
     final desc = descElement?.innerText;
+    budget?.checkField(channelId, phase: 'xmltv_parse_programme_field');
+    budget?.checkField(title, phase: 'xmltv_parse_programme_field');
+    if (desc != null) {
+      budget?.checkField(desc, phase: 'xmltv_parse_programme_field');
+    }
+    budget?.acceptRecord(
+      ImportRecordKind.record,
+      phase: 'xmltv_parse_programmes',
+    );
 
     out.add(
       ParsedEpgEntry(

@@ -5,6 +5,7 @@ import 'package:m3uxtream_player/shared/theme/appearance_preferences.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_expressive_slider.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_settings_section_header.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// Settings-owned adapter for the user accent and neutral surface controls.
 class AppearanceSettingsCard extends ConsumerWidget {
@@ -28,15 +29,15 @@ class AppearanceSettingsCard extends ConsumerWidget {
           M3SettingsSectionHeader(
             icon: Icons.palette_outlined,
             iconColor: colors.primary,
-            title: 'Darstellung',
-            description: 'Akzent und neutrale Flächen getrennt anpassen.',
+            title: context.l10n.appearanceTitle,
+            description: context.l10n.appearanceDescription,
             compact: compact,
             trailing: TextButton.icon(
               onPressed: appearance == AppearancePreferences.defaults
                   ? null
                   : controller.reset,
               icon: const Icon(Icons.restart_alt_rounded, size: 17),
-              label: const Text('Standard wiederherstellen'),
+              label: Text(context.l10n.appearanceRestoreDefaults),
             ),
           ),
           const SizedBox(height: 16),
@@ -47,7 +48,7 @@ class AppearanceSettingsCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _AppearanceExpressiveSlider(
-                    label: 'Akzentfarbe',
+                    label: context.l10n.appearanceAccentColor,
                     valueLabel: '${appearance.accentHue.round()}°',
                     value: appearance.accentHue,
                     min: 0,
@@ -56,7 +57,7 @@ class AppearanceSettingsCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 10),
                   _AppearanceExpressiveSlider(
-                    label: 'Neutralgrau / Flächenton',
+                    label: context.l10n.appearanceNeutralSurfaceTone,
                     valueLabel: '${(appearance.surfaceTone * 100).round()}%',
                     value: appearance.surfaceTone,
                     min: 0,
@@ -124,15 +125,18 @@ class _AppearanceExpressiveSlider extends StatelessWidget {
           min: min,
           max: max,
           onChanged: onChanged,
-          semanticFormatter: (nextValue) => '$label ${_formatValue(nextValue)}',
+          semanticFormatter: (nextValue) =>
+              '$label ${_formatValue(context, nextValue)}',
         ),
       ],
     );
   }
 
-  String _formatValue(double nextValue) {
-    if (max == 360) return '${nextValue.round()} Grad';
-    return '${(nextValue * 100).round()} Prozent';
+  String _formatValue(BuildContext context, double nextValue) {
+    if (max == 360) {
+      return context.l10n.appearanceDegreesSemantics(nextValue.round());
+    }
+    return context.l10n.appearancePercentSemantics((nextValue * 100).round());
   }
 }
 
@@ -154,7 +158,7 @@ class _AppearancePreview extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Live TV',
+                  context.l10n.appearancePreviewLiveTv,
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
               ),
@@ -171,7 +175,7 @@ class _AppearancePreview extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Mediathek',
+                    context.l10n.appearancePreviewLibrary,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
@@ -179,7 +183,10 @@ class _AppearancePreview extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          FilledButton(onPressed: () {}, child: const Text('Auswaehlen')),
+          FilledButton(
+            onPressed: () {},
+            child: Text(context.l10n.appearancePreviewSelect),
+          ),
         ],
       ),
     );

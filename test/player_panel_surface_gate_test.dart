@@ -7,13 +7,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
 import 'package:media_kit_video/media_kit_video.dart';
 
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
-import 'package:m3uxtream_player/features/player/providers/player_ui_providers.dart';
-import 'package:m3uxtream_player/features/player/widgets/player_panel.dart';
-import 'package:m3uxtream_player/features/player/widgets/player_transport_bar.dart';
+import 'package:m3uxtream_player/app/composition/player/providers/player_ui_providers.dart';
+import 'package:m3uxtream_player/app/composition/player/widgets/player_panel.dart';
+import 'package:m3uxtream_player/app/composition/player/widgets/player_transport_bar.dart';
 import 'package:m3uxtream_player/shared/theme/app_color_roles.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
@@ -258,7 +258,7 @@ void main() {
 
       await tester.pump();
 
-      expect(find.textContaining('Stream wird vorbereitet'), findsOneWidget);
+      expect(find.textContaining('Preparing stream'), findsOneWidget);
       expect(find.byType(Video), findsNothing);
     },
   );
@@ -437,12 +437,12 @@ void main() {
 
       expect(find.byType(AppOverlaySurface), findsOneWidget);
       expect(
-        tester.widget<Text>(find.text('Stream wird vorbereitet')).style?.color,
+        tester.widget<Text>(find.text('Preparing stream')).style?.color,
         colors.onSurface,
       );
       expect(
         tester
-            .widget<Text>(find.textContaining('Verbindung wird hergestellt'))
+            .widget<Text>(find.textContaining('Establishing connection'))
             .style
             ?.color,
         colors.onSurfaceVariant,

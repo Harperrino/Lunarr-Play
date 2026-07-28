@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_catalog_providers.dart';
 
 /// Persisted inactive playlist IDs (stored in AppStates).
@@ -36,9 +36,9 @@ class InactivePlaylistIdsNotifier extends AsyncNotifier<Set<int>> {
     state = AsyncData(inactiveIds);
     // The activity switch changes exactly this playlist's catalogue scopes;
     // unrelated warm entries stay intact.
-    ref.read(playlistCatalogWarmCacheProvider).invalidateForPlaylist(
-      playlistId,
-    );
+    ref
+        .read(playlistCatalogWarmCacheProvider)
+        .invalidateForPlaylist(playlistId);
     try {
       await repository.setPlaylistActive(playlistId, active);
     } catch (error, stackTrace) {
@@ -56,9 +56,9 @@ class InactivePlaylistIdsNotifier extends AsyncNotifier<Set<int>> {
     };
     inactiveIds.remove(playlistId);
     state = AsyncData(inactiveIds);
-    ref.read(playlistCatalogWarmCacheProvider).invalidateForPlaylist(
-      playlistId,
-    );
+    ref
+        .read(playlistCatalogWarmCacheProvider)
+        .invalidateForPlaylist(playlistId);
     await repository.setPlaylistActive(playlistId, true);
   }
 }

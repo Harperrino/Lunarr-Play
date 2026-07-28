@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_providers.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/features/search/providers/search_providers.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
@@ -38,11 +38,15 @@ void main() {
           }),
           selectedPlaylistIdProvider.overrideWith((ref) => 1),
           knownEpgChannelIdsProvider.overrideWith((ref) {
-            return Stream.value(const {'de.rtl'});
+            return Stream.value(const {
+              1: {'de.rtl'},
+            });
           }),
           epgChannelDisplayNamesProvider.overrideWith((ref) {
             return Stream.value(const {
-              'de.rtl': ['RTL HD'],
+              1: {
+                'de.rtl': ['RTL HD'],
+              },
             });
           }),
           liveChannelsStreamProvider.overrideWith((ref) {
@@ -59,7 +63,7 @@ void main() {
       await container.read(epgChannelDisplayNamesProvider.future);
       await container.read(liveChannelsStreamProvider.future);
 
-      final indexSubA = container.listen<EpgMatchingIndex>(
+      final indexSubA = container.listen<PlaylistEpgMatchingIndex>(
         epgMatchingIndexProvider,
         (_, _) {},
       );
@@ -76,7 +80,7 @@ void main() {
 
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      final indexSubB = container.listen<EpgMatchingIndex>(
+      final indexSubB = container.listen<PlaylistEpgMatchingIndex>(
         epgMatchingIndexProvider,
         (_, _) {},
       );
@@ -96,7 +100,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 200));
       await Future<void>.delayed(Duration.zero);
 
-      final indexSubC = container.listen<EpgMatchingIndex>(
+      final indexSubC = container.listen<PlaylistEpgMatchingIndex>(
         epgMatchingIndexProvider,
         (_, _) {},
       );
@@ -127,11 +131,15 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           knownEpgChannelIdsProvider.overrideWith(
-            (ref) => Stream.value(const {'de.rtl'}),
+            (ref) => Stream.value(const {
+              1: {'de.rtl'},
+            }),
           ),
           epgChannelDisplayNamesProvider.overrideWith(
             (ref) => Stream.value(const {
-              'de.rtl': ['RTL HD'],
+              1: {
+                'de.rtl': ['RTL HD'],
+              },
             }),
           ),
           liveChannelsStreamProvider.overrideWith(

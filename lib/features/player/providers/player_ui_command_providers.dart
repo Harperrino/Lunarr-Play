@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
-import 'package:m3uxtream_player/features/diagnostics/providers/ui_logs_providers.dart';
+import 'package:m3uxtream_player/core/providers/ui_logs_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/features/player/services/player_ui_command_runner.dart';
 

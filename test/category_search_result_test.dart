@@ -120,10 +120,10 @@ void main() {
       CategorySearchTarget.movies,
       CategorySearchTarget.series,
     ]);
-    expect(results.map((result) => result.visibleLabel), [
-      'News · Live TV · Main',
-      'News · Movies · Movies',
-      'News · Series · Series',
+    expect(results.map((result) => (result.target, result.playlistName)), [
+      (CategorySearchTarget.live, 'Main'),
+      (CategorySearchTarget.movies, 'Movies'),
+      (CategorySearchTarget.series, 'Series'),
     ]);
   });
 

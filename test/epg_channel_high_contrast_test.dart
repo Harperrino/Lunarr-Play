@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
-import 'package:m3uxtream_player/features/channels/providers/channel_providers.dart';
-import 'package:m3uxtream_player/features/channels/widgets/channel_list_panel.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_grid_providers.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_providers.dart';
-import 'package:m3uxtream_player/features/epg/providers/epg_sync_providers.dart';
-import 'package:m3uxtream_player/features/epg/widgets/epg_program_cell.dart';
-import 'package:m3uxtream_player/features/epg/widgets/epg_screen.dart';
+import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/app/composition/channels/widgets/channel_list_panel.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_sync_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/widgets/epg_program_cell.dart';
+import 'package:m3uxtream_player/app/composition/epg/widgets/epg_screen.dart';
 import 'package:m3uxtream_player/features/playlists/providers/group_visibility_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
@@ -49,6 +49,7 @@ void main() {
   ) async {
     final entry = EpgEntry(
       id: 1,
+      playlistId: 1,
       channelId: 'example.channel',
       title: 'Prime Time',
       description: null,
@@ -150,11 +151,11 @@ Future<void> _pumpEpgEmpty(WidgetTester tester) async {
           (ref) => throw StateError('EPG HC test must not open the database'),
         ),
         epgSyncNotifierProvider.overrideWith(_ReadyEpgSyncNotifier.new),
-        epgGridEntriesStreamProvider.overrideWith(
-          (ref) => Stream.value(const <EpgEntry>[]),
+        epgGridEntriesSnapshotProvider.overrideWith(
+          (ref) => const AsyncValue.data(<EpgEntry>[]),
         ),
         knownEpgChannelIdsProvider.overrideWith(
-          (ref) => Stream.value(const <String>{}),
+          (ref) => Stream.value(const <int, Set<String>>{}),
         ),
         epgGridRowsProvider.overrideWith((ref) => const <EpgGridRowData>[]),
         epgGridChannelsProvider.overrideWith((ref) => const <Channel>[]),

@@ -23,7 +23,7 @@ class DatabaseHealthController extends StateNotifier<DatabaseHealthState> {
     if (state.isFatal) return;
 
     const message =
-        'Datenbankverbindung unterbrochen. Bitte die Anwendung neu starten.';
+        'Database connection interrupted. Please restart the application.';
     state = const DatabaseHealthState(isFatal: true, message: message);
     AppLogger.error(
       'DatabaseHealth: Drift disconnect detected (first occurrence); restart required.',

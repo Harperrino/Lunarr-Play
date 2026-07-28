@@ -9,7 +9,7 @@ import 'package:m3uxtream_player/shared/widgets/category_sidebar.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_media_list_item.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_navigation_item.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_slots.dart';
-import 'package:m3uxtream_player/features/favorites/widgets/favorite_channel_list.dart';
+import 'package:m3uxtream_player/app/composition/favorites/widgets/favorite_channel_list.dart';
 import 'package:m3uxtream_player/features/xtream/widgets/movie_card.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_poster_frame.dart';
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:m3uxtream_player/app/shell/shell_tabs.dart';
+import 'package:m3uxtream_player/app/shell/shell_tab_labels.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface_state_layer.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_navigation_item.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_pane_toggle_button.dart';
@@ -139,11 +141,13 @@ class _SidebarHeaderState extends State<_SidebarHeader> {
     if (!widget.isExpanded) {
       return Center(
         child: M3PaneToggleButton(
-          paneLabel: 'Sidebar',
+          paneLabel: context.l10n.shellSidebarLabel,
           expanded: false,
           onPressed: widget.onToggleExpanded,
           focusNode: _toggleFocusNode,
-          collapsedTooltip: 'Expand sidebar',
+          collapsedTooltip: context.l10n.paneExpandAction(
+            context.l10n.shellSidebarLabel,
+          ),
           focusOutlineKey: const ValueKey('shell-sidebar-focus-ring'),
           focusOutlineStyle: AppFocusOutlineStyle.box,
         ),
@@ -155,11 +159,13 @@ class _SidebarHeaderState extends State<_SidebarHeader> {
       child: Align(
         alignment: Alignment.centerRight,
         child: M3PaneToggleButton(
-          paneLabel: 'Sidebar',
+          paneLabel: context.l10n.shellSidebarLabel,
           expanded: true,
           onPressed: widget.onToggleExpanded,
           focusNode: _toggleFocusNode,
-          expandedTooltip: 'Collapse sidebar',
+          expandedTooltip: context.l10n.paneCollapseAction(
+            context.l10n.shellSidebarLabel,
+          ),
           focusOutlineKey: const ValueKey('shell-sidebar-focus-ring'),
           focusOutlineStyle: AppFocusOutlineStyle.box,
         ),
@@ -183,10 +189,11 @@ class _SidebarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final title = shellTabTitle(tab, context.l10n);
     return M3NavigationItem(
       key: ValueKey('shell-sidebar-item-${tab.index}'),
-      label: tab.title,
-      tooltip: tab.title,
+      label: title,
+      tooltip: title,
       icon: tab.icon,
       selected: isActive,
       onPressed: () => onTap(tab.index),

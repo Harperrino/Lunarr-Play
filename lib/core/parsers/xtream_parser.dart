@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:m3uxtream_player/core/imports/import_budget.dart';
+import 'package:m3uxtream_player/core/imports/import_limit_exception.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/core/parsers/m3u_parser.dart';
 
@@ -50,7 +52,9 @@ class XtreamCataloguePayload {
 class XtreamParser {
   /// Parses live + VOD + series catalogues into a single channel list.
   static List<ParsedChannel> parseFullCatalogue(
-    XtreamCataloguePayload payload,
+    XtreamCataloguePayload payload, {
+    ImportBudget? budget,
+  }
   ) {
     final live = parseLiveStreams(
       streamsJsonStr: payload.liveStreamsJson,
@@ -58,6 +62,7 @@ class XtreamParser {
       host: payload.host,
       username: payload.username,
       password: payload.password,
+      budget: budget,
     );
     final vod = parseVodStreams(
       streamsJsonStr: payload.vodStreamsJson,
@@ -65,6 +70,7 @@ class XtreamParser {
       host: payload.host,
       username: payload.username,
       password: payload.password,
+      budget: budget,
     );
     final series = parseSeries(
       seriesJsonStr: payload.seriesJson,
@@ -72,6 +78,7 @@ class XtreamParser {
       host: payload.host,
       username: payload.username,
       password: payload.password,
+      budget: budget,
     );
 
     return [...live, ...vod, ...series];
@@ -84,6 +91,7 @@ class XtreamParser {
     required String host,
     required String username,
     required String password,
+    ImportBudget? budget,
   }) {
     return _parseStreamCatalogue(
       streamsJsonStr: streamsJsonStr,
@@ -97,6 +105,7 @@ class XtreamParser {
         return '$normalizedHost/live/$username/$password/$streamId';
       },
       logoFields: const ['stream_icon'],
+      budget: budget,
     );
   }
 
@@ -107,6 +116,7 @@ class XtreamParser {
     required String host,
     required String username,
     required String password,
+    ImportBudget? budget,
   }) {
     return _parseStreamCatalogue(
       streamsJsonStr: streamsJsonStr,
@@ -122,6 +132,7 @@ class XtreamParser {
         return '$normalizedHost/movie/$username/$password/$streamId.$safeExt';
       },
       logoFields: const ['stream_icon'],
+      budget: budget,
     );
   }
 
@@ -132,6 +143,7 @@ class XtreamParser {
     required String host,
     required String username,
     required String password,
+    ImportBudget? budget,
   }) {
     final stopwatch = Stopwatch()..start();
     final channels = <ParsedChannel>[];
@@ -139,7 +151,10 @@ class XtreamParser {
 
     try {
       final seriesList = _decodeJsonArray(seriesJsonStr, label: 'series');
-      final categoryMap = _buildCategoryMap(categoriesJsonStr);
+      final categoryMap = _buildCategoryMap(
+        categoriesJsonStr,
+        budget: budget,
+      );
 
       for (var i = 0; i < seriesList.length; i++) {
         final entry = seriesList[i];
@@ -161,7 +176,25 @@ class XtreamParser {
           ]);
           final categoryId = entry['category_id']?.toString();
           final groupName = categoryId != null ? categoryMap[categoryId] : null;
+          for (final field in <String?>[
+            seriesId,
+            name,
+            logo,
+            groupName,
+          ]) {
+            if (field != null) {
+              budget?.checkField(field, phase: 'xtream_parse_field');
+            }
+          }
 
+          budget?.acceptRecord(
+            ImportRecordKind.record,
+            phase: 'xtream_parse_records',
+          );
+          budget?.acceptRecord(
+            ImportRecordKind.channel,
+            phase: 'xtream_parse_series',
+          );
           channels.add(
             ParsedChannel(
               name: name,
@@ -173,6 +206,8 @@ class XtreamParser {
               providerOrder: i,
             ),
           );
+        } on ImportLimitException {
+          rethrow;
         } catch (e, stackTrace) {
           AppLogger.warning(
             'XtreamParser: Failed parsing series entry at index $i. Skipping. Error: $e',
@@ -279,6 +314,7 @@ class XtreamParser {
     )
     buildStreamUrl,
     required List<String> logoFields,
+    ImportBudget? budget,
   }) {
     final stopwatch = Stopwatch()..start();
     final channels = <ParsedChannel>[];
@@ -286,7 +322,10 @@ class XtreamParser {
 
     try {
       final streamsList = _decodeJsonArray(streamsJsonStr, label: channelType);
-      final categoryMap = _buildCategoryMap(categoriesJsonStr);
+      final categoryMap = _buildCategoryMap(
+        categoriesJsonStr,
+        budget: budget,
+      );
 
       for (var i = 0; i < streamsList.length; i++) {
         final stream = streamsList[i];
@@ -307,7 +346,27 @@ class XtreamParser {
           final channelNumber = stream['num']?.toString().trim();
           final categoryId = stream['category_id']?.toString();
           final groupName = categoryId != null ? categoryMap[categoryId] : null;
+          for (final field in <String?>[
+            streamId,
+            name,
+            logo,
+            tvgId,
+            channelNumber,
+            groupName,
+          ]) {
+            if (field != null) {
+              budget?.checkField(field, phase: 'xtream_parse_field');
+            }
+          }
 
+          budget?.acceptRecord(
+            ImportRecordKind.record,
+            phase: 'xtream_parse_records',
+          );
+          budget?.acceptRecord(
+            ImportRecordKind.channel,
+            phase: 'xtream_parse_$channelType',
+          );
           channels.add(
             ParsedChannel(
               name: name,
@@ -324,6 +383,8 @@ class XtreamParser {
                   : channelNumber,
             ),
           );
+        } on ImportLimitException {
+          rethrow;
         } catch (e, stackTrace) {
           AppLogger.warning(
             'XtreamParser: Failed parsing $channelType entry at index $i. Skipping. Error: $e',
@@ -363,7 +424,10 @@ class XtreamParser {
     return decoded;
   }
 
-  static Map<String, String> _buildCategoryMap(String categoriesJsonStr) {
+  static Map<String, String> _buildCategoryMap(
+    String categoriesJsonStr, {
+    ImportBudget? budget,
+  }) {
     final map = <String, String>{};
     if (categoriesJsonStr.trim().isEmpty) return map;
 
@@ -375,6 +439,16 @@ class XtreamParser {
         final id = cat['category_id']?.toString();
         final name = cat['category_name']?.toString();
         if (id != null && name != null) {
+          budget?.checkField(id, phase: 'xtream_parse_category_field');
+          budget?.checkField(name, phase: 'xtream_parse_category_field');
+          budget?.acceptRecord(
+            ImportRecordKind.record,
+            phase: 'xtream_parse_records',
+          );
+          budget?.acceptRecord(
+            ImportRecordKind.category,
+            phase: 'xtream_parse_categories',
+          );
           map[id] = name;
         }
       }

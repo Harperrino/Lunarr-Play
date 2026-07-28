@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/core/constants/app_identity.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
 import 'package:m3uxtream_player/shared/widgets/app_brand_mark.dart';
@@ -74,12 +75,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             children: [
               _buildWindowButton(
                 icon: Icons.remove_rounded,
-                tooltip: 'Minimieren',
+                tooltip: context.l10n.windowMinimizeTooltip,
                 onPressed: () => windowManager.minimize(),
               ),
               _buildWindowButton(
                 icon: Icons.crop_square_rounded,
-                tooltip: 'Maximieren / Wiederherstellen',
+                tooltip: context.l10n.windowMaximizeRestoreTooltip,
                 onPressed: () async {
                   if (await windowManager.isMaximized()) {
                     await windowManager.unmaximize();
@@ -90,7 +91,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
               _buildWindowButton(
                 icon: Icons.close_rounded,
-                tooltip: 'Schließen',
+                tooltip: context.l10n.windowCloseTooltip,
                 isClose: true,
                 onPressed: onCloseRequested,
               ),

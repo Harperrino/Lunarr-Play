@@ -2,13 +2,13 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/services/settings_layout_geometry.dart';
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/vod_pre_buffer_settings_providers.dart';
 import 'package:m3uxtream_player/features/settings/providers/debug_mode_providers.dart';
-import 'package:m3uxtream_player/features/settings/widgets/settings_screen.dart';
+import 'package:m3uxtream_player/app/composition/settings/widgets/settings_screen.dart';
 import 'package:m3uxtream_player/features/settings/widgets/settings_section_navigation.dart';
 
 class _TestPlayerBufferSecondsNotifier extends PlayerBufferSecondsNotifier {
@@ -118,12 +118,12 @@ void main() {
     await pumpSettings(tester, size: const Size(400, 720), textScaleFactor: 2);
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Live-Startpuffer'), findsOneWidget);
-    expect(find.text('Bevorzugte Audiosprache'), findsOneWidget);
+    expect(find.text('Live startup buffer'), findsOneWidget);
+    expect(find.text('Preferred audio language'), findsOneWidget);
     expect(find.text('ADD PLAYLIST'), findsNothing);
     expect(
-      tester.getTopLeft(find.text('Standard wiederherstellen')).dy,
-      greaterThan(tester.getTopLeft(find.text('Darstellung')).dy),
+      tester.getTopLeft(find.text('Restore defaults')).dy,
+      greaterThan(tester.getTopLeft(find.text('Appearance')).dy),
     );
   });
 

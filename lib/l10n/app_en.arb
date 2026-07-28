@@ -1,0 +1,783 @@
+{
+  "@@locale": "en",
+  "appTitle": "Lunarr Player",
+  "@appTitle": {
+    "description": "Public application title."
+  },
+  "globalSearchHint": "Search channels, movies, and series…",
+  "globalSearchClearTooltip": "Clear search",
+  "globalSearchSemanticsLabel": "Global search",
+  "globalSearchUnavailable": "Search is unavailable",
+  "globalSearchIndexBuildingProgress": "Building search index… {ready}/{total}",
+  "@globalSearchIndexBuildingProgress": {
+    "placeholders": {
+      "ready": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "globalSearchLoading": "Loading search…",
+  "globalSearchNoResults": "No results",
+  "globalSearchOpenHint": "Open",
+  "globalSearchFilterAll": "All",
+  "globalSearchFilterChannels": "Channels",
+  "globalSearchFilterCategories": "Categories",
+  "globalSearchIndexProgressSemantics": "Search index: {ready} of {total} playlists",
+  "@globalSearchIndexProgressSemantics": {
+    "placeholders": {
+      "ready": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "globalSearchIndexRetrySemantics": "Search index: {count} incomplete playlists. Retry",
+  "@globalSearchIndexRetrySemantics": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "globalSearchIndexIncompletePlaylists": "{count, plural, =1{1 playlist is not fully indexed} other{{count} playlists are not fully indexed}}",
+  "@globalSearchIndexIncompletePlaylists": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "globalSearchRetry": "Retry",
+  "globalSearchEpgLoading": "Loading EPG…",
+  "globalSearchEpgUnavailable": "EPG unavailable",
+  "globalSearchEpgNow": "Now: {title}",
+  "@globalSearchEpgNow": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "globalSearchEpgNone": "No EPG",
+  "globalSearchResultSemantics": "{title} · {metadata}",
+  "@globalSearchResultSemantics": {
+    "placeholders": {
+      "title": {"type": "String"},
+      "metadata": {"type": "String"}
+    }
+  },
+  "playlistMenuTitle": "Playlists",
+  "playlistMenuAdd": "Add playlist",
+  "playlistMenuAllActiveSelection": "All active playlists",
+  "playlistMenuChoose": "Choose playlist",
+  "playlistMenuStatusActive": "Active",
+  "playlistMenuStatusInactive": "Inactive",
+  "playlistMenuAllLabel": "All",
+  "playlistMenuActivePlaylistsSubtitle": "Active playlists",
+  "playlistMenuSyncing": "Syncing…",
+  "playlistMenuSyncFailed": "Sync failed",
+  "playlistMenuSyncTooltip": "Sync playlist",
+  "playlistMenuManageTooltip": "Manage playlist",
+  "playlistDialogCreateFailed": "Could not create playlist: {error}",
+  "@playlistDialogCreateFailed": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "playlistDialogAddTitle": "Add playlist",
+  "playlistDialogCancel": "Cancel",
+  "playlistDialogAddAndSync": "Add and sync",
+  "playlistDialogEditTitle": "Edit {type} playlist",
+  "@playlistDialogEditTitle": {
+    "placeholders": {
+      "type": {"type": "String"}
+    }
+  },
+  "playlistDialogNameField": "Name",
+  "playlistDialogHostField": "Host",
+  "playlistDialogUrlOrFileField": "URL or file path",
+  "playlistDialogUsernameField": "Username",
+  "playlistDialogPasswordField": "Password",
+  "playlistDialogAutomaticUrlTitle": "Detected automatically",
+  "playlistDialogNoAutomaticUrl": "No URL was detected from the source.",
+  "playlistDialogEpgOverrideField": "EPG override (optional)",
+  "playlistDialogEpgOverrideHint": "Leave empty to use the automatic URL",
+  "playlistDialogEffectiveUrl": "Effective: {url}",
+  "@playlistDialogEffectiveUrl": {
+    "placeholders": {
+      "url": {"type": "String"}
+    }
+  },
+  "playlistDialogSaving": "Saving…",
+  "playlistDialogSave": "Save",
+  "playlistHubLoadError": "Failed to load playlists: {error}",
+  "@playlistHubLoadError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "playlistHubTitle": "Playlists",
+  "playlistHubSubtitle": "Activate, sync, and manage each playlist separately.",
+  "playlistHubAdd": "Add playlist",
+  "playlistHubCategoryVisibilityTitle": "Category visibility",
+  "playlistHubCategoryVisibilitySubtitle": "Pin what matters, hide what you do not need, and keep the same order everywhere.",
+  "playlistHubSyncToLoadCategories": "Sync the playlist to load categories.",
+  "playlistHubVisibleCategoriesSection": "Visible categories",
+  "playlistHubHiddenCategoriesSection": "Hidden categories",
+  "playlistHubDeleteTitle": "Delete playlist?",
+  "playlistHubDeleteBody": "The playlist “{name}” and its local data will be removed.",
+  "@playlistHubDeleteBody": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "playlistHubDeleteCancel": "Cancel",
+  "playlistHubDeleteConfirm": "Delete",
+  "playlistHubDeleteSuccess": "Playlist “{name}” deleted.",
+  "@playlistHubDeleteSuccess": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "playlistHubDeleteFailure": "Delete failed: {error}",
+  "@playlistHubDeleteFailure": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "playlistHubContentFilterAll": "All",
+  "playlistHubContentFilterLive": "Live",
+  "playlistHubContentFilterVod": "VOD",
+  "playlistHubContentFilterSeries": "Series",
+  "playlistHubEmptyCategoriesAll": "No categories found in this playlist.",
+  "playlistHubEmptyCategoriesLive": "No live categories found in this playlist.",
+  "playlistHubEmptyCategoriesVod": "No VOD categories found in this playlist.",
+  "playlistHubEmptyCategoriesSeries": "No series categories found in this playlist.",
+  "playlistHubStatusInactive": "Inactive",
+  "playlistHubStatusActive": "Active",
+  "playlistHubStatusSyncing": "Syncing…",
+  "playlistHubStatusEpgSyncing": "EPG syncing…",
+  "playlistHubStatusEpgError": "EPG error",
+  "playlistHubStatusEpgReady": "EPG ready",
+  "playlistHubStatusEpgInterval": "EPG {interval}",
+  "@playlistHubStatusEpgInterval": {
+    "placeholders": {
+      "interval": {"type": "String"}
+    }
+  },
+  "playlistHubSyncTooltip": "Sync playlist",
+  "playlistHubMoreActionsTooltip": "More playlist actions",
+  "playlistHubSyncAction": "Sync playlist",
+  "playlistHubNoEpgUrl": "No EPG URL configured",
+  "playlistHubRetryEpgAction": "Retry EPG",
+  "playlistHubSyncEpgAction": "Sync EPG",
+  "playlistHubManageAction": "Manage",
+  "playlistHubEditAction": "Edit",
+  "playlistHubDeleteAction": "Delete",
+  "playlistHubAutomaticEpgTitle": "Automatically sync EPG",
+  "playlistHubEpgIntervalManual": "Manual",
+  "playlistHubEpgIntervalHours6": "Every 6 hours",
+  "playlistHubEpgIntervalHours12": "Every 12 hours",
+  "playlistHubEpgIntervalHours24": "Every 24 hours",
+  "playlistHubCategoryVisibleDescription": "Visible in all category sidebars",
+  "playlistHubCategoryHiddenDescription": "Hidden from sidebar lists",
+  "playlistHubUnpinCategoryTooltip": "Unpin category",
+  "playlistHubPinCategoryTooltip": "Pin category",
+  "playlistHubSummaryVisible": "Visible",
+  "playlistHubSummaryPinned": "Pinned",
+  "playlistHubSummaryHidden": "Hidden",
+  "playlistHubSummaryHiddenPinned": "Hidden pinned",
+  "playlistHubHideAllCategories": "Hide all",
+  "playlistHubHideLiveCategories": "Hide live categories",
+  "playlistHubHideVodCategories": "Hide VOD categories",
+  "playlistHubHideSeriesCategories": "Hide series categories",
+  "playlistHubShowAllCategories": "Show all",
+  "playlistHubShowLiveCategories": "Show live categories",
+  "playlistHubShowVodCategories": "Show VOD categories",
+  "playlistHubShowSeriesCategories": "Show series categories",
+  "playlistHubEmptyTitle": "No playlists yet",
+  "playlistHubEmptySubtitle": "Add your first source and manage it here.",
+  "diagnosticsConsoleTitle": "SYSTEM REAL-TIME DIAGNOSTICS",
+  "diagnosticsConsoleClear": "Clear",
+  "diagnosticsConsoleKeyboardHelp": "Press [Space] to play or pause, [F] for fullscreen, [+/-] for volume, and [Arrow keys] to change channels.",
+  "channelFavoriteRemove": "Remove from favorites",
+  "channelFavoriteAdd": "Add to favorites",
+  "audioTrackChooseTooltip": "Choose audio track",
+  "audioTrackNoneDetectedTooltip": "No audio tracks detected",
+  "audioTrackAutomatic": "Auto",
+  "playerEmptyTitle": "Select a channel to play",
+  "playerEmptySubtitle": "Select a channel from the list or use the arrow keys.",
+  "playbackAudioRawNone": "No raw audio tracks detected",
+  "playbackAudioNoneSelectable": "Audio tracks detected, but none are currently selectable",
+  "playbackAudioTrackCounts": "{rawCount} raw / {selectableCount} selectable",
+  "@playbackAudioTrackCounts": {
+    "placeholders": {
+      "rawCount": {"type": "int"},
+      "selectableCount": {"type": "int"}
+    }
+  },
+  "playbackAudioNotExposed": "Audio track not exposed by stream or demuxer",
+  "playbackAudioNone": "None",
+  "playbackInfoTitle": "Playback information",
+  "playbackInfoCloseTooltip": "Close",
+  "playbackInfoTitleLabel": "Title",
+  "playbackInfoGroupLabel": "Group",
+  "playbackInfoTypeLabel": "Type",
+  "playbackInfoResolutionLabel": "Resolution",
+  "playbackInfoVideoFormatLabel": "Video format",
+  "playbackInfoAudioTrackLabel": "Audio track",
+  "playbackInfoAudioTrackStatusLabel": "Audio track status",
+  "playbackInfoAudioDecodedLabel": "Audio decoded",
+  "playbackInfoAudioFormatLabel": "Audio format",
+  "playbackInfoAudioChannelsLabel": "Audio channels",
+  "playbackInfoAudioHintLabel": "Audio note",
+  "playbackInfoSampleRateLabel": "Sample rate",
+  "playbackInfoAudioBitrateLabel": "Audio bitrate",
+  "playbackInfoContainerLabel": "Container",
+  "playbackInfoPositionLabel": "Position",
+  "playbackInfoDurationLabel": "Duration",
+  "playbackInfoDemuxerBufferLabel": "Buffer (demuxer)",
+  "playbackInfoBufferedUntilLabel": "Buffered until",
+  "playbackInfoStatusLabel": "Status",
+  "playbackInfoYes": "Yes",
+  "playbackInfoNo": "No",
+  "playbackInfoBuffering": "Buffering…",
+  "playbackInfoPlaying": "Playing",
+  "playbackInfoPaused": "Paused",
+  "playbackInfoTypeVod": "Movie (VOD)",
+  "playbackInfoTypeSeries": "Series / episode",
+  "playbackInfoTypeLive": "Live TV",
+  "episodeCardSemantics": "Episode: {title}",
+  "@episodeCardSemantics": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "movieCardSemantics": "Movie: {title}",
+  "@movieCardSemantics": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "seriesCardSemantics": "Series: {title}",
+  "@seriesCardSemantics": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "epgNowMarkerSemantics": "Now, current time in the programme",
+  "epgNowMarkerLabel": "NOW",
+  "epgToolbarTitle": "TV PROGRAMME",
+  "epgToolbarNow": "Now",
+  "epgToolbarJumpToNowTooltip": "Go to the current time",
+  "epgToolbarBackTwoHoursTooltip": "Go back two hours",
+  "epgToolbarForwardTwoHoursTooltip": "Go forward two hours",
+  "epgToolbarBackOneDayTooltip": "Go back one day",
+  "epgToolbarForwardOneDayTooltip": "Go forward one day",
+  "epgToolbarZoomOutTooltip": "Zoom out the timeline",
+  "epgToolbarZoomInTooltip": "Zoom in the timeline",
+  "epgToolbarResetZoomTooltip": "Reset the timeline to 100 percent",
+  "playlistFormTitle": "ADD PLAYLIST",
+  "playlistFormDescription": "Create a new source and keep the flow focused on setup, sync, and playback.",
+  "playlistFormNameLabel": "Name",
+  "playlistFormNameHint": "My IPTV list",
+  "playlistFormUrlOrFileLabel": "URL or file path",
+  "playlistFormHostLabel": "Host",
+  "playlistFormUsernameLabel": "Username",
+  "playlistFormPasswordLabel": "Password",
+  "playlistFormEpgOverrideLabel": "EPG override (optional)",
+  "playlistFormEpgOverrideHint": "Leave empty to use the automatic URL",
+  "playlistFormWorking": "Working…",
+  "playlistFormAddAndSync": "Add and sync",
+  "appearanceTitle": "Appearance",
+  "appearanceDescription": "Adjust the accent and neutral surfaces independently.",
+  "appearanceRestoreDefaults": "Restore defaults",
+  "appearanceAccentColor": "Accent color",
+  "appearanceNeutralSurfaceTone": "Neutral gray / surface tone",
+  "appearanceDegreesSemantics": "{value} degrees",
+  "@appearanceDegreesSemantics": {
+    "placeholders": {
+      "value": {"type": "int"}
+    }
+  },
+  "appearancePercentSemantics": "{value} percent",
+  "@appearancePercentSemantics": {
+    "placeholders": {
+      "value": {"type": "int"}
+    }
+  },
+  "appearancePreviewLiveTv": "Live TV",
+  "appearancePreviewLibrary": "Library",
+  "appearancePreviewSelect": "Select",
+  "debugModeTitle": "DEBUG MODE",
+  "debugModeDescription": "Shows the Diagnostics / Logs tab and keeps collecting logs even when hidden.",
+  "debugModeDiagnosticsOn": "Diagnostics on",
+  "debugModeHidden": "Hidden",
+  "debugModeEnabled": "Enabled",
+  "debugModeDisabled": "Disabled",
+  "settingsSectionsTitle": "Sections",
+  "settingsSectionGeneral": "General",
+  "settingsSectionPlaylistSetup": "Playlist setup",
+  "settingsSectionSavedPlaylists": "Saved playlists",
+  "favoriteSaveFailed": "Could not save favorite.",
+  "favoritesLoadFailed": "Could not load favorites",
+  "favoritesNoPlaylistTitle": "No playlist selected",
+  "favoritesNoPlaylistSubtitle": "Select a playlist to see your favorites.",
+  "favoritesEmptyTitle": "No live favorites yet",
+  "favoritesEmptySubtitle": "Favorites from your active playlist will appear here.",
+  "favoriteChannelSemantics": "Favorite: {title}",
+  "@favoriteChannelSemantics": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "favoriteIconSemantics": "Favorite",
+  "favoritePlayLiveSemantics": "Play live",
+  "watchLaterRemove": "Remove from Watch Later",
+  "watchLaterSave": "Save for later",
+  "watchLaterLoadFailed": "Could not load Watch Later",
+  "watchLaterNoPlaylistSubtitle": "Select an active playlist first.",
+  "watchLaterEmptyTitle": "Nothing saved for later yet",
+  "watchLaterEmptySubtitle": "Bookmark movies or series to keep them here.",
+  "catalogNoPlaylistSubtitle": "Select a playlist in the Playlists tab or Settings.",
+  "catalogResetFilters": "Reset filters",
+  "catalogSyncPlaylist": "Sync playlist",
+  "catalogSyncingPlaylist": "Syncing playlist…",
+  "catalogGenresTitle": "Genres",
+  "catalogSyncAction": "Sync",
+  "vodLoadFailed": "Could not load movies",
+  "vodNoSearchResults": "No movies match your search",
+  "vodNoVisibleMovies": "No movies visible",
+  "vodNoMoviesFound": "No movies found",
+  "vodClearSearchSubtitle": "Clear the search field to show all movies again.",
+  "vodHiddenByFiltersSubtitle": "Your VOD catalogue is loaded, but filters or hidden categories are hiding the visible list.",
+  "vodSyncSubtitle": "Sync your Xtream playlist to load VOD movies.",
+  "vodToolbarTitle": "VOD MOVIES",
+  "seriesLoadFailed": "Could not load series",
+  "seriesNoSearchResults": "No series match your search",
+  "seriesNoVisibleSeries": "No series visible",
+  "seriesNoSeriesFound": "No series found",
+  "seriesClearSearchSubtitle": "Clear the search field to show all series again.",
+  "seriesHiddenByFiltersSubtitle": "Your series catalogue is loaded, but filters or hidden categories are hiding the visible list.",
+  "seriesSyncSubtitle": "Sync your Xtream playlist to load series.",
+  "seriesToolbarTitle": "SERIES",
+  "epgNoSearchResults": "No channels match your search",
+  "epgClearSearchSubtitle": "Clear the search field to show all {count} channels again.",
+  "@epgClearSearchSubtitle": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "epgNoChannelsTitle": "No channels loaded",
+  "epgNoChannelsSubtitle": "Select a playlist and sync channels on the Live tab or in Settings.",
+  "epgNoDataTitle": "No EPG data for this time window",
+  "epgUpdateGuideSubtitle": "Update the TV programme guide for your active playlist.",
+  "epgConfigureUrlSubtitle": "Configure an EPG URL in Settings or sync an M3U playlist with a url-tvg header.",
+  "epgUpdateAction": "Update EPG",
+  "playbackSettingsTitle": "PLAYBACK",
+  "playbackSettingsDescription": "Choose how much content is buffered before live playback starts. Higher values delay startup but reduce stuttering on unstable streams.",
+  "playbackSettingsLiveBufferLabel": "Live startup buffer",
+  "playbackSettingsVodBufferDescription": "VOD pre-buffering loads media before playback for smoother seeking. Higher values require more time and bandwidth.",
+  "playbackSettingsVodBufferLabel": "VOD pre-buffer",
+  "playbackSettingsForceStereoTitle": "Force stereo",
+  "playbackSettingsForceStereoDescription": "Helps with external sound cards, mixing consoles, or channels with multichannel audio.",
+  "playbackSettingsPreferredLanguageTitle": "Preferred audio language",
+  "playbackSettingsPreferredLanguageDescription": "When multiple audio tracks are available, this language is preferred.",
+  "playbackSettingsLanguageAutomatic": "Automatic",
+  "playbackSettingsLanguageGerman": "German",
+  "playbackSettingsBufferOff": "Off",
+  "playbackSettingsBufferSeconds": "{seconds, plural, =1{1 second} other{{seconds} seconds}}",
+  "@playbackSettingsBufferSeconds": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "playbackSettingsBufferMaximum": "{seconds} seconds (maximum)",
+  "@playbackSettingsBufferMaximum": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "seriesPlayEpisode": "Play — {title}",
+  "@seriesPlayEpisode": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "seriesEpisodesTab": "Episodes",
+  "commonBackTooltip": "Back",
+  "seriesContinueWatching": "Continue watching",
+  "seriesContinueAction": "Continue",
+  "seriesNoEpisodes": "No episodes found.",
+  "channelRefreshFailedRetained": "Channels could not be refreshed. The last loaded channels remain visible.",
+  "channelLoadFailed": "Could not load channels",
+  "channelNoPlaylistSubtitle": "Add and sync a playlist to see channels here.",
+  "channelNoSearchResults": "No channels match your search",
+  "channelNoChannelsFound": "No channels found",
+  "channelClearSearchSubtitle": "Clear the search field to show all channels again.",
+  "channelSyncOrFilterSubtitle": "Sync your playlist or try a different category filter.",
+  "channelSyncFailed": "Sync failed: {error}",
+  "@channelSyncFailed": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "channelEpgUpdated": "EPG updated successfully.",
+  "channelEpgSyncFailed": "EPG sync failed: {error}",
+  "@channelEpgSyncFailed": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "channelPlaylistCount": "{count, plural, =0{No playlists} =1{1 playlist} other{{count} playlists}}",
+  "@channelPlaylistCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "channelAllActivePlaylists": "All active playlists",
+  "channelLiveTitle": "LIVE CHANNELS",
+  "channelUncategorized": "Uncategorized",
+  "channelLoading": "Loading channels…",
+  "commonRetry": "Retry",
+  "channelSortTooltip": "Sort: {mode}",
+  "@channelSortTooltip": {
+    "placeholders": {
+      "mode": {"type": "String"}
+    }
+  },
+  "channelSortProvider": "Provider order",
+  "channelSortAlphabetical": "Alphabetical",
+  "channelSortNumber": "Channel number",
+  "channelEpgNow": "Now: {title}",
+  "@channelEpgNow": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "channelEpgLoading": "Loading EPG…",
+  "channelNoEpg": "No EPG",
+  "channelEpgNotUpdated": "The TV programme guide (EPG) has not been updated yet.",
+  "channelEpgUpdating": "Updating…",
+  "channelEpgUpdateNow": "Update EPG now",
+  "commonDismissTooltip": "Dismiss",
+  "commonSyncing": "Syncing…",
+  "commonSync": "Sync",
+  "mediaLibraryMoviesTab": "Movies",
+  "mediaLibrarySeriesTab": "Series",
+  "mediaLibraryWatchLaterTab": "Watch Later",
+  "epgAgendaNext": "Next: {title}",
+  "@epgAgendaNext": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "epgAgendaNow": "NOW: {title}",
+  "@epgAgendaNow": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "epgAgendaUnavailable": "No EPG available",
+  "epgAgendaNoCurrentProgram": "No programme currently airing",
+  "epgAgendaChannelSemantics": "Channel: {name}",
+  "@epgAgendaChannelSemantics": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "epgAgendaLiveSemantics": "LIVE, now playing: {title}",
+  "@epgAgendaLiveSemantics": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "epgAgendaStartChannel": "Play channel",
+  "epgLiveNowSemantics": "LIVE, now playing",
+  "commonLiveLabel": "LIVE",
+  "epgProgramLiveSemantics": "Live now: {title}",
+  "@epgProgramLiveSemantics": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "epgProgramSemantics": "Programme: {title}",
+  "@epgProgramSemantics": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "epgProgramDurationMinutes": "{minutes, plural, =1{1 min} other{{minutes} min}}",
+  "@epgProgramDurationMinutes": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "epgGridChannelHeader": "CHANNEL",
+  "epgGridChannelSemantics": "Channel: {name}. {status}",
+  "@epgGridChannelSemantics": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "status": {"type": "String"}
+    }
+  },
+  "epgGridNoProgramme": "No programme",
+  "epgGridNoEpg": "No EPG",
+  "epgTimelineResizeSemantics": "Adjust time column width",
+  "epgTimelineResizeHint": "Use the arrow keys to adjust it step by step",
+  "diagnosticsSettingsLoadFailed": "Could not load streaming diagnostics settings: {error}",
+  "@diagnosticsSettingsLoadFailed": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "diagnosticsStreamingTitle": "PLAYER & STREAMING",
+  "diagnosticsStreamingSubtitle": "Advanced diagnostics",
+  "diagnosticsFallbackOn": "Fallback on",
+  "diagnosticsFallbackOff": "Fallback off",
+  "diagnosticsAutoFallbackTitle": "Use fallback automatically",
+  "diagnosticsAutoFallbackSubtitle": "Automatically try the live fallback matrix before showing an error.",
+  "diagnosticsShowOnErrorTitle": "Show diagnostics on error",
+  "diagnosticsShowOnErrorSubtitle": "Writes a short diagnostic entry to the UI logs when live playback fails to start.",
+  "diagnosticsCopyLastFailure": "Copy last failure",
+  "diagnosticsLastFailureCopied": "Last streaming failure copied.",
+  "diagnosticsCopyPlayerLog": "Copy player log",
+  "diagnosticsPlayerLogCopied": "Player log copied.",
+  "diagnosticsTestStream": "Test stream",
+  "diagnosticsStreamCheckFailed": "Stream check failed.",
+  "diagnosticsLastFailureTitle": "Last streaming failure",
+  "playerPreviousChannelTooltip": "Previous channel",
+  "playerPlayTooltip": "Play",
+  "playerPauseTooltip": "Pause",
+  "playerStopTooltip": "Stop",
+  "playerNextChannelTooltip": "Next channel",
+  "playerPlaybackInfoTooltip": "Playback information",
+  "playerFullscreenTooltip": "Fullscreen",
+  "playerNowPlaying": "Now playing: {title}",
+  "@playerNowPlaying": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "playerPositionSemantics": "Position {position}",
+  "@playerPositionSemantics": {
+    "placeholders": {
+      "position": {"type": "String"}
+    }
+  },
+  "playerBufferedAhead": "{duration} ahead",
+  "@playerBufferedAhead": {
+    "placeholders": {
+      "duration": {"type": "String"}
+    }
+  },
+  "playerBuffering": "Buffering…",
+  "playerLoading": "Loading…",
+  "playerStartupBufferProgress": "Startup buffer {current} / {target}",
+  "@playerStartupBufferProgress": {
+    "placeholders": {
+      "current": {"type": "String"},
+      "target": {"type": "String"}
+    }
+  },
+  "playerStartupBufferBuilding": "Building startup buffer…",
+  "playerBuffered": "{duration} buffered",
+  "@playerBuffered": {
+    "placeholders": {
+      "duration": {"type": "String"}
+    }
+  },
+  "playerStabilizingLive": "Stabilizing live connection…",
+  "playerLiveInstantStart": "Live — instant start",
+  "playerLiveRollingBuffer": "Live — rolling buffer active",
+  "playerStartsAtBuffer": "Starts at {target}",
+  "@playerStartsAtBuffer": {
+    "placeholders": {
+      "target": {"type": "String"}
+    }
+  },
+  "playerLiveCacheActive": "Live cache active",
+  "playerTargetBuffer": "Target buffer {target}",
+  "@playerTargetBuffer": {
+    "placeholders": {
+      "target": {"type": "String"}
+    }
+  },
+  "playerMaximumBuffer": "Max {duration}",
+  "@playerMaximumBuffer": {
+    "placeholders": {
+      "duration": {"type": "String"}
+    }
+  },
+  "playerVolumeSemantics": "Volume",
+  "playerUnmuteTooltip": "Unmute",
+  "playerMuteTooltip": "Mute",
+  "playerVolumePercentSemantics": "Volume {percent} percent",
+  "@playerVolumePercentSemantics": {
+    "placeholders": {
+      "percent": {"type": "int"}
+    }
+  },
+  "playerNoChannelSelected": "No channel selected",
+  "playerStatusIdle": "IDLE",
+  "playerStatusStabilizing": "STABILIZING",
+  "playerStatusWarmingUp": "WARMING UP",
+  "playerStatusBuffering": "BUFFERING",
+  "playerStatusLive": "LIVE",
+  "playerStatusPaused": "PAUSED",
+  "playerExitFullscreenHint": "Press F or Esc to exit fullscreen",
+  "playerLivePlaybackTitle": "LIVE PLAYBACK",
+  "playerStatusError": "ERROR",
+  "playerStatusReady": "READY",
+  "playerStatusConnecting": "CONNECTING",
+  "playerStatusOnAir": "ON AIR",
+  "playerSelectChannelTitle": "Select a channel",
+  "playerSelectChannelFullscreenSubtitle": "Exit fullscreen (F / Esc) and select a channel from the list.",
+  "playerPlaybackFailedTitle": "Playback failed",
+  "playerVideoInitializationFailed": "Could not initialize video output.",
+  "playbackPrepEpisodeTitle": "Prepare episode",
+  "playbackPrepMovieTitle": "Prepare movie",
+  "playbackPrepEpisodeSubtitle": "Pre-buffered start for a smoother episode handoff.",
+  "playbackPrepMovieSubtitle": "Pre-buffered start for smoother seeking and faster resume.",
+  "playbackPrepBufferingProgress": "Buffering… {percent}%",
+  "@playbackPrepBufferingProgress": {
+    "placeholders": {
+      "percent": {"type": "int"}
+    }
+  },
+  "playbackPrepOpeningStream": "Opening stream…",
+  "playbackPrepCompleted": "Preparation complete",
+  "playbackPrepReady": "Ready to play",
+  "playbackPrepDetectedMedia": "Detected: {resolution}{container}",
+  "@playbackPrepDetectedMedia": {
+    "placeholders": {
+      "resolution": {"type": "String"},
+      "container": {"type": "String"}
+    }
+  },
+  "playbackPrepEpisodeExplanation": "Buffer the episode before playback for smoother seeking and resume.",
+  "playbackPrepMovieExplanation": "Buffer before playback for smoother forward and backward seeking.",
+  "playbackPrepLoadingAction": "Loading…",
+  "playbackPrepPrepareAction": "Prepare",
+  "playbackPrepStartAction": "Start playback",
+  "playbackPrepStartImmediatelyAction": "Start immediately",
+  "playbackPrepStartPosition": "Start at {position}",
+  "@playbackPrepStartPosition": {
+    "placeholders": {
+      "position": {"type": "String"}
+    }
+  },
+  "playbackPrepEpisodeDetail": "Buffer the episode before playback for smoother seeking within the episode.",
+  "playbackPrepMovieDetail": "Buffer before playback for smoother forward and backward seeking.",
+  "playbackPrepToggleTitle": "Pre-buffer",
+  "playbackPrepToggleSubtitle": "Loads approximately {seconds} seconds before playback (Settings → Playback)",
+  "@playbackPrepToggleSubtitle": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "windowMinimizeTooltip": "Minimize",
+  "windowMaximizeRestoreTooltip": "Maximize / Restore",
+  "windowCloseTooltip": "Close",
+  "paneCategories": "Categories",
+  "paneChannels": "Channel list",
+  "paneCollapseAction": "Collapse {pane}",
+  "@paneCollapseAction": {
+    "placeholders": {
+      "pane": {"type": "String"}
+    }
+  },
+  "paneExpandAction": "Expand {pane}",
+  "@paneExpandAction": {
+    "placeholders": {
+      "pane": {"type": "String"}
+    }
+  },
+  "categoryPaneResizeLabel": "Resize category pane",
+  "categoryPaneResizeHint": "Drag to resize; double-click to reset",
+  "stepperDecreaseValue": "Decrease value",
+  "stepperIncreaseValue": "Increase value",
+  "databaseFatalSemanticLabel": "Database connection interrupted. Restart the application.",
+  "databaseFatalMessage": "Database connection interrupted — please restart the application.",
+  "comingSoonTitle": "Feature — Coming Soon",
+  "comingSoonDescription": "This section is planned for a future milestone.",
+  "playbackSettingsLanguageEnglish": "English",
+  "playbackSettingsLanguageFrench": "Français",
+  "playbackSettingsLanguageSpanish": "Español",
+  "playbackSettingsLanguageItalian": "Italiano",
+  "playbackSettingsLanguagePortuguese": "Português",
+  "playbackSettingsLanguageTurkish": "Türkçe",
+  "playbackSettingsLanguageRussian": "Русский",
+  "shellTabLiveTitle": "Live TV",
+  "shellTabLiveSubtitle": "Watch live channels — select a playlist and tap to play.",
+  "shellTabMediaLibraryTitle": "Media Library",
+  "shellTabMediaLibrarySubtitle": "Movies, series, and Watch Later in one shared media library.",
+  "shellTabFavoritesTitle": "Favorites",
+  "shellTabFavoritesSubtitle": "Quick access to your favorite live channels.",
+  "shellTabPlaylistsTitle": "Playlists",
+  "shellTabPlaylistsSubtitle": "Switch playlists and manage which categories are visible.",
+  "shellTabEpgTitle": "EPG Guide",
+  "shellTabEpgSubtitle": "TV program guide for the active playlist — select a show to watch live.",
+  "shellTabVodTitle": "VOD Movies",
+  "shellTabVodSubtitle": "Browse movies from your active playlist — select one to play on the Live tab.",
+  "shellTabSeriesTitle": "Series",
+  "shellTabSeriesSubtitle": "Browse series — open a show for episodes and resume where you left off.",
+  "shellTabDiagnosticsTitle": "Diagnostics / Logs",
+  "shellTabDiagnosticsSubtitle": "Debug-only log console and runtime diagnostics.",
+  "shellTabSettingsTitle": "Settings",
+  "shellTabSettingsSubtitle": "Add, sync, and manage M3U and Xtream playlists.",
+  "shellFallbackTitle": "Neural Control Center",
+  "shellFallbackSubtitle": "Material 3 media workspace (Drift & Riverpod)",
+  "shellSidebarLabel": "Sidebar",
+  "liveStartupBufferOff": "Off",
+  "liveStartupBufferSeconds": "{seconds} seconds",
+  "@liveStartupBufferSeconds": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "liveStartupBufferSecondsMaximum": "{seconds} seconds (maximum)",
+  "@liveStartupBufferSecondsMaximum": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "playerPanelError": "Player error: {error}",
+  "@playerPanelError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "playerAudioDetectionTitle": "Detecting audio",
+  "playerAudioDetectionSubtitle": "Detecting audio track…",
+  "playerAudioSynchronizationTitle": "Synchronizing audio",
+  "playerAudioSynchronizationSubtitle": "Stabilizing audio track…",
+  "playerInstantStartActive": "Instant start active",
+  "playerStartsAtBufferTarget": "Starts at {target} buffer",
+  "@playerStartsAtBufferTarget": {
+    "placeholders": {
+      "target": {"type": "String"}
+    }
+  },
+  "playerBuildingLiveBuffer": "Building live buffer",
+  "playerPreparingStream": "Preparing stream",
+  "playerDetectingAudio": "Detecting audio…",
+  "playerEstablishingConnection": "Establishing connection…",
+  "epgGridNowProgram": "Now: {title}",
+  "@epgGridNowProgram": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "playbackPrepVideoSurfaceTimeout": "Video output was not ready in time. Please start playback again.",
+  "globalSearchTargetLive": "Live TV",
+  "globalSearchTargetMovies": "Movies",
+  "globalSearchTargetSeries": "Series",
+  "globalSearchCategoryVisibleLabel": "{category} · {target} · {playlist}",
+  "@globalSearchCategoryVisibleLabel": {
+    "placeholders": {
+      "category": {"type": "String"},
+      "target": {"type": "String"},
+      "playlist": {"type": "String"}
+    }
+  },
+  "globalSearchCategoryMetadata": "{target} · {playlist}",
+  "@globalSearchCategoryMetadata": {
+    "placeholders": {
+      "target": {"type": "String"},
+      "playlist": {"type": "String"}
+    }
+  },
+  "playbackAudioMultichannelHint": "Multichannel audio decoded. If no sound is audible, try Force stereo."
+}

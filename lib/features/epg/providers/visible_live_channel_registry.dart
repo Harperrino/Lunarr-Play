@@ -101,9 +101,7 @@ class VisibleLiveChannelRegistry {
     }
     _lastPublished = bounded;
     if (!_changes.isClosed) {
-      _changes.add(
-        List<VisibleLiveChannelCandidate>.unmodifiable(bounded),
-      );
+      _changes.add(List<VisibleLiveChannelCandidate>.unmodifiable(bounded));
     }
   }
 
@@ -128,12 +126,13 @@ class VisibleLiveChannelRegistry {
 
 /// Process-wide registry boundary. Rows register on mount and unregister on
 /// dispose; the provider owns the registry lifetime.
-final visibleLiveChannelRegistryProvider =
-    Provider<VisibleLiveChannelRegistry>((ref) {
-      final registry = VisibleLiveChannelRegistry();
-      ref.onDispose(registry.dispose);
-      return registry;
-    });
+final visibleLiveChannelRegistryProvider = Provider<VisibleLiveChannelRegistry>(
+  (ref) {
+    final registry = VisibleLiveChannelRegistry();
+    ref.onDispose(registry.dispose);
+    return registry;
+  },
+);
 
 /// Latest bundled visible Live channel candidates. Emits only on real set
 /// changes, never on scrolls that keep the same rows mounted.

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/app/providers/core_providers.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/features/settings/widgets/settings_debug_mode_card.dart';
-import 'package:m3uxtream_player/features/settings/widgets/settings_playlist_form.dart';
-import 'package:m3uxtream_player/features/settings/widgets/settings_playlist_section.dart';
+import 'package:m3uxtream_player/features/playlists/widgets/playlist_form.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
-import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 
 void main() {
   testWidgets(
@@ -52,8 +50,8 @@ void main() {
                     const SizedBox(height: 16),
                     SizedBox(
                       width: 760,
-                      child: SettingsPlaylistForm(
-                        mode: SettingsPlaylistFormMode.m3u,
+                      child: PlaylistForm(
+                        mode: PlaylistFormMode.m3u,
                         nameController: controllers[0],
                         urlController: controllers[1],
                         hostController: controllers[2],
@@ -64,19 +62,6 @@ void main() {
                         compact: true,
                         onModeChanged: (_) {},
                         onSubmit: () {},
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: 760,
-                      child: SettingsPlaylistSection(
-                        items: const [],
-                        isLoading: false,
-                        errorMessage: null,
-                        isSyncing: false,
-                        isEpgSyncing: false,
-                        isBusy: false,
-                        compact: false,
                       ),
                     ),
                   ],
@@ -98,32 +83,6 @@ void main() {
         final field = tester.widget<TextField>(find.byType(TextField).first);
         expect(field.style?.color, colors.onSurface);
         expect(field.decoration?.fillColor, colors.surfaceContainerHigh);
-        expect(
-          tester.widget<Text>(find.text('No playlists yet')).style?.color,
-          colors.onSurface,
-        );
-        expect(
-          tester
-              .widget<Text>(
-                find.text('Add an M3U or Xtream playlist to get started.'),
-              )
-              .style
-              ?.color,
-          colors.onSurfaceVariant,
-        );
-        expect(
-          tester.widget<Icon>(find.byIcon(Icons.inbox_rounded)).color,
-          colors.outline,
-        );
-        final emptySurface = tester.widget<AppSurface>(
-          find
-              .ancestor(
-                of: find.byIcon(Icons.inbox_rounded),
-                matching: find.byType(AppSurface),
-              )
-              .first,
-        );
-        expect(emptySurface.level, AppSurfaceLevel.low);
       }
 
       await pumpSettings(highContrast: false);

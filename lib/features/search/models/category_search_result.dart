@@ -4,14 +4,6 @@ const int categorySearchResultLimit = 12;
 
 enum CategorySearchTarget { live, movies, series }
 
-extension CategorySearchTargetLabels on CategorySearchTarget {
-  String get label => switch (this) {
-    CategorySearchTarget.live => 'Live TV',
-    CategorySearchTarget.movies => 'Movies',
-    CategorySearchTarget.series => 'Series',
-  };
-}
-
 class CategorySearchResult {
   const CategorySearchResult({
     required this.target,
@@ -26,10 +18,6 @@ class CategorySearchResult {
   final int playlistId;
   final String playlistName;
   final bool isPinned;
-
-  String get targetLabel => target.label;
-  String get visibleLabel => '$categoryName · $targetLabel · $playlistName';
-  String get metadataLabel => '$targetLabel · $playlistName';
 }
 
 class _ScoredCategorySearchResult {
