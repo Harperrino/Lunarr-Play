@@ -41,23 +41,33 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
     final colors = Theme.of(context).colorScheme;
-    final titleContent = Row(
-      children: [
-        const AppBrandMark(key: ValueKey('window-bar-brand-mark'), size: 40),
-        const SizedBox(width: 12),
-        Flexible(
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: colors.onSurface,
-            ),
-          ),
-        ),
-      ],
-    );
+    final titleContent = title == AppIdentity.displayName
+        ? AppBrandWordmark(
+            key: const ValueKey('window-bar-brand-wordmark'),
+            width: 196,
+            semanticLabel: title,
+          )
+        : Row(
+            children: [
+              AppBrandMark(
+                key: const ValueKey('window-bar-brand-mark'),
+                size: 40,
+                semanticLabel: title,
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: colors.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          );
 
     final titleAreaContent = SizedBox(
       width: _brandWidth,

@@ -3,58 +3,37 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/shared/widgets/app_brand_mark.dart';
 
 void main() {
-  testWidgets('brand mark follows the active Material color scheme', (
+  testWidgets('brand mark renders the canonical standalone logo asset', (
     tester,
   ) async {
-    final firstScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF4B61D1),
-    );
-    final secondScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFFD14B82),
-    );
-
-    Future<void> pumpWith(ColorScheme colorScheme) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: ThemeData(useMaterial3: true, colorScheme: colorScheme),
-          home: const Scaffold(body: Center(child: AppBrandMark(size: 40))),
-        ),
-      );
-      await tester.pumpAndSettle();
-    }
-
-    await pumpWith(firstScheme);
-    final firstPainter =
-        tester.widget<CustomPaint>(find.byKey(AppBrandMark.painterKey)).painter!
-            as LunarrBrandMarkPainter;
-    expect(firstPainter.color, firstScheme.primary);
-
-    await pumpWith(secondScheme);
-    final secondPainter =
-        tester.widget<CustomPaint>(find.byKey(AppBrandMark.painterKey)).painter!
-            as LunarrBrandMarkPainter;
-    expect(secondPainter.color, secondScheme.primary);
-    expect(secondPainter.color, isNot(firstPainter.color));
-    expect(secondPainter.shouldRepaint(firstPainter), isTrue);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('brand mark supports an explicit surface color', (tester) async {
-    const overrideColor = Color(0xFF7BE6A2);
-
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(
-          body: Center(child: AppBrandMark(size: 28, color: overrideColor)),
-        ),
+        home: Scaffold(body: Center(child: AppBrandMark(size: 40))),
       ),
     );
 
-    final painter =
-        tester.widget<CustomPaint>(find.byKey(AppBrandMark.painterKey)).painter!
-            as LunarrBrandMarkPainter;
-    expect(painter.color, overrideColor);
-    expect(tester.getSize(find.byType(AppBrandMark)), const Size.square(28));
+    final image = tester.widget<Image>(find.byKey(AppBrandMark.imageKey));
+    expect(image.image, isA<AssetImage>());
+    expect((image.image as AssetImage).assetName, AppBrandAssets.logo);
+    expect(tester.getSize(find.byType(AppBrandMark)), const Size.square(40));
+    expect(image.semanticLabel, 'Lunarr Player');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('brand wordmark preserves the supplied artwork aspect ratio', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: AppBrandWordmark(width: 187))),
+    );
+
+    final image = tester.widget<Image>(find.byKey(AppBrandWordmark.imageKey));
+    expect(image.image, isA<AssetImage>());
+    expect((image.image as AssetImage).assetName, AppBrandAssets.wordmark);
+    expect(
+      tester.getSize(find.byType(AppBrandWordmark)),
+      const Size(187, 187 / AppBrandWordmark.aspectRatio),
+    );
     expect(tester.takeException(), isNull);
   });
 }

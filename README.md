@@ -1,6 +1,10 @@
-# Lunarr Play
+<p align="center">
+  <img src="assets/branding/lunarr-player-wordmark.svg"
+       alt="Lunarr Player"
+       width="720">
+</p>
 
-Lunarr Play is a modern M3U/Xtream player for Windows. It brings live television,
+Lunarr Player is a modern M3U/Xtream player for Windows. It brings live television,
 movies, series and the programme guide together in a focused desktop app with a
 clean Material 3 interface.
 
@@ -40,14 +44,14 @@ SmartScreen warning because the application is not currently code-signed.
 
 ## Current Status
 
-The current release candidate is **Lunarr Player 0.9.0 RC1**
-(`v0.9.0-rc.1`).
+The current release candidate is **Lunarr Player 0.9.1 RC2**
+(`v0.9.1-rc.2`).
 
 Windows desktop is the currently supported platform. An iOS version is planned.
 Android, Linux and Web versions are not currently planned.
 
-Existing Beta 5 installations can continue using their local `v2` database, so
-playlists and settings remain available after updating to RC1.
+Existing Beta 5 and RC1 installations can continue using their local `v2`
+database, so playlists and settings remain available after updating to RC2.
 
 ## Data and Privacy
 
