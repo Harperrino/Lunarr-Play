@@ -1,106 +1,68 @@
 import 'package:flutter/material.dart';
 
-/// Code-native presentation of the Lunarr Player application mark.
-///
-/// The mark deliberately resolves its accent from the active [ColorScheme] so
-/// it follows appearance changes without loading or recoloring an image asset.
-class AppBrandMark extends StatelessWidget {
-  const AppBrandMark({super.key, this.size = 28, this.color});
+/// Canonical application branding bundled with every Lunarr Player build.
+abstract final class AppBrandAssets {
+  static const logo = 'assets/branding/lunarr-player-logo.png';
+  static const wordmark = 'assets/branding/lunarr-player-wordmark.png';
+}
 
-  static const painterKey = ValueKey('app-brand-logo-painter');
+/// Standalone Lunarr Player moon mark.
+class AppBrandMark extends StatelessWidget {
+  const AppBrandMark({
+    super.key,
+    this.size = 28,
+    this.semanticLabel = 'Lunarr Player',
+  });
+
+  static const imageKey = ValueKey('app-brand-logo-image');
 
   final double size;
-  final Color? color;
+  final String semanticLabel;
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final accent = color ?? colors.primary;
-    final background = Color.alphaBlend(
-      accent.withValues(alpha: 0.14),
-      colors.surfaceContainerLow,
-    );
-
     return SizedBox.square(
       dimension: size,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(size * 0.26),
-        ),
-        child: CustomPaint(
-          key: painterKey,
-          painter: LunarrBrandMarkPainter(color: accent),
-        ),
+      child: Image.asset(
+        AppBrandAssets.logo,
+        key: imageKey,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        gaplessPlayback: true,
+        semanticLabel: semanticLabel,
       ),
     );
   }
 }
 
-/// Paints the Lunarr Player crescent inside a compact display outline.
-///
-/// Keeping the painter public makes the color contract directly testable and
-/// allows future platform surfaces to reuse the same vector geometry.
-class LunarrBrandMarkPainter extends CustomPainter {
-  const LunarrBrandMarkPainter({required this.color});
+/// Full Lunarr Player logo and lettering for prominent brand surfaces.
+class AppBrandWordmark extends StatelessWidget {
+  const AppBrandWordmark({
+    super.key,
+    required this.width,
+    this.semanticLabel = 'Lunarr Player',
+  });
 
-  final Color color;
+  static const imageKey = ValueKey('app-brand-wordmark-image');
+  static const aspectRatio = 1870 / 512;
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final extent = size.shortestSide;
-    final strokeWidth = extent * 0.065;
-    final linePaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final displayRect = Rect.fromLTRB(
-      extent * 0.16,
-      extent * 0.17,
-      extent * 0.84,
-      extent * 0.66,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(displayRect, Radius.circular(extent * 0.09)),
-      linePaint,
-    );
-
-    final standPath = Path()
-      ..moveTo(extent * 0.50, extent * 0.67)
-      ..lineTo(extent * 0.50, extent * 0.77)
-      ..moveTo(extent * 0.36, extent * 0.80)
-      ..lineTo(extent * 0.64, extent * 0.80);
-    canvas.drawPath(standPath, linePaint);
-
-    final moonOuter = Path()
-      ..addOval(
-        Rect.fromCircle(
-          // The cutout removes the upper-right visual mass. Offset the source
-          // circle so the remaining crescent is optically centered in-screen.
-          center: Offset(extent * 0.52, extent * 0.39),
-          radius: extent * 0.14,
-        ),
-      );
-    final moonCutout = Path()
-      ..addOval(
-        Rect.fromCircle(
-          center: Offset(extent * 0.59, extent * 0.35),
-          radius: extent * 0.135,
-        ),
-      );
-    final crescent = Path.combine(
-      PathOperation.difference,
-      moonOuter,
-      moonCutout,
-    );
-    canvas.drawPath(crescent, Paint()..color = color);
-  }
+  final double width;
+  final String semanticLabel;
 
   @override
-  bool shouldRepaint(covariant LunarrBrandMarkPainter oldDelegate) {
-    return oldDelegate.color != color;
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: width / aspectRatio,
+      child: Image.asset(
+        AppBrandAssets.wordmark,
+        key: imageKey,
+        fit: BoxFit.contain,
+        alignment: Alignment.centerLeft,
+        filterQuality: FilterQuality.high,
+        gaplessPlayback: true,
+        semanticLabel: semanticLabel,
+      ),
+    );
   }
 }

@@ -59,12 +59,11 @@ void main() {
 
       final appBarRect = tester.getRect(find.byType(CustomAppBar));
       final searchRect = tester.getRect(find.byType(GlobalSearchField));
-      expect(find.text('Lunarr Player'), findsOneWidget);
       expect(
-        find.byKey(const ValueKey('window-bar-brand-mark')),
+        find.byKey(const ValueKey('window-bar-brand-wordmark')),
         findsOneWidget,
       );
-      expect(find.byKey(AppBrandMark.painterKey), findsOneWidget);
+      expect(find.byKey(AppBrandWordmark.imageKey), findsOneWidget);
       expect(searchRect.top, greaterThan(appBarRect.top));
       expect(searchRect.bottom, lessThan(appBarRect.bottom));
       expect(searchRect.height, GlobalSearchField.fieldHeight);
