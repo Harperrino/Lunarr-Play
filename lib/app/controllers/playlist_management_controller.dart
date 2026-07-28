@@ -32,20 +32,12 @@ class PlaylistManagementController {
 
   Future<void> selectPlaylist(
     int playlistId, {
-    bool activateIfNeeded = true,
     bool navigateToLive = true,
   }) async {
-    final inactiveIds =
-        _ref.read(inactivePlaylistIdsProvider).valueOrNull ?? const <int>{};
     _ref.read(playlistCatalogScopeProvider.notifier).state =
         PlaylistCatalogScope.single(playlistId);
     _ref.read(selectedPlaylistIdProvider.notifier).state = playlistId;
     _resetSelectedGroupState(playlistId);
-    if (activateIfNeeded && inactiveIds.contains(playlistId)) {
-      await _ref
-          .read(inactivePlaylistIdsProvider.notifier)
-          .setActive(playlistId, true);
-    }
     if (navigateToLive) navigateToLiveTab();
   }
 

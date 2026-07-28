@@ -153,6 +153,102 @@ void main() {
       }
     },
   );
+
+  test(
+    'single scope loads an inactive playlist while All excludes it',
+    () async {
+      final database = AppDatabase.executor(NativeDatabase.memory());
+      addTearDown(database.close);
+
+      final activeId = await database
+          .into(database.playlists)
+          .insert(
+            PlaylistsCompanion.insert(
+              name: 'Active',
+              type: 'm3u',
+              urlOrHost: 'https://example.invalid/active.m3u',
+            ),
+          );
+      final inactiveId = await database
+          .into(database.playlists)
+          .insert(
+            PlaylistsCompanion.insert(
+              name: 'Inactive',
+              type: 'm3u',
+              urlOrHost: 'https://example.invalid/inactive.m3u',
+            ),
+          );
+      await database.batch((batch) {
+        batch.insertAll(database.channels, [
+          ChannelsCompanion.insert(
+            playlistId: activeId,
+            name: 'Active channel',
+            streamUrl: 'https://example.invalid/active/channel',
+            channelType: 'live',
+          ),
+          ChannelsCompanion.insert(
+            playlistId: inactiveId,
+            name: 'Inactive channel',
+            streamUrl: 'https://example.invalid/inactive/channel',
+            channelType: 'live',
+          ),
+        ]);
+      });
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(database),
+          inactivePlaylistIdsProvider.overrideWith(
+            () => _FixedInactivePlaylistIdsNotifier(inactiveId),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      await container.read(playlistsStreamProvider.future);
+      await container.read(inactivePlaylistIdsProvider.future);
+
+      expect(
+        container.read(
+          playlistCatalogPlaylistIdsProvider(
+            const PlaylistCatalogScope.allActive(),
+          ),
+        ),
+        [activeId],
+      );
+
+      final inactiveScope = PlaylistCatalogScope.single(inactiveId);
+      expect(
+        container.read(playlistCatalogPlaylistIdsProvider(inactiveScope)),
+        [inactiveId],
+      );
+      container.read(playlistCatalogScopeProvider.notifier).state =
+          inactiveScope;
+      final liveSubscription = container.listen(
+        liveChannelsStreamProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
+      addTearDown(liveSubscription.close);
+      final channels = await container.read(liveChannelsStreamProvider.future);
+
+      expect(channels, hasLength(1));
+      expect(channels.single.playlistId, inactiveId);
+      expect(channels.single.name, 'Inactive channel');
+      expect(
+        container.read(inactivePlaylistIdsProvider).valueOrNull,
+        contains(inactiveId),
+      );
+    },
+  );
+}
+
+class _FixedInactivePlaylistIdsNotifier extends InactivePlaylistIdsNotifier {
+  _FixedInactivePlaylistIdsNotifier(this.inactiveId);
+
+  final int inactiveId;
+
+  @override
+  Future<Set<int>> build() async => {inactiveId};
 }
 
 Future<List<Channel>> _waitForChannels(

@@ -146,7 +146,7 @@ class TopBarPlaylistMenu extends ConsumerWidget {
         break;
       }
     }
-    if (selected != null && !inactiveIds.contains(selected.id)) return selected;
+    if (selected != null) return selected;
     for (final playlist in playlists) {
       if (!inactiveIds.contains(playlist.id)) return playlist;
     }

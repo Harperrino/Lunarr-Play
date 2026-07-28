@@ -7,6 +7,7 @@ import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/app/controllers/playlist_management_controller.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
+import 'package:m3uxtream_player/features/playlists/providers/playlist_catalog_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 
 void main() {
@@ -51,7 +52,11 @@ void main() {
     expect(container.read(selectedPlaylistIdProvider), secondId);
     expect(
       container.read(inactivePlaylistIdsProvider).valueOrNull,
-      isNot(contains(secondId)),
+      contains(secondId),
+    );
+    expect(
+      container.read(playlistCatalogScopeProvider),
+      PlaylistCatalogScope.single(secondId),
     );
   });
 }

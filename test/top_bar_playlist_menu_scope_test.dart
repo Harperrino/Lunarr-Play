@@ -63,6 +63,65 @@ void main() {
       findsNWidgets(_playlists.length),
     );
   });
+
+  testWidgets('selecting an inactive playlist does not activate it', (
+    tester,
+  ) async {
+    final database = AppDatabase.executor(NativeDatabase.memory());
+    addTearDown(database.close);
+    final container = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(database),
+        playlistsStreamProvider.overrideWith((ref) => Stream.value(_playlists)),
+        selectedPlaylistIdProvider.overrideWith((ref) => 1),
+        playlistCatalogScopeProvider.overrideWith(
+          (ref) => const PlaylistCatalogScope.single(1),
+        ),
+        inactivePlaylistIdsProvider.overrideWith(
+          _SecondInactivePlaylistIdsNotifier.new,
+        ),
+        playlistSyncNotifierProvider.overrideWith(
+          _ReadyPlaylistSyncNotifier.new,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.darkTheme,
+          scrollBehavior: const MaterialScrollBehavior().copyWith(
+            scrollbars: false,
+          ),
+          home: const Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: TopBarPlaylistMenu(availableWidth: 1300),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('First'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Second'));
+    await tester.pumpAndSettle();
+
+    expect(container.read(selectedPlaylistIdProvider), 2);
+    expect(
+      container.read(playlistCatalogScopeProvider),
+      const PlaylistCatalogScope.single(2),
+    );
+    expect(
+      container.read(inactivePlaylistIdsProvider).valueOrNull,
+      contains(2),
+    );
+    expect(find.text('Second'), findsOneWidget);
+  });
 }
 
 class _ReadyPlaylistSyncNotifier extends PlaylistSyncNotifier {
@@ -73,6 +132,11 @@ class _ReadyPlaylistSyncNotifier extends PlaylistSyncNotifier {
 class _EmptyInactivePlaylistIdsNotifier extends InactivePlaylistIdsNotifier {
   @override
   Future<Set<int>> build() async => const <int>{};
+}
+
+class _SecondInactivePlaylistIdsNotifier extends InactivePlaylistIdsNotifier {
+  @override
+  Future<Set<int>> build() async => const <int>{2};
 }
 
 final _playlists = [
