@@ -44,7 +44,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final titleContent = title == AppIdentity.displayName
         ? AppBrandWordmark(
             key: const ValueKey('window-bar-brand-wordmark'),
-            width: 196,
+            width: 188,
             semanticLabel: title,
           )
         : Row(

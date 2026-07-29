@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/branding/lunarr-player-wordmark.svg"
+  <img src="assets/branding/lunarr-player-wordmark.png"
        alt="Lunarr Player"
        width="720">
 </p>
@@ -46,6 +46,8 @@ SmartScreen warning because the application is not currently code-signed.
 
 The current release candidate is **Lunarr Player 0.9.1 RC2**
 (`v0.9.1-rc.2`).
+
+[See what is new in RC2](CHANGELOG.md).
 
 Windows desktop is the currently supported platform. An iOS version is planned.
 Android, Linux and Web versions are not currently planned.
