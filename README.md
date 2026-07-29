@@ -49,8 +49,7 @@ The current release candidate is **Lunarr Player 0.9.1 RC2**
 
 [See what is new in RC2](CHANGELOG.md).
 
-Windows desktop is the currently supported platform. An iOS version is planned.
-Android, Linux and Web versions are not currently planned.
+Windows desktop is the currently supported platform, Linux is planned. Also there are plans to integrate Jellyfin Support for a simple AiO Media Center solution on Windows.
 
 Existing Beta 5 and RC1 installations can continue using their local `v2`
 database, so playlists and settings remain available after updating to RC2.
@@ -79,8 +78,8 @@ flutter build windows --release
 ## Contributors
 
 - **Harperrino** — creator and maintainer
-- **Codex by OpenAI** ([@codex](https://github.com/codex)) — AI-assisted
-  engineering, refactoring, UI quality assurance, testing, release
+- **Codex by OpenAI** ([@codex](https://github.com/codex)) — AI-engineering, refactoring,
+  UI quality assurance, testing, release
   verification and documentation
 
 ## License
