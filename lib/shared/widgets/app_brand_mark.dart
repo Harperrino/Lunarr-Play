@@ -44,7 +44,7 @@ class AppBrandWordmark extends StatelessWidget {
   });
 
   static const imageKey = ValueKey('app-brand-wordmark-image');
-  static const aspectRatio = 1870 / 512;
+  static const aspectRatio = 2048 / 682;
 
   final double width;
   final String semanticLabel;
