@@ -9,6 +9,7 @@ import 'package:m3uxtream_player/app/composition/settings/widgets/settings_scree
 import 'package:m3uxtream_player/app/composition/xtream/widgets/series_screen.dart';
 import 'package:m3uxtream_player/app/composition/xtream/widgets/vod_screen.dart';
 import 'package:m3uxtream_player/app/composition/xtream/widgets/media_library_screen.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_screen.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 
 /// Feature body for sidebar indices 1â€“6 (non-live tabs).
@@ -37,6 +38,8 @@ class NonLiveTabBody extends StatelessWidget {
         return const FavoritesScreen();
       case shellMediaLibraryTabIndex:
         return const MediaLibraryScreen();
+      case shellJellyfinTabIndex:
+        return const JellyfinScreen();
       case shellEpgTabIndex:
         return const EpgScreen();
       case shellVodTabIndex:

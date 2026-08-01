@@ -1468,6 +1468,34 @@ class AppLocalizationsEn extends AppLocalizations {
       'Movies, series, and Watch Later in one shared media library.';
 
   @override
+  String get shellTabJellyfinTitle => 'Jellyfin';
+
+  @override
+  String get shellTabJellyfinSubtitle => 'Your personal media library';
+
+  @override
+  String get jellyfinConnectTitle => 'Connect to Jellyfin';
+
+  @override
+  String get jellyfinConnectDescription =>
+      'Enter your Jellyfin server address to get started.';
+
+  @override
+  String get jellyfinServerLabel => 'Server';
+
+  @override
+  String get jellyfinServerHint => 'http://server:8096';
+
+  @override
+  String get jellyfinCheckConnection => 'Check connection';
+
+  @override
+  String get jellyfinConnecting => 'Connecting…';
+
+  @override
+  String get jellyfinConnected => 'Connected';
+
+  @override
   String get shellTabFavoritesTitle => 'Favorites';
 
   @override

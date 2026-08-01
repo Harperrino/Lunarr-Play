@@ -5,6 +5,7 @@ String shellTabTitle(ShellTabSpec tab, AppLocalizations l10n) =>
     switch (tab.kind) {
       ShellTabKind.live => l10n.shellTabLiveTitle,
       ShellTabKind.mediaLibrary => l10n.shellTabMediaLibraryTitle,
+      ShellTabKind.jellyfin => l10n.shellTabJellyfinTitle,
       ShellTabKind.favorites => l10n.shellTabFavoritesTitle,
       ShellTabKind.playlists => l10n.shellTabPlaylistsTitle,
       ShellTabKind.epg => l10n.shellTabEpgTitle,
@@ -18,6 +19,7 @@ String shellTabSubtitle(ShellTabSpec tab, AppLocalizations l10n) =>
     switch (tab.kind) {
       ShellTabKind.live => l10n.shellTabLiveSubtitle,
       ShellTabKind.mediaLibrary => l10n.shellTabMediaLibrarySubtitle,
+      ShellTabKind.jellyfin => l10n.shellTabJellyfinSubtitle,
       ShellTabKind.favorites => l10n.shellTabFavoritesSubtitle,
       ShellTabKind.playlists => l10n.shellTabPlaylistsSubtitle,
       ShellTabKind.epg => l10n.shellTabEpgSubtitle,

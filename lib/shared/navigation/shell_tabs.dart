@@ -10,6 +10,7 @@ const shellSettingsTabIndex = 5;
 const shellDiagnosticsTabIndex = 6;
 const shellFavoritesTabIndex = 7;
 const shellMediaLibraryTabIndex = 8;
+const shellJellyfinTabIndex = 9;
 
 /// Central layout tokens shared by every windowed shell.
 const double shellSidebarCollapsedWidth =
@@ -39,6 +40,7 @@ class ShellTabSpec {
 enum ShellTabKind {
   live,
   mediaLibrary,
+  jellyfin,
   favorites,
   playlists,
   epg,
@@ -58,6 +60,11 @@ const List<ShellTabSpec> shellTabSpecs = [
     index: shellMediaLibraryTabIndex,
     icon: Icons.video_library_rounded,
     kind: ShellTabKind.mediaLibrary,
+  ),
+  ShellTabSpec(
+    index: shellJellyfinTabIndex,
+    icon: Icons.connected_tv_rounded,
+    kind: ShellTabKind.jellyfin,
   ),
   ShellTabSpec(
     index: shellFavoritesTabIndex,

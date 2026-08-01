@@ -2632,6 +2632,60 @@ abstract class AppLocalizations {
   /// **'Movies, series, and Watch Later in one shared media library.'**
   String get shellTabMediaLibrarySubtitle;
 
+  /// No description provided for @shellTabJellyfinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Jellyfin'**
+  String get shellTabJellyfinTitle;
+
+  /// No description provided for @shellTabJellyfinSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your personal media library'**
+  String get shellTabJellyfinSubtitle;
+
+  /// No description provided for @jellyfinConnectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to Jellyfin'**
+  String get jellyfinConnectTitle;
+
+  /// No description provided for @jellyfinConnectDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your Jellyfin server address to get started.'**
+  String get jellyfinConnectDescription;
+
+  /// No description provided for @jellyfinServerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Server'**
+  String get jellyfinServerLabel;
+
+  /// No description provided for @jellyfinServerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'http://server:8096'**
+  String get jellyfinServerHint;
+
+  /// No description provided for @jellyfinCheckConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Check connection'**
+  String get jellyfinCheckConnection;
+
+  /// No description provided for @jellyfinConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get jellyfinConnecting;
+
+  /// No description provided for @jellyfinConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get jellyfinConnected;
+
   /// No description provided for @shellTabFavoritesTitle.
   ///
   /// In en, this message translates to:

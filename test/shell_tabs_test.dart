@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/app/shell/shell_tab_labels.dart';
 import 'package:m3uxtream_player/l10n/generated/app_localizations_en.dart';
@@ -16,9 +17,11 @@ void main() {
       expect(shellDiagnosticsTabIndex, 6);
       expect(shellFavoritesTabIndex, 7);
       expect(shellMediaLibraryTabIndex, 8);
+      expect(shellJellyfinTabIndex, 9);
       expect(shellTabSpecs.map((tab) => tab.index), [
         0,
         8,
+        9,
         7,
         1,
         2,
@@ -39,6 +42,7 @@ void main() {
           tabs.any((tab) => tab.index == shellMediaLibraryTabIndex),
           isTrue,
         );
+        expect(tabs.any((tab) => tab.index == shellJellyfinTabIndex), isTrue);
         expect(tabs.last.index, shellSettingsTabIndex);
       }
     });
@@ -74,6 +78,18 @@ void main() {
         ),
         'Diagnostics / Logs',
       );
+    });
+
+    test('jellyfin tab exposes the connected TV icon and localized copy', () {
+      final tab = shellTabSpecs.firstWhere(
+        (tab) => tab.kind == ShellTabKind.jellyfin,
+      );
+
+      expect(tab.index, shellJellyfinTabIndex);
+      expect(tab.visibleInNavigation, isTrue);
+      expect(tab.icon, Icons.connected_tv_rounded);
+      expect(shellTabTitle(tab, l10n), 'Jellyfin');
+      expect(shellTabSubtitle(tab, l10n), 'Your personal media library');
     });
 
     test('fallback tab stays on settings', () {
