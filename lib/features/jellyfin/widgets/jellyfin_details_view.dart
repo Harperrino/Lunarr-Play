@@ -228,17 +228,14 @@ class _InfoBlock extends ConsumerWidget {
               ],
               if (!item.isSeries) ...[
                 const SizedBox(height: 18),
-                Tooltip(
-                  message: l10n.jellyfinPlaybackUnavailableTooltip,
-                  child: FilledButton.icon(
-                    onPressed: null,
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: Text(l10n.jellyfinPlay),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 22,
-                        vertical: 12,
-                      ),
+                FilledButton.icon(
+                  onPressed: () => jellyfinOpenPlayer(ref, item),
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: Text(l10n.jellyfinPlay),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 12,
                     ),
                   ),
                 ),

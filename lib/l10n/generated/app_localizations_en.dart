@@ -1587,8 +1587,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jellyfinPlay => 'Play';
 
   @override
-  String get jellyfinPlaybackUnavailableTooltip =>
-      'Playback is not available yet.';
+  String get jellyfinPlayerFailed => 'Playback could not be started.';
+
+  @override
+  String get jellyfinPlayerDirectPlay => 'Direct Play';
+
+  @override
+  String get jellyfinPlayerDirectStream => 'Direct Stream';
+
+  @override
+  String get jellyfinPlayerTranscode => 'Transcode';
+
+  @override
+  String get jellyfinStopTooltip => 'Stop and go back';
+
+  @override
+  String get jellyfinVolumeTooltip => 'Volume';
+
+  @override
+  String get jellyfinDurationUnknown => '--:--';
 
   @override
   String get jellyfinResumeLabel => 'Resume';

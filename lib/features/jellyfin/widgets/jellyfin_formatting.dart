@@ -48,3 +48,13 @@ Map<int, List<JellyfinItem>> jellyfinGroupEpisodesBySeason(
     ..sort((a, b) => a.key.compareTo(b.key));
   return {for (final entry in entries) entry.key: entry.value};
 }
+
+/// Formats a duration as `H:MM:SS` or `M:SS` for player time labels.
+String jellyfinFormatDuration(Duration duration) {
+  final hours = duration.inHours;
+  final minutes = duration.inMinutes.remainder(60);
+  final seconds = duration.inSeconds.remainder(60);
+  String two(int value) => value.toString().padLeft(2, '0');
+  if (hours > 0) return '$hours:${two(minutes)}:${two(seconds)}';
+  return '$minutes:${two(seconds)}';
+}

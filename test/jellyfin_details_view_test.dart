@@ -51,7 +51,7 @@ void main() {
     expect(find.text('Resume'), findsOneWidget);
     final play = find.widgetWithText(FilledButton, 'Play');
     expect(play, findsOneWidget);
-    expect(tester.widget<FilledButton>(play).onPressed, isNull);
+    expect(tester.widget<FilledButton>(play).onPressed, isNotNull);
   });
 
   testWidgets('series detail lists episodes grouped by season', (tester) async {
@@ -86,7 +86,7 @@ void main() {
     expect(find.text('An episode overview.'), findsOneWidget);
     final play = find.widgetWithText(FilledButton, 'Play');
     expect(play, findsOneWidget);
-    expect(tester.widget<FilledButton>(play).onPressed, isNull);
+    expect(tester.widget<FilledButton>(play).onPressed, isNotNull);
   });
 
   testWidgets('a broken episodes endpoint shows an inline retry', (

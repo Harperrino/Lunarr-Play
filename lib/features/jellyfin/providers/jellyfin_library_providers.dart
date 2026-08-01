@@ -142,6 +142,12 @@ class JellyfinDetailsRoute extends JellyfinRoute {
   final JellyfinItem item;
 }
 
+class JellyfinPlayerRoute extends JellyfinRoute {
+  const JellyfinPlayerRoute({required this.item});
+
+  final JellyfinItem item;
+}
+
 final jellyfinViewStackProvider = StateProvider<List<JellyfinRoute>>(
   (ref) => const [JellyfinHomeRoute()],
 );
@@ -158,6 +164,13 @@ void jellyfinOpenDetails(WidgetRef ref, JellyfinItem item) {
   ref
       .read(jellyfinViewStackProvider.notifier)
       .state = [...stack, JellyfinDetailsRoute(item: item)];
+}
+
+void jellyfinOpenPlayer(WidgetRef ref, JellyfinItem item) {
+  final stack = ref.read(jellyfinViewStackProvider);
+  ref
+      .read(jellyfinViewStackProvider.notifier)
+      .state = [...stack, JellyfinPlayerRoute(item: item)];
 }
 
 void jellyfinGoBack(WidgetRef ref) {

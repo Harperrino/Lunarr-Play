@@ -2848,11 +2848,47 @@ abstract class AppLocalizations {
   /// **'Play'**
   String get jellyfinPlay;
 
-  /// No description provided for @jellyfinPlaybackUnavailableTooltip.
+  /// No description provided for @jellyfinPlayerFailed.
   ///
   /// In en, this message translates to:
-  /// **'Playback is not available yet.'**
-  String get jellyfinPlaybackUnavailableTooltip;
+  /// **'Playback could not be started.'**
+  String get jellyfinPlayerFailed;
+
+  /// No description provided for @jellyfinPlayerDirectPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct Play'**
+  String get jellyfinPlayerDirectPlay;
+
+  /// No description provided for @jellyfinPlayerDirectStream.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct Stream'**
+  String get jellyfinPlayerDirectStream;
+
+  /// No description provided for @jellyfinPlayerTranscode.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcode'**
+  String get jellyfinPlayerTranscode;
+
+  /// No description provided for @jellyfinStopTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop and go back'**
+  String get jellyfinStopTooltip;
+
+  /// No description provided for @jellyfinVolumeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get jellyfinVolumeTooltip;
+
+  /// No description provided for @jellyfinDurationUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'--:--'**
+  String get jellyfinDurationUnknown;
 
   /// No description provided for @jellyfinResumeLabel.
   ///

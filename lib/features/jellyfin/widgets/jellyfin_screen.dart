@@ -8,6 +8,7 @@ import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_connect_view
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_details_view.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_home_view.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_library_view.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_player_view.dart';
 import 'package:m3uxtream_player/l10n/generated/app_localizations.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 
@@ -127,6 +128,10 @@ class _JellyfinBrowseArea extends ConsumerWidget {
         library: library,
       ),
       JellyfinDetailsRoute(item: final item) => JellyfinDetailsView(
+        connection: connection,
+        item: item,
+      ),
+      JellyfinPlayerRoute(item: final item) => JellyfinPlayerView(
         connection: connection,
         item: item,
       ),

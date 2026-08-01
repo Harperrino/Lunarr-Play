@@ -9,7 +9,9 @@ import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_url_builder.dart
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_library.dart';
+import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_info.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_server_info.dart';
+import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_device_profile.dart';
 import 'package:m3uxtream_player/features/jellyfin/services/jellyfin_log_redactor.dart';
 
 /// Raw result of `AuthenticateByName`.
@@ -317,6 +319,65 @@ class JellyfinApiClient {
       operation: 'SeriesEpisodes',
     );
     return _decodeItemPayload(response).map(JellyfinItem.fromJson).toList();
+  }
+
+  /// Playback info for one item, requesting Direct Play only.
+  Future<JellyfinPlaybackInfo> fetchPlaybackInfo(
+    JellyfinConnection connection, {
+    required String itemId,
+    JellyfinDeviceProfile deviceProfile = const JellyfinDeviceProfile(),
+    int startTimeTicks = 0,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) async {
+    AppLogger.info(
+      _redactor.redact(
+        'JellyfinApiClient: PlaybackInfo for item $itemId on '
+        '${connection.baseUrl}.',
+      ),
+    );
+
+    final response = await _send(
+      _urlBuilder.playbackInfo(connection.baseUrl, itemId),
+      method: 'POST',
+      baseUrl: connection.baseUrl,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Emby-Token': connection.accessToken,
+      },
+      body: {
+        'UserId': connection.userId,
+        'DeviceProfile': deviceProfile.toJson(),
+        'EnableDirectPlay': true,
+        'EnableDirectStream': false,
+        'EnableTranscoding': false,
+        'AutoOpenLiveStream': false,
+        'StartTimeTicks': startTimeTicks,
+        'AudioStreamIndex': ?audioStreamIndex,
+        'SubtitleStreamIndex': ?subtitleStreamIndex,
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw JellyfinApiException(
+        kind: JellyfinFailureKind.unknown,
+        statusCode: response.statusCode,
+        message: 'Playback info request failed.',
+      );
+    }
+
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Expected a JSON object.');
+      }
+      return JellyfinPlaybackInfo.fromJson(decoded);
+    } on FormatException {
+      throw const JellyfinApiException(
+        kind: JellyfinFailureKind.unknown,
+        message: 'Playback info payload could not be parsed.',
+      );
+    }
   }
 
   Future<http.Response> _get(

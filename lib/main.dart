@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:m3uxtream_player/app/bootstrap/desktop_window_bootstrap.dart';
+import 'package:m3uxtream_player/app/composition/jellyfin/jellyfin_playback_host_bridge.dart';
 import 'package:m3uxtream_player/app/shell/main_layout_screen.dart';
 import 'package:m3uxtream_player/app/services/app_error_handlers.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/app/composition/xtream/widgets/series_resume_tracker.dart';
+import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_playback_providers.dart';
 import 'package:m3uxtream_player/features/settings/providers/appearance_providers.dart';
 import 'package:m3uxtream_player/l10n/generated/app_localizations.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
@@ -18,7 +20,18 @@ void main() async {
 
   await bootstrapDesktopWindow();
 
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        jellyfinExistingPlaybackStopperProvider.overrideWith(
+          (ref) => () => JellyfinPlaybackHostBridge.stopExistingLunarrPlayback(
+            ref,
+          ),
+        ),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends ConsumerWidget {

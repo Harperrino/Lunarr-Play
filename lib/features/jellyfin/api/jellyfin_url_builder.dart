@@ -115,6 +115,9 @@ class JellyfinUrlBuilder {
     );
   }
 
+  Uri playbackInfo(String baseUrl, String itemId) =>
+      Uri.parse('$baseUrl/Items/$itemId/PlaybackInfo');
+
   static const itemFields = 'Overview,ProductionYear,RuntimeTicks';
 
   Uri _withFields(Uri uri) {
