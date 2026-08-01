@@ -2686,6 +2686,108 @@ abstract class AppLocalizations {
   /// **'Connected'**
   String get jellyfinConnected;
 
+  /// No description provided for @jellyfinCheckingServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking server…'**
+  String get jellyfinCheckingServer;
+
+  /// No description provided for @jellyfinServerVerifiedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Server verified'**
+  String get jellyfinServerVerifiedLabel;
+
+  /// No description provided for @jellyfinServerVersionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Server version {version}'**
+  String jellyfinServerVersionLabel(String version);
+
+  /// No description provided for @jellyfinUsernameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get jellyfinUsernameLabel;
+
+  /// No description provided for @jellyfinPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get jellyfinPasswordLabel;
+
+  /// No description provided for @jellyfinSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get jellyfinSignIn;
+
+  /// No description provided for @jellyfinSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get jellyfinSignOut;
+
+  /// No description provided for @jellyfinSignedInAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in as {username}'**
+  String jellyfinSignedInAs(String username);
+
+  /// No description provided for @jellyfinErrorInvalidUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid server address with http:// or https://.'**
+  String get jellyfinErrorInvalidUrl;
+
+  /// No description provided for @jellyfinErrorDns.
+  ///
+  /// In en, this message translates to:
+  /// **'The server host could not be resolved.'**
+  String get jellyfinErrorDns;
+
+  /// No description provided for @jellyfinErrorConnectionRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The connection was refused by the server.'**
+  String get jellyfinErrorConnectionRefused;
+
+  /// No description provided for @jellyfinErrorHostUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'The server is not reachable.'**
+  String get jellyfinErrorHostUnreachable;
+
+  /// No description provided for @jellyfinErrorTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The connection timed out.'**
+  String get jellyfinErrorTimeout;
+
+  /// No description provided for @jellyfinErrorTls.
+  ///
+  /// In en, this message translates to:
+  /// **'The secure connection failed. Check the server certificate.'**
+  String get jellyfinErrorTls;
+
+  /// No description provided for @jellyfinErrorNotJellyfin.
+  ///
+  /// In en, this message translates to:
+  /// **'This address does not look like a Jellyfin server.'**
+  String get jellyfinErrorNotJellyfin;
+
+  /// No description provided for @jellyfinErrorInvalidCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect username or password.'**
+  String get jellyfinErrorInvalidCredentials;
+
+  /// No description provided for @jellyfinErrorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'The connection failed.'**
+  String get jellyfinErrorUnknown;
+
   /// No description provided for @shellTabFavoritesTitle.
   ///
   /// In en, this message translates to:

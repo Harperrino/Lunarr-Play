@@ -712,6 +712,33 @@
   "jellyfinCheckConnection": "Check connection",
   "jellyfinConnecting": "Connecting…",
   "jellyfinConnected": "Connected",
+  "jellyfinCheckingServer": "Checking server…",
+  "jellyfinServerVerifiedLabel": "Server verified",
+  "jellyfinServerVersionLabel": "Server version {version}",
+  "@jellyfinServerVersionLabel": {
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  },
+  "jellyfinUsernameLabel": "Username",
+  "jellyfinPasswordLabel": "Password",
+  "jellyfinSignIn": "Sign in",
+  "jellyfinSignOut": "Sign out",
+  "jellyfinSignedInAs": "Signed in as {username}",
+  "@jellyfinSignedInAs": {
+    "placeholders": {
+      "username": {"type": "String"}
+    }
+  },
+  "jellyfinErrorInvalidUrl": "Enter a valid server address with http:// or https://.",
+  "jellyfinErrorDns": "The server host could not be resolved.",
+  "jellyfinErrorConnectionRefused": "The connection was refused by the server.",
+  "jellyfinErrorHostUnreachable": "The server is not reachable.",
+  "jellyfinErrorTimeout": "The connection timed out.",
+  "jellyfinErrorTls": "The secure connection failed. Check the server certificate.",
+  "jellyfinErrorNotJellyfin": "This address does not look like a Jellyfin server.",
+  "jellyfinErrorInvalidCredentials": "Incorrect username or password.",
+  "jellyfinErrorUnknown": "The connection failed.",
   "shellTabFavoritesTitle": "Favorites",
   "shellTabFavoritesSubtitle": "Quick access to your favorite live channels.",
   "shellTabPlaylistsTitle": "Playlists",

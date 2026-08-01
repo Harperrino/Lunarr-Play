@@ -1496,6 +1496,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jellyfinConnected => 'Connected';
 
   @override
+  String get jellyfinCheckingServer => 'Checking server…';
+
+  @override
+  String get jellyfinServerVerifiedLabel => 'Server verified';
+
+  @override
+  String jellyfinServerVersionLabel(String version) {
+    return 'Server version $version';
+  }
+
+  @override
+  String get jellyfinUsernameLabel => 'Username';
+
+  @override
+  String get jellyfinPasswordLabel => 'Password';
+
+  @override
+  String get jellyfinSignIn => 'Sign in';
+
+  @override
+  String get jellyfinSignOut => 'Sign out';
+
+  @override
+  String jellyfinSignedInAs(String username) {
+    return 'Signed in as $username';
+  }
+
+  @override
+  String get jellyfinErrorInvalidUrl =>
+      'Enter a valid server address with http:// or https://.';
+
+  @override
+  String get jellyfinErrorDns => 'The server host could not be resolved.';
+
+  @override
+  String get jellyfinErrorConnectionRefused =>
+      'The connection was refused by the server.';
+
+  @override
+  String get jellyfinErrorHostUnreachable => 'The server is not reachable.';
+
+  @override
+  String get jellyfinErrorTimeout => 'The connection timed out.';
+
+  @override
+  String get jellyfinErrorTls =>
+      'The secure connection failed. Check the server certificate.';
+
+  @override
+  String get jellyfinErrorNotJellyfin =>
+      'This address does not look like a Jellyfin server.';
+
+  @override
+  String get jellyfinErrorInvalidCredentials =>
+      'Incorrect username or password.';
+
+  @override
+  String get jellyfinErrorUnknown => 'The connection failed.';
+
+  @override
   String get shellTabFavoritesTitle => 'Favorites';
 
   @override

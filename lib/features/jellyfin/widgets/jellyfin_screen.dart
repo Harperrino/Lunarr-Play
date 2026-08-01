@@ -1,137 +1,122 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_exception.dart';
+import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
+import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_connection_providers.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_connect_view.dart';
+import 'package:m3uxtream_player/l10n/generated/app_localizations.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_settings_section_header.dart';
 
-/// Connection lifecycle of the Jellyfin feature.
-enum JellyfinConnectionStage { disconnected, loading, connected }
+/// Standalone Jellyfin main tab: server check, sign-in and session state.
+class JellyfinScreen extends ConsumerStatefulWidget {
+  const JellyfinScreen({super.key});
 
-/// Standalone Jellyfin main tab.
-///
-/// Wave 1 renders the connect view only; the loading and connected branches
-/// prepare the states for the upcoming connection wave.
-class JellyfinScreen extends StatelessWidget {
-  const JellyfinScreen({
-    super.key,
-    this.initialStage = JellyfinConnectionStage.disconnected,
-  });
+  @override
+  ConsumerState<JellyfinScreen> createState() => _JellyfinScreenState();
+}
 
-  final JellyfinConnectionStage initialStage;
+class _JellyfinScreenState extends ConsumerState<JellyfinScreen> {
+  final TextEditingController _serverUrlController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _serverUrlController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkServer() async {
+    await ref
+        .read(jellyfinSessionControllerProvider.notifier)
+        .checkServer(_serverUrlController.text.trim());
+  }
+
+  Future<void> _signIn() async {
+    await ref
+        .read(jellyfinSessionControllerProvider.notifier)
+        .signIn(
+          username: _usernameController.text.trim(),
+          password: _passwordController.text,
+        );
+  }
+
+  Future<void> _signOut() async {
+    _usernameController.clear();
+    _passwordController.clear();
+    await ref.read(jellyfinSessionControllerProvider.notifier).signOut();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return switch (initialStage) {
-      JellyfinConnectionStage.disconnected => const _JellyfinConnectView(),
-      JellyfinConnectionStage.loading => _JellyfinStatusView(
-        icon: Icons.sync_rounded,
+    final state = ref.watch(jellyfinSessionControllerProvider);
+
+    return switch (state) {
+      JellyfinIdle() => JellyfinServerForm(
+        serverUrlController: _serverUrlController,
+        onCheckConnection: _checkServer,
+      ),
+      JellyfinVerifyingServer() => _StatusView(
+        message: context.l10n.jellyfinCheckingServer,
+        busy: true,
+      ),
+      JellyfinServerVerified(server: final server) => JellyfinLoginForm(
+        server: server,
+        usernameController: _usernameController,
+        passwordController: _passwordController,
+        onSignIn: _signIn,
+      ),
+      JellyfinSigningIn() => _StatusView(
         message: context.l10n.jellyfinConnecting,
         busy: true,
       ),
-      JellyfinConnectionStage.connected => _JellyfinStatusView(
-        icon: Icons.check_circle_rounded,
-        message: context.l10n.jellyfinConnected,
+      JellyfinAuthenticated(connection: final connection) => _ConnectedView(
+        connection: connection,
+        onSignOut: _signOut,
+      ),
+      JellyfinSessionFailure(
+        kind: final kind,
+        server: final server,
+      ) when server == null => JellyfinServerForm(
+        serverUrlController: _serverUrlController,
+        onCheckConnection: _checkServer,
+        errorMessage: _errorMessage(context.l10n, kind),
+      ),
+      JellyfinSessionFailure(
+        kind: final kind,
+        server: final server,
+      ) => JellyfinLoginForm(
+        server: server!,
+        usernameController: _usernameController,
+        passwordController: _passwordController,
+        onSignIn: _signIn,
+        errorMessage: _errorMessage(context.l10n, kind),
       ),
     };
   }
 }
 
-class _JellyfinConnectView extends StatelessWidget {
-  const _JellyfinConnectView();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return Align(
-      alignment: Alignment.topLeft,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: AppSurface(
-          level: AppSurfaceLevel.standard,
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              M3SettingsSectionHeader(
-                icon: Icons.connected_tv_rounded,
-                title: context.l10n.jellyfinConnectTitle,
-                description: context.l10n.jellyfinConnectDescription,
-              ),
-              const SizedBox(height: 20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.l10n.jellyfinServerLabel.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.8,
-                      color: colors.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  TextField(
-                    style: TextStyle(fontSize: 13, color: colors.onSurface),
-                    decoration: InputDecoration(
-                      hintText: context.l10n.jellyfinServerHint,
-                      hintStyle: TextStyle(
-                        color: colors.onSurfaceVariant,
-                        fontSize: 13,
-                      ),
-                      filled: true,
-                      fillColor: colors.surfaceContainerHigh,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: colors.outlineVariant),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: colors.outlineVariant),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: colors.primary),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: null,
-                  icon: const Icon(Icons.link_rounded, size: 18),
-                  label: Text(context.l10n.jellyfinCheckConnection),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+String _errorMessage(AppLocalizations l10n, JellyfinFailureKind kind) {
+  return switch (kind) {
+    JellyfinFailureKind.invalidUrl => l10n.jellyfinErrorInvalidUrl,
+    JellyfinFailureKind.dns => l10n.jellyfinErrorDns,
+    JellyfinFailureKind.connectionRefused => l10n.jellyfinErrorConnectionRefused,
+    JellyfinFailureKind.hostUnreachable => l10n.jellyfinErrorHostUnreachable,
+    JellyfinFailureKind.timeout => l10n.jellyfinErrorTimeout,
+    JellyfinFailureKind.tls => l10n.jellyfinErrorTls,
+    JellyfinFailureKind.notJellyfin => l10n.jellyfinErrorNotJellyfin,
+    JellyfinFailureKind.invalidCredentials => l10n.jellyfinErrorInvalidCredentials,
+    JellyfinFailureKind.unknown => l10n.jellyfinErrorUnknown,
+  };
 }
 
-class _JellyfinStatusView extends StatelessWidget {
-  const _JellyfinStatusView({
-    required this.icon,
-    required this.message,
-    this.busy = false,
-  });
+class _StatusView extends StatelessWidget {
+  const _StatusView({required this.message, this.busy = false});
 
-  final IconData icon;
   final String message;
   final bool busy;
 
@@ -148,9 +133,7 @@ class _JellyfinStatusView extends StatelessWidget {
               width: 32,
               height: 32,
               child: CircularProgressIndicator(strokeWidth: 3),
-            )
-          else
-            Icon(icon, size: 40, color: colors.primary),
+            ),
           const SizedBox(height: 16),
           Text(
             message,
@@ -159,6 +142,66 @@ class _JellyfinStatusView extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ConnectedView extends StatelessWidget {
+  const _ConnectedView({required this.connection, required this.onSignOut});
+
+  final JellyfinConnection connection;
+  final VoidCallback onSignOut;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topLeft,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: AppSurface(
+          level: AppSurfaceLevel.standard,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              M3SettingsSectionHeader(
+                icon: Icons.check_circle_rounded,
+                title: context.l10n.jellyfinConnected,
+                description: connection.baseUrl,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                context.l10n.jellyfinSignedInAs(connection.username),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                context.l10n.jellyfinServerVersionLabel(
+                  connection.serverVersion,
+                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  onPressed: onSignOut,
+                  icon: const Icon(Icons.logout_rounded, size: 18),
+                  label: Text(context.l10n.jellyfinSignOut),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
