@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_exception.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_connection_providers.dart';
+import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_library_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_connect_view.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_details_view.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_home_view.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_library_view.dart';
 import 'package:m3uxtream_player/l10n/generated/app_localizations.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
-import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
-import 'package:m3uxtream_player/shared/widgets/m3_settings_section_header.dart';
 
 /// Standalone Jellyfin main tab: server check, sign-in and session state.
 class JellyfinScreen extends ConsumerStatefulWidget {
@@ -48,6 +50,8 @@ class _JellyfinScreenState extends ConsumerState<JellyfinScreen> {
   Future<void> _signOut() async {
     _usernameController.clear();
     _passwordController.clear();
+    ref.read(jellyfinViewStackProvider.notifier).state =
+        const [JellyfinHomeRoute()];
     await ref.read(jellyfinSessionControllerProvider.notifier).signOut();
   }
 
@@ -74,10 +78,8 @@ class _JellyfinScreenState extends ConsumerState<JellyfinScreen> {
         message: context.l10n.jellyfinConnecting,
         busy: true,
       ),
-      JellyfinAuthenticated(connection: final connection) => _ConnectedView(
-        connection: connection,
-        onSignOut: _signOut,
-      ),
+      JellyfinAuthenticated(connection: final connection) =>
+        _JellyfinBrowseArea(connection: connection, onSignOut: _signOut),
       JellyfinSessionFailure(
         kind: final kind,
         server: final server,
@@ -95,6 +97,38 @@ class _JellyfinScreenState extends ConsumerState<JellyfinScreen> {
         passwordController: _passwordController,
         onSignIn: _signIn,
         errorMessage: _errorMessage(context.l10n, kind),
+      ),
+    };
+  }
+}
+
+/// Renders the internal Jellyfin view stack (home → library → details).
+class _JellyfinBrowseArea extends ConsumerWidget {
+  const _JellyfinBrowseArea({
+    required this.connection,
+    required this.onSignOut,
+  });
+
+  final JellyfinConnection connection;
+  final VoidCallback onSignOut;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stack = ref.watch(jellyfinViewStackProvider);
+    final route = stack.isEmpty ? const JellyfinHomeRoute() : stack.last;
+
+    return switch (route) {
+      JellyfinHomeRoute() => JellyfinHomeView(
+        connection: connection,
+        onSignOut: onSignOut,
+      ),
+      JellyfinLibraryRoute(library: final library) => JellyfinLibraryView(
+        connection: connection,
+        library: library,
+      ),
+      JellyfinDetailsRoute(item: final item) => JellyfinDetailsView(
+        connection: connection,
+        item: item,
       ),
     };
   }
@@ -142,66 +176,6 @@ class _StatusView extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ConnectedView extends StatelessWidget {
-  const _ConnectedView({required this.connection, required this.onSignOut});
-
-  final JellyfinConnection connection;
-  final VoidCallback onSignOut;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.topLeft,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: AppSurface(
-          level: AppSurfaceLevel.standard,
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              M3SettingsSectionHeader(
-                icon: Icons.check_circle_rounded,
-                title: context.l10n.jellyfinConnected,
-                description: connection.baseUrl,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                context.l10n.jellyfinSignedInAs(connection.username),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                context.l10n.jellyfinServerVersionLabel(
-                  connection.serverVersion,
-                ),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.tonalIcon(
-                  onPressed: onSignOut,
-                  icon: const Icon(Icons.logout_rounded, size: 18),
-                  label: Text(context.l10n.jellyfinSignOut),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

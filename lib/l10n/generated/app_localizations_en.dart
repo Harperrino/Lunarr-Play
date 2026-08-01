@@ -1556,6 +1556,90 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jellyfinErrorUnknown => 'The connection failed.';
 
   @override
+  String get jellyfinContinueWatching => 'Continue watching';
+
+  @override
+  String get jellyfinNextUp => 'Next up';
+
+  @override
+  String get jellyfinRecentlyAdded => 'Recently added';
+
+  @override
+  String get jellyfinLibraries => 'Libraries';
+
+  @override
+  String get jellyfinHomeEmptyTitle => 'Nothing here yet';
+
+  @override
+  String get jellyfinHomeEmptySubtitle =>
+      'Add media to your Jellyfin libraries and refresh.';
+
+  @override
+  String get jellyfinRefreshTooltip => 'Refresh';
+
+  @override
+  String get jellyfinLoadFailed => 'Could not load from the Jellyfin server.';
+
+  @override
+  String get jellyfinLibraryEmpty => 'This library is empty.';
+
+  @override
+  String get jellyfinPlay => 'Play';
+
+  @override
+  String get jellyfinPlaybackUnavailableTooltip =>
+      'Playback is not available yet.';
+
+  @override
+  String get jellyfinResumeLabel => 'Resume';
+
+  @override
+  String jellyfinRuntimeMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String jellyfinRuntimeHours(int hours, int minutes) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String jellyfinSeasonLabel(int number) {
+    return 'Season $number';
+  }
+
+  @override
+  String jellyfinSeasonEpisodeLabel(int season, int episode) {
+    return 'S$season E$episode';
+  }
+
+  @override
+  String jellyfinEpisodeLabel(int number) {
+    return 'Episode $number';
+  }
+
+  @override
+  String jellyfinEpisodeNumberLabel(int number) {
+    return 'E$number';
+  }
+
+  @override
+  String jellyfinMetaLine(String year, String runtime) {
+    return '$year · $runtime';
+  }
+
+  @override
+  String jellyfinItemsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get shellTabFavoritesTitle => 'Favorites';
 
   @override

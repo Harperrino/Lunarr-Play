@@ -739,6 +739,69 @@
   "jellyfinErrorNotJellyfin": "This address does not look like a Jellyfin server.",
   "jellyfinErrorInvalidCredentials": "Incorrect username or password.",
   "jellyfinErrorUnknown": "The connection failed.",
+  "jellyfinContinueWatching": "Continue watching",
+  "jellyfinNextUp": "Next up",
+  "jellyfinRecentlyAdded": "Recently added",
+  "jellyfinLibraries": "Libraries",
+  "jellyfinHomeEmptyTitle": "Nothing here yet",
+  "jellyfinHomeEmptySubtitle": "Add media to your Jellyfin libraries and refresh.",
+  "jellyfinRefreshTooltip": "Refresh",
+  "jellyfinLoadFailed": "Could not load from the Jellyfin server.",
+  "jellyfinLibraryEmpty": "This library is empty.",
+  "jellyfinPlay": "Play",
+  "jellyfinPlaybackUnavailableTooltip": "Playback is not available yet.",
+  "jellyfinResumeLabel": "Resume",
+  "jellyfinRuntimeMinutes": "{minutes} min",
+  "@jellyfinRuntimeMinutes": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "jellyfinRuntimeHours": "{hours} h {minutes} min",
+  "@jellyfinRuntimeHours": {
+    "placeholders": {
+      "hours": {"type": "int"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "jellyfinSeasonLabel": "Season {number}",
+  "@jellyfinSeasonLabel": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "jellyfinSeasonEpisodeLabel": "S{season} E{episode}",
+  "@jellyfinSeasonEpisodeLabel": {
+    "placeholders": {
+      "season": {"type": "int"},
+      "episode": {"type": "int"}
+    }
+  },
+  "jellyfinEpisodeLabel": "Episode {number}",
+  "@jellyfinEpisodeLabel": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "jellyfinEpisodeNumberLabel": "E{number}",
+  "@jellyfinEpisodeNumberLabel": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "jellyfinMetaLine": "{year} · {runtime}",
+  "@jellyfinMetaLine": {
+    "placeholders": {
+      "year": {"type": "String"},
+      "runtime": {"type": "String"}
+    }
+  },
+  "jellyfinItemsCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@jellyfinItemsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "shellTabFavoritesTitle": "Favorites",
   "shellTabFavoritesSubtitle": "Quick access to your favorite live channels.",
   "shellTabPlaylistsTitle": "Playlists",

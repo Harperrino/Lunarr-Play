@@ -2788,6 +2788,126 @@ abstract class AppLocalizations {
   /// **'The connection failed.'**
   String get jellyfinErrorUnknown;
 
+  /// No description provided for @jellyfinContinueWatching.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue watching'**
+  String get jellyfinContinueWatching;
+
+  /// No description provided for @jellyfinNextUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Next up'**
+  String get jellyfinNextUp;
+
+  /// No description provided for @jellyfinRecentlyAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently added'**
+  String get jellyfinRecentlyAdded;
+
+  /// No description provided for @jellyfinLibraries.
+  ///
+  /// In en, this message translates to:
+  /// **'Libraries'**
+  String get jellyfinLibraries;
+
+  /// No description provided for @jellyfinHomeEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here yet'**
+  String get jellyfinHomeEmptyTitle;
+
+  /// No description provided for @jellyfinHomeEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add media to your Jellyfin libraries and refresh.'**
+  String get jellyfinHomeEmptySubtitle;
+
+  /// No description provided for @jellyfinRefreshTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get jellyfinRefreshTooltip;
+
+  /// No description provided for @jellyfinLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load from the Jellyfin server.'**
+  String get jellyfinLoadFailed;
+
+  /// No description provided for @jellyfinLibraryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'This library is empty.'**
+  String get jellyfinLibraryEmpty;
+
+  /// No description provided for @jellyfinPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get jellyfinPlay;
+
+  /// No description provided for @jellyfinPlaybackUnavailableTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback is not available yet.'**
+  String get jellyfinPlaybackUnavailableTooltip;
+
+  /// No description provided for @jellyfinResumeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get jellyfinResumeLabel;
+
+  /// No description provided for @jellyfinRuntimeMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String jellyfinRuntimeMinutes(int minutes);
+
+  /// No description provided for @jellyfinRuntimeHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} h {minutes} min'**
+  String jellyfinRuntimeHours(int hours, int minutes);
+
+  /// No description provided for @jellyfinSeasonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Season {number}'**
+  String jellyfinSeasonLabel(int number);
+
+  /// No description provided for @jellyfinSeasonEpisodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'S{season} E{episode}'**
+  String jellyfinSeasonEpisodeLabel(int season, int episode);
+
+  /// No description provided for @jellyfinEpisodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Episode {number}'**
+  String jellyfinEpisodeLabel(int number);
+
+  /// No description provided for @jellyfinEpisodeNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'E{number}'**
+  String jellyfinEpisodeNumberLabel(int number);
+
+  /// No description provided for @jellyfinMetaLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{year} · {runtime}'**
+  String jellyfinMetaLine(String year, String runtime);
+
+  /// No description provided for @jellyfinItemsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item} other{{count} items}}'**
+  String jellyfinItemsCount(int count);
+
   /// No description provided for @shellTabFavoritesTitle.
   ///
   /// In en, this message translates to:

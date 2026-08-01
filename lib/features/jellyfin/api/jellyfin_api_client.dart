@@ -7,6 +7,8 @@ import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_exception.dart';
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_url_builder.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
+import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
+import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_library.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_server_info.dart';
 import 'package:m3uxtream_player/features/jellyfin/services/jellyfin_log_redactor.dart';
 
@@ -186,6 +188,187 @@ class JellyfinApiClient {
       baseUrl: connection.baseUrl,
       headers: {'X-Emby-Token': connection.accessToken},
     );
+  }
+
+  /// User views (libraries) of the connected user.
+  Future<List<JellyfinLibrary>> fetchUserViews(
+    JellyfinConnection connection,
+  ) async {
+    final response = await _get(
+      connection,
+      _urlBuilder.userViewsWithFields(connection.baseUrl, connection.userId),
+      operation: 'Views',
+    );
+    return _decodeItemPayload(response).map(JellyfinLibrary.fromJson).toList();
+  }
+
+  /// Continue-watching items of the connected user.
+  Future<List<JellyfinItem>> fetchResumeItems(
+    JellyfinConnection connection, {
+    int limit = 24,
+  }) async {
+    final response = await _get(
+      connection,
+      _urlBuilder.resumeItemsWithFields(
+        connection.baseUrl,
+        connection.userId,
+        limit: limit,
+      ),
+      operation: 'Resume',
+    );
+    return _decodeItemPayload(response).map(JellyfinItem.fromJson).toList();
+  }
+
+  /// Next-up episodes of the connected user.
+  Future<List<JellyfinItem>> fetchNextUp(
+    JellyfinConnection connection, {
+    int limit = 12,
+  }) async {
+    final response = await _get(
+      connection,
+      _urlBuilder.nextUpWithFields(
+        connection.baseUrl,
+        connection.userId,
+        limit: limit,
+      ),
+      operation: 'NextUp',
+    );
+    return _decodeItemPayload(response).map(JellyfinItem.fromJson).toList();
+  }
+
+  /// Latest additions across all libraries (bare JSON array response).
+  Future<List<JellyfinItem>> fetchLatestItems(
+    JellyfinConnection connection, {
+    int limit = 16,
+  }) async {
+    final response = await _get(
+      connection,
+      _urlBuilder.latestItemsWithFields(
+        connection.baseUrl,
+        connection.userId,
+        limit: limit,
+      ),
+      operation: 'Latest',
+    );
+    return _decodeArrayPayload(response).map(JellyfinItem.fromJson).toList();
+  }
+
+  /// Items inside a library, optionally filtered by item types.
+  Future<List<JellyfinItem>> fetchLibraryItems(
+    JellyfinConnection connection, {
+    required String libraryId,
+    List<String> itemTypes = const [],
+  }) async {
+    final response = await _get(
+      connection,
+      _urlBuilder.libraryItemsWithFields(
+        connection.baseUrl,
+        connection.userId,
+        parentId: libraryId,
+        itemTypes: itemTypes,
+      ),
+      operation: 'LibraryItems',
+    );
+    return _decodeItemPayload(response).map(JellyfinItem.fromJson).toList();
+  }
+
+  /// Full detail of a single item.
+  Future<JellyfinItem> fetchItemDetail(
+    JellyfinConnection connection, {
+    required String itemId,
+  }) async {
+    final response = await _get(
+      connection,
+      _urlBuilder.itemDetailWithFields(
+        connection.baseUrl,
+        connection.userId,
+        itemId,
+      ),
+      operation: 'ItemDetail',
+    );
+    final Map<String, dynamic> json;
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Expected a JSON object.');
+      }
+      json = decoded;
+    } on FormatException {
+      throw const JellyfinApiException(
+        kind: JellyfinFailureKind.unknown,
+        message: 'Item payload could not be parsed.',
+      );
+    }
+    return JellyfinItem.fromJson(json);
+  }
+
+  /// Episodes of a series, grouped on the server by season order.
+  Future<List<JellyfinItem>> fetchSeriesEpisodes(
+    JellyfinConnection connection, {
+    required String seriesId,
+  }) async {
+    final response = await _get(
+      connection,
+      _urlBuilder.seriesEpisodesWithFields(
+        connection.baseUrl,
+        connection.userId,
+        seriesId,
+      ),
+      operation: 'SeriesEpisodes',
+    );
+    return _decodeItemPayload(response).map(JellyfinItem.fromJson).toList();
+  }
+
+  Future<http.Response> _get(
+    JellyfinConnection connection,
+    Uri uri, {
+    required String operation,
+  }) {
+    AppLogger.info(
+      _redactor.redact(
+        'JellyfinApiClient: $operation on ${connection.baseUrl}.',
+      ),
+    );
+    return _send(
+      uri,
+      method: 'GET',
+      baseUrl: connection.baseUrl,
+      headers: {'X-Emby-Token': connection.accessToken},
+    );
+  }
+
+  List<Map<String, dynamic>> _decodeItemPayload(http.Response response) {
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Expected an object with an Items list.');
+      }
+      final items = decoded['Items'];
+      if (items is! List) {
+        throw const FormatException('Missing Items list.');
+      }
+      return items.whereType<Map<String, dynamic>>().toList();
+    } on FormatException {
+      throw const JellyfinApiException(
+        kind: JellyfinFailureKind.unknown,
+        message: 'Items payload could not be parsed.',
+      );
+    }
+  }
+
+  List<Map<String, dynamic>> _decodeArrayPayload(http.Response response) {
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) {
+        throw const FormatException('Expected a JSON array.');
+      }
+      return decoded.whereType<Map<String, dynamic>>().toList();
+    } on FormatException {
+      throw const JellyfinApiException(
+        kind: JellyfinFailureKind.unknown,
+        message: 'Items payload could not be parsed.',
+      );
+    }
   }
 
   Future<http.Response> _send(

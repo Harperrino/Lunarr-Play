@@ -11,6 +11,8 @@ import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_credentials_sto
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_connection_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_screen.dart';
 
+import 'jellyfin_test_helpers.dart';
+
 const _publicInfoJson = {
   'ServerName': 'Media Server',
   'Version': '10.10.3',
@@ -24,6 +26,7 @@ const _authResponseJson = {
 };
 
 MockClient _happyTransport() {
+  final library = jellyfinHappyHandler();
   return MockClient((request) async {
     if (request.url.path == '/Users/AuthenticateByName') {
       return http.Response(jsonEncode(_authResponseJson), 200);
@@ -31,7 +34,10 @@ MockClient _happyTransport() {
     if (request.url.path == '/Sessions/Logout') {
       return http.Response('', 204);
     }
-    return http.Response(jsonEncode(_publicInfoJson), 200);
+    if (request.url.path == '/System/Info/Public') {
+      return http.Response(jsonEncode(_publicInfoJson), 200);
+    }
+    return library(request);
   });
 }
 
@@ -117,9 +123,10 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
   });
 
-  testWidgets('correct login shows the connected view and signs out', (
+  testWidgets('correct login shows the home screen and signs out', (
     tester,
   ) async {
+    jellyfinTallViewport(tester);
     await tester.pumpWidget(_host(_happyTransport()));
 
     await tester.enterText(
@@ -134,15 +141,16 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Connected'), findsOneWidget);
+    expect(find.text('Continue watching'), findsOneWidget);
+    expect(find.text('Libraries'), findsOneWidget);
     expect(find.text('Signed in as alice'), findsOneWidget);
     expect(find.text('http://server:8096'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Sign out'));
+    await tester.tap(find.byTooltip('Sign out'));
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(FilledButton, 'Check connection'), findsOneWidget);
-    expect(find.text('Connected'), findsNothing);
+    expect(find.text('Libraries'), findsNothing);
   });
 
   testWidgets('access token and password never appear in log output', (

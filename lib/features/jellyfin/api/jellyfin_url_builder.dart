@@ -65,4 +65,93 @@ class JellyfinUrlBuilder {
       Uri.parse('$baseUrl/Users/AuthenticateByName');
 
   Uri sessionsLogout(String baseUrl) => Uri.parse('$baseUrl/Sessions/Logout');
+
+  Uri userViews(String baseUrl, String userId) =>
+      Uri.parse('$baseUrl/Users/$userId/Views');
+
+  Uri resumeItems(String baseUrl, String userId, {int limit = 24}) {
+    return Uri.parse(
+      '$baseUrl/Users/$userId/Items/Resume'
+      '?Recursive=true&Limit=$limit&MediaTypes=Video',
+    );
+  }
+
+  Uri nextUp(String baseUrl, String userId, {int limit = 12}) {
+    return Uri.parse(
+      '$baseUrl/Shows/NextUp?UserId=$userId&Limit=$limit',
+    );
+  }
+
+  Uri latestItems(String baseUrl, String userId, {int limit = 16}) {
+    return Uri.parse(
+      '$baseUrl/Users/$userId/Items/Latest?Limit=$limit',
+    );
+  }
+
+  Uri libraryItems(
+    String baseUrl,
+    String userId, {
+    required String parentId,
+    List<String> itemTypes = const [],
+  }) {
+    final typeFilter = itemTypes.isEmpty
+        ? ''
+        : '&IncludeItemTypes=${itemTypes.join(',')}';
+    return Uri.parse(
+      '$baseUrl/Users/$userId/Items'
+      '?ParentId=$parentId&Recursive=true$typeFilter'
+      '&SortBy=SortName&SortOrder=Ascending',
+    );
+  }
+
+  Uri itemDetail(String baseUrl, String userId, String itemId) {
+    return Uri.parse('$baseUrl/Users/$userId/Items/$itemId');
+  }
+
+  Uri seriesEpisodes(String baseUrl, String userId, String seriesId) {
+    return Uri.parse(
+      '$baseUrl/Shows/$seriesId/Episodes'
+      '?UserId=$userId&SortBy=SortName&SortOrder=Ascending',
+    );
+  }
+
+  static const itemFields = 'Overview,ProductionYear,RuntimeTicks';
+
+  Uri _withFields(Uri uri) {
+    final separator = uri.hasQuery ? '&' : '?';
+    return Uri.parse('$uri${separator}Fields=$itemFields');
+  }
+
+  Uri userViewsWithFields(String baseUrl, String userId) =>
+      _withFields(userViews(baseUrl, userId));
+
+  Uri resumeItemsWithFields(String baseUrl, String userId, {int limit = 24}) =>
+      _withFields(resumeItems(baseUrl, userId, limit: limit));
+
+  Uri nextUpWithFields(String baseUrl, String userId, {int limit = 12}) =>
+      _withFields(nextUp(baseUrl, userId, limit: limit));
+
+  Uri latestItemsWithFields(String baseUrl, String userId, {int limit = 16}) =>
+      _withFields(latestItems(baseUrl, userId, limit: limit));
+
+  Uri libraryItemsWithFields(
+    String baseUrl,
+    String userId, {
+    required String parentId,
+    List<String> itemTypes = const [],
+  }) =>
+      _withFields(
+        libraryItems(
+          baseUrl,
+          userId,
+          parentId: parentId,
+          itemTypes: itemTypes,
+        ),
+      );
+
+  Uri itemDetailWithFields(String baseUrl, String userId, String itemId) =>
+      _withFields(itemDetail(baseUrl, userId, itemId));
+
+  Uri seriesEpisodesWithFields(String baseUrl, String userId, String seriesId) =>
+      _withFields(seriesEpisodes(baseUrl, userId, seriesId));
 }
