@@ -1,4 +1,5 @@
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
+import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_info.dart';
 import 'package:m3uxtream_player/l10n/generated/app_localizations.dart';
 
 /// Formats Jellyfin ticks (100 ns units) as a compact runtime label.
@@ -57,4 +58,22 @@ String jellyfinFormatDuration(Duration duration) {
   String two(int value) => value.toString().padLeft(2, '0');
   if (hours > 0) return '$hours:${two(minutes)}:${two(seconds)}';
   return '$minutes:${two(seconds)}';
+}
+
+/// Returns a compact, user-facing label for an audio or subtitle stream.
+/// Jellyfin's DisplayTitle is preferred because it already includes the
+/// server's localized codec/channel information.
+String jellyfinStreamDisplayLabel(JellyfinMediaStream stream) {
+  if (stream.displayTitle.isNotEmpty) return stream.displayTitle;
+  final parts = <String>[];
+  if (stream.language.isNotEmpty) parts.add(stream.language);
+  if (stream.codec.isNotEmpty) parts.add(stream.codec.toUpperCase());
+  if (stream.channelLayout.isNotEmpty) {
+    parts.add(stream.channelLayout);
+  } else if (stream.channels != null) {
+    parts.add('${stream.channels} ch');
+  }
+  if (stream.title.isNotEmpty) parts.add(stream.title);
+  if (stream.isForced) parts.add('Forced');
+  return parts.isEmpty ? 'Stream ${stream.index}' : parts.join(' · ');
 }

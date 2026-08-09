@@ -21,7 +21,7 @@ const _authResponseJson = {
   'ServerId': 'server-id-1',
 };
 
-class _RecordingStore implements JellyfinCredentialsStore {
+class _RecordingStore extends JellyfinCredentialsStore {
   JellyfinConnection? stored;
 
   @override
@@ -111,15 +111,16 @@ void main() {
     });
 
     test('logout clears the store even when the server call fails', () async {
-      final store = _RecordingStore()..stored = const JellyfinConnection(
-        baseUrl: 'http://server:8096',
-        serverId: 'server-id-1',
-        serverVersion: '10.10.3',
-        userId: 'user-id-1',
-        username: 'alice',
-        accessToken: 'token-abc-123',
-        deviceId: 'device-42',
-      );
+      final store = _RecordingStore()
+        ..stored = const JellyfinConnection(
+          baseUrl: 'http://server:8096',
+          serverId: 'server-id-1',
+          serverVersion: '10.10.3',
+          userId: 'user-id-1',
+          username: 'alice',
+          accessToken: 'token-abc-123',
+          deviceId: 'device-42',
+        );
       final repository = JellyfinAuthRepository(
         apiClient: JellyfinApiClient(
           transport: MockClient((request) async => throw Exception('offline')),

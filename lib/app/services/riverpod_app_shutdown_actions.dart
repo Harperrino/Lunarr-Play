@@ -9,6 +9,7 @@ import 'package:m3uxtream_player/core/services/app_shutdown_service.dart';
 import 'package:m3uxtream_player/app/composition/epg/providers/epg_sync_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/app/composition/xtream/providers/series_providers.dart';
+import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_playback_providers.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// App-layer adapter that coordinates Riverpod feature implementations while
@@ -82,7 +83,11 @@ class RiverpodAppShutdownActions implements AppShutdownActions {
 
   @override
   Future<void> stopPlayback() async {
-    await ref.read(playerNotifierProvider.notifier).stopStream();
+    try {
+      await ref.read(playerNotifierProvider.notifier).stopStream();
+    } finally {
+      await _stopJellyfinPlaybackIfActive();
+    }
   }
 
   @override
@@ -107,7 +112,21 @@ class RiverpodAppShutdownActions implements AppShutdownActions {
 
   @override
   Future<void> disposePlaybackResources() async {
-    await ref.read(playerNotifierProvider.notifier).disposeResources();
+    try {
+      await ref.read(playerNotifierProvider.notifier).disposeResources();
+    } finally {
+      await _disposeJellyfinPlaybackIfActive();
+    }
+  }
+
+  Future<void> _stopJellyfinPlaybackIfActive() async {
+    if (!ref.exists(jellyfinPlayerControllerProvider)) return;
+    await ref.read(jellyfinPlayerControllerProvider).stop();
+  }
+
+  Future<void> _disposeJellyfinPlaybackIfActive() async {
+    if (!ref.exists(jellyfinPlayerControllerProvider)) return;
+    await ref.read(jellyfinPlayerControllerProvider).disposeAsync();
   }
 
   @override

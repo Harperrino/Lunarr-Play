@@ -53,7 +53,9 @@ class JellyfinApiClient {
   Future<JellyfinServerInfo> fetchPublicServerInfo(String inputUrl) async {
     final baseUrl = _urlBuilder.normalizeBaseUrl(inputUrl);
     AppLogger.info(
-      _redactor.redact('JellyfinApiClient: Fetching public system info from $baseUrl.'),
+      _redactor.redact(
+        'JellyfinApiClient: Fetching public system info from $baseUrl.',
+      ),
     );
 
     final response = await _send(
@@ -304,6 +306,58 @@ class JellyfinApiClient {
     return JellyfinItem.fromJson(json);
   }
 
+  /// Marks an item as a favorite for the connected user.
+  Future<void> markFavorite(
+    JellyfinConnection connection, {
+    required String itemId,
+  }) {
+    return _sendItemStatus(
+      connection,
+      _urlBuilder.favoriteItem(connection.baseUrl, connection.userId, itemId),
+      method: 'POST',
+      operation: 'MarkFavorite',
+    );
+  }
+
+  /// Removes an item from the connected user's favorites.
+  Future<void> unmarkFavorite(
+    JellyfinConnection connection, {
+    required String itemId,
+  }) {
+    return _sendItemStatus(
+      connection,
+      _urlBuilder.favoriteItem(connection.baseUrl, connection.userId, itemId),
+      method: 'DELETE',
+      operation: 'UnmarkFavorite',
+    );
+  }
+
+  /// Marks an item as played for the connected user.
+  Future<void> markPlayed(
+    JellyfinConnection connection, {
+    required String itemId,
+  }) {
+    return _sendItemStatus(
+      connection,
+      _urlBuilder.playedItem(connection.baseUrl, connection.userId, itemId),
+      method: 'POST',
+      operation: 'MarkPlayed',
+    );
+  }
+
+  /// Removes an item's played flag for the connected user.
+  Future<void> markUnplayed(
+    JellyfinConnection connection, {
+    required String itemId,
+  }) {
+    return _sendItemStatus(
+      connection,
+      _urlBuilder.playedItem(connection.baseUrl, connection.userId, itemId),
+      method: 'DELETE',
+      operation: 'MarkUnplayed',
+    );
+  }
+
   /// Episodes of a series, grouped on the server by season order.
   Future<List<JellyfinItem>> fetchSeriesEpisodes(
     JellyfinConnection connection, {
@@ -321,7 +375,7 @@ class JellyfinApiClient {
     return _decodeItemPayload(response).map(JellyfinItem.fromJson).toList();
   }
 
-  /// Playback info for one item, requesting Direct Play only.
+  /// Playback info for one item, asking Jellyfin for the best supported path.
   Future<JellyfinPlaybackInfo> fetchPlaybackInfo(
     JellyfinConnection connection, {
     required String itemId,
@@ -329,6 +383,10 @@ class JellyfinApiClient {
     int startTimeTicks = 0,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
+    bool enableDirectPlay = true,
+    bool enableDirectStream = false,
+    bool enableTranscoding = false,
+    int? maxStreamingBitrate,
   }) async {
     AppLogger.info(
       _redactor.redact(
@@ -348,13 +406,14 @@ class JellyfinApiClient {
       body: {
         'UserId': connection.userId,
         'DeviceProfile': deviceProfile.toJson(),
-        'EnableDirectPlay': true,
-        'EnableDirectStream': false,
-        'EnableTranscoding': false,
+        'EnableDirectPlay': enableDirectPlay,
+        'EnableDirectStream': enableDirectStream,
+        'EnableTranscoding': enableTranscoding,
         'AutoOpenLiveStream': false,
         'StartTimeTicks': startTimeTicks,
         'AudioStreamIndex': ?audioStreamIndex,
         'SubtitleStreamIndex': ?subtitleStreamIndex,
+        'MaxStreamingBitrate': ?maxStreamingBitrate,
       },
     );
 
@@ -376,6 +435,146 @@ class JellyfinApiClient {
       throw const JellyfinApiException(
         kind: JellyfinFailureKind.unknown,
         message: 'Playback info payload could not be parsed.',
+      );
+    }
+  }
+
+  /// Reports that playback has started for the connected user's session.
+  Future<void> reportPlaybackStart(
+    JellyfinConnection connection, {
+    required String itemId,
+    required String mediaSourceId,
+    String? playSessionId,
+    required int positionTicks,
+    required bool isPaused,
+    String playMethod = 'DirectPlay',
+  }) {
+    return _reportPlayback(
+      connection,
+      _urlBuilder.sessionsPlaying(connection.baseUrl),
+      operation: 'PlaybackStart',
+      itemId: itemId,
+      mediaSourceId: mediaSourceId,
+      playSessionId: playSessionId,
+      positionTicks: positionTicks,
+      isPaused: isPaused,
+      playMethod: playMethod,
+    );
+  }
+
+  /// Reports a throttled playback position update.
+  Future<void> reportPlaybackProgress(
+    JellyfinConnection connection, {
+    required String itemId,
+    required String mediaSourceId,
+    String? playSessionId,
+    required int positionTicks,
+    required bool isPaused,
+    String playMethod = 'DirectPlay',
+  }) {
+    return _reportPlayback(
+      connection,
+      _urlBuilder.sessionsPlayingProgress(connection.baseUrl),
+      operation: 'PlaybackProgress',
+      itemId: itemId,
+      mediaSourceId: mediaSourceId,
+      playSessionId: playSessionId,
+      positionTicks: positionTicks,
+      isPaused: isPaused,
+      playMethod: playMethod,
+    );
+  }
+
+  /// Reports that playback has stopped.
+  Future<void> reportPlaybackStopped(
+    JellyfinConnection connection, {
+    required String itemId,
+    required String mediaSourceId,
+    String? playSessionId,
+    required int positionTicks,
+    required bool isPaused,
+    String playMethod = 'DirectPlay',
+  }) {
+    return _reportPlayback(
+      connection,
+      _urlBuilder.sessionsPlayingStopped(connection.baseUrl),
+      operation: 'PlaybackStopped',
+      itemId: itemId,
+      mediaSourceId: mediaSourceId,
+      playSessionId: playSessionId,
+      positionTicks: positionTicks,
+      isPaused: isPaused,
+      playMethod: playMethod,
+    );
+  }
+
+  Future<void> _reportPlayback(
+    JellyfinConnection connection,
+    Uri uri, {
+    required String operation,
+    required String itemId,
+    required String mediaSourceId,
+    required String? playSessionId,
+    required int positionTicks,
+    required bool isPaused,
+    required String playMethod,
+  }) async {
+    AppLogger.info(
+      _redactor.redact(
+        'JellyfinApiClient: $operation for item $itemId on '
+        '${connection.baseUrl}.',
+      ),
+    );
+
+    final response = await _send(
+      uri,
+      method: 'POST',
+      baseUrl: connection.baseUrl,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Emby-Token': connection.accessToken,
+      },
+      body: {
+        'ItemId': itemId,
+        'MediaSourceId': mediaSourceId,
+        'PlaySessionId': ?playSessionId,
+        'PositionTicks': positionTicks,
+        'IsPaused': isPaused,
+        'PlayMethod': playMethod,
+      },
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw JellyfinApiException(
+        kind: JellyfinFailureKind.unknown,
+        statusCode: response.statusCode,
+        message: '$operation request failed.',
+      );
+    }
+  }
+
+  Future<void> _sendItemStatus(
+    JellyfinConnection connection,
+    Uri uri, {
+    required String method,
+    required String operation,
+  }) async {
+    AppLogger.info(
+      _redactor.redact(
+        'JellyfinApiClient: $operation on ${connection.baseUrl}.',
+      ),
+    );
+    final response = await _send(
+      uri,
+      method: method,
+      baseUrl: connection.baseUrl,
+      headers: {'X-Emby-Token': connection.accessToken},
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw JellyfinApiException(
+        kind: JellyfinFailureKind.unknown,
+        statusCode: response.statusCode,
+        message: '$operation request failed.',
       );
     }
   }

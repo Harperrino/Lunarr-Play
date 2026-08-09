@@ -143,6 +143,10 @@ class JellyfinLoginForm extends StatelessWidget {
                 style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant),
               ),
               const SizedBox(height: 16),
+              if (Uri.tryParse(server.baseUrl)?.scheme.toLowerCase() == 'http') ...[
+                _WarningBanner(message: context.l10n.jellyfinHttpWarning),
+                const SizedBox(height: 16),
+              ],
               if (errorMessage != null) ...[
                 _ErrorBanner(message: errorMessage!),
                 const SizedBox(height: 16),
@@ -214,6 +218,50 @@ class _ErrorBanner extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   color: colors.onErrorContainer,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WarningBanner extends StatelessWidget {
+  const _WarningBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: colors.secondaryContainer,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              size: 17,
+              color: colors.onSecondaryContainer,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colors.onSecondaryContainer,
                 ),
               ),
             ),

@@ -7,38 +7,51 @@ void main() {
 
   group('normalizeBaseUrl', () {
     test('trims whitespace and strips trailing slashes', () {
-      expect(builder.normalizeBaseUrl('  https://server:8096///  '), 'https://server:8096');
+      expect(
+        builder.normalizeBaseUrl('  https://server:8096///  '),
+        'https://server:8096',
+      );
       expect(builder.normalizeBaseUrl('http://server/'), 'http://server');
     });
 
     test('prepends http when no scheme is given', () {
       expect(builder.normalizeBaseUrl('server:8096'), 'http://server:8096');
-      expect(builder.normalizeBaseUrl('192.168.1.10:8096'), 'http://192.168.1.10:8096');
+      expect(
+        builder.normalizeBaseUrl('192.168.1.10:8096'),
+        'http://192.168.1.10:8096',
+      );
     });
 
     test('keeps https and an explicit reverse-proxy path', () {
-      expect(builder.normalizeBaseUrl('https://media.example.com/jellyfin'), 'https://media.example.com/jellyfin');
+      expect(
+        builder.normalizeBaseUrl('https://media.example.com/jellyfin'),
+        'https://media.example.com/jellyfin',
+      );
     });
 
     test('rejects empty input', () {
       expect(
         () => builder.normalizeBaseUrl('   '),
-        throwsA(isA<JellyfinApiException>().having(
-          (e) => e.kind,
-          'kind',
-          JellyfinFailureKind.invalidUrl,
-        )),
+        throwsA(
+          isA<JellyfinApiException>().having(
+            (e) => e.kind,
+            'kind',
+            JellyfinFailureKind.invalidUrl,
+          ),
+        ),
       );
     });
 
     test('rejects unsupported schemes', () {
       expect(
         () => builder.normalizeBaseUrl('ftp://server'),
-        throwsA(isA<JellyfinApiException>().having(
-          (e) => e.kind,
-          'kind',
-          JellyfinFailureKind.invalidUrl,
-        )),
+        throwsA(
+          isA<JellyfinApiException>().having(
+            (e) => e.kind,
+            'kind',
+            JellyfinFailureKind.invalidUrl,
+          ),
+        ),
       );
     });
 
@@ -75,6 +88,33 @@ void main() {
         builder.sessionsLogout('http://server:8096').toString(),
         'http://server:8096/Sessions/Logout',
       );
+    });
+
+    test('builds item status endpoints', () {
+      expect(
+        builder
+            .favoriteItem('http://server:8096', 'user-1', 'item-1')
+            .toString(),
+        'http://server:8096/Users/user-1/FavoriteItems/item-1',
+      );
+      expect(
+        builder.playedItem('http://server:8096', 'user-1', 'item-1').toString(),
+        'http://server:8096/Users/user-1/PlayedItems/item-1',
+      );
+    });
+
+    test('requests detail fields and image/user data', () {
+      final uri = builder.itemDetailWithFields(
+        'http://server:8096',
+        'user-1',
+        'item-1',
+      );
+
+      expect(uri.queryParameters['Fields'], contains('ProviderIds'));
+      expect(uri.queryParameters['Fields'], contains('People'));
+      expect(uri.queryParameters['EnableImages'], 'true');
+      expect(uri.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
+      expect(uri.queryParameters['EnableUserData'], 'true');
     });
   });
 }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/app/shell/shell_sidebar.dart';
 import 'package:m3uxtream_player/app/shell/shell_command_area.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 import 'package:m3uxtream_player/shared/layout/live_composition_geometry.dart';
 import 'package:m3uxtream_player/shared/layout/live_layout_geometry.dart';
 import 'package:m3uxtream_player/features/channels/providers/category_pane_width_providers.dart';
@@ -24,6 +25,7 @@ class LiveTabShell extends ConsumerStatefulWidget {
     required this.playerPanelKey,
     required this.activeSidebarIndex,
     required this.debugModeEnabled,
+    this.hiddenTabKinds = const {},
     required this.sidebarExpanded,
     required this.onSidebarTap,
     required this.onSidebarToggle,
@@ -40,6 +42,7 @@ class LiveTabShell extends ConsumerStatefulWidget {
   final GlobalKey playerPanelKey;
   final int activeSidebarIndex;
   final bool debugModeEnabled;
+  final Set<ShellTabKind> hiddenTabKinds;
   final bool sidebarExpanded;
   final ValueChanged<int> onSidebarTap;
   final VoidCallback onSidebarToggle;
@@ -154,6 +157,7 @@ class _LiveTabShellState extends ConsumerState<LiveTabShell> {
         child: ShellSidebar(
           activeIndex: widget.activeSidebarIndex,
           debugModeEnabled: widget.debugModeEnabled,
+          hiddenTabKinds: widget.hiddenTabKinds,
           isExpanded: widget.sidebarExpanded,
           onToggleExpanded: widget.onSidebarToggle,
           onTap: widget.onSidebarTap,

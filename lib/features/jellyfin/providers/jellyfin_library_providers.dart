@@ -152,6 +152,30 @@ final jellyfinViewStackProvider = StateProvider<List<JellyfinRoute>>(
   (ref) => const [JellyfinHomeRoute()],
 );
 
+/// Select the Jellyfin overview and discard any deeper browse path.
+void jellyfinSelectOverview(WidgetRef ref) {
+  ref.read(jellyfinViewStackProvider.notifier).state =
+      const [JellyfinHomeRoute()];
+}
+
+/// Select a library from feature-local navigation and reset its browse path.
+void jellyfinSelectLibrary(WidgetRef ref, JellyfinLibrary library) {
+  ref.read(jellyfinViewStackProvider.notifier).state = [
+    const JellyfinHomeRoute(),
+    JellyfinLibraryRoute(library: library),
+  ];
+}
+
+/// Returns the library context of the current detail/player path, if any.
+JellyfinLibrary? jellyfinSelectedLibrary(List<JellyfinRoute> stack) {
+  for (final route in stack.reversed) {
+    if (route case JellyfinLibraryRoute(library: final library)) {
+      return library;
+    }
+  }
+  return null;
+}
+
 void jellyfinOpenLibrary(WidgetRef ref, JellyfinLibrary library) {
   final stack = ref.read(jellyfinViewStackProvider);
   ref

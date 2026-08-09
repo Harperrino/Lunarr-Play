@@ -60,11 +60,12 @@ void main() {
 
       final profile = body!['DeviceProfile'] as Map<String, dynamic>;
       expect(profile['MaxStaticBitrate'], isA<int>());
-      final direct = (profile['DirectPlayProfiles'] as List).first
-          as Map<String, dynamic>;
+      final direct =
+          (profile['DirectPlayProfiles'] as List).first as Map<String, dynamic>;
       expect(direct['Container'], contains('mkv'));
       expect(direct['VideoCodec'], contains('hevc'));
       expect(direct['AudioCodec'], contains('ac3'));
+      expect(direct['Type'], 'Video');
     });
 
     test('includes audio and subtitle indices when provided', () async {
@@ -72,10 +73,7 @@ void main() {
       final client = JellyfinApiClient(
         transport: MockClient((request) async {
           body = jsonDecode(request.body) as Map<String, dynamic>;
-          return http.Response(
-            jsonEncode({'MediaSources': <Object>[]}),
-            200,
-          );
+          return http.Response(jsonEncode({'MediaSources': <Object>[]}), 200);
         }),
       );
 
@@ -89,6 +87,47 @@ void main() {
       expect(body!['AudioStreamIndex'], 2);
       expect(body!['SubtitleStreamIndex'], 3);
     });
+
+    test(
+      'enables direct stream and transcoding fallbacks when requested',
+      () async {
+        Map<String, dynamic>? body;
+        final client = JellyfinApiClient(
+          transport: MockClient((request) async {
+            body = jsonDecode(request.body) as Map<String, dynamic>;
+            return http.Response(
+              jsonEncode({
+                'MediaSources': [
+                  {
+                    'Id': 'ms-transcode',
+                    'SupportsTranscoding': true,
+                    'TranscodingUrl': '/Videos/movie-1/master.m3u8',
+                  },
+                ],
+              }),
+              200,
+            );
+          }),
+        );
+
+        final info = await client.fetchPlaybackInfo(
+          jellyfinTestConnection,
+          itemId: 'movie-1',
+          enableDirectStream: true,
+          enableTranscoding: true,
+          maxStreamingBitrate: 20000000,
+        );
+
+        expect(
+          info.mediaSources.single.transcodingUrl,
+          '/Videos/movie-1/master.m3u8',
+        );
+        expect(body!['EnableDirectPlay'], isTrue);
+        expect(body!['EnableDirectStream'], isTrue);
+        expect(body!['EnableTranscoding'], isTrue);
+        expect(body!['MaxStreamingBitrate'], 20000000);
+      },
+    );
 
     test('classifies a failing request as an unknown failure', () async {
       final client = JellyfinApiClient(
@@ -112,11 +151,12 @@ void main() {
       final json = profile.toJson();
 
       expect(json['MaxStaticBitrate'], 120000000);
-      final direct = (json['DirectPlayProfiles'] as List).single
-          as Map<String, dynamic>;
+      final direct =
+          (json['DirectPlayProfiles'] as List).single as Map<String, dynamic>;
       expect(direct['Container'], 'mp4,mkv,m4v,mov,webm,ts');
       expect(direct['VideoCodec'], contains('h264,hevc'));
       expect(direct['AudioCodec'], contains('aac,ac3,eac3'));
+      expect(direct['Type'], 'Video');
     });
   });
 }

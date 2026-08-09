@@ -37,6 +37,7 @@ class AppStateKeys {
   static const appearanceAccentHue = 'appearanceAccentHue';
   static const appearanceSurfaceTone = 'appearanceSurfaceTone';
   static const categoryPaneWidth = 'category_pane_width';
+  static const hiddenShellTabs = 'hidden_shell_tabs';
 }
 
 /// Shared key-value adapter for the feature-specific app-state stores.
@@ -496,6 +497,32 @@ class LayoutStateStore {
       );
     } catch (error, stackTrace) {
       AppLogger.error('Failed writing category pane width', error, stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<Set<String>> getHiddenShellTabs() async {
+    try {
+      final raw = await _values.read(AppStateKeys.hiddenShellTabs);
+      if (raw == null || raw.isEmpty) return {};
+      final decoded = jsonDecode(raw);
+      return decoded is List
+          ? decoded.map((item) => item.toString()).toSet()
+          : {};
+    } catch (error, stackTrace) {
+      AppLogger.error('Failed reading hidden shell tabs', error, stackTrace);
+      return {};
+    }
+  }
+
+  Future<void> setHiddenShellTabs(Set<String> tabKinds) async {
+    try {
+      await _values.write(
+        AppStateKeys.hiddenShellTabs,
+        jsonEncode(tabKinds.toList()..sort()),
+      );
+    } catch (error, stackTrace) {
+      AppLogger.error('Failed writing hidden shell tabs', error, stackTrace);
       rethrow;
     }
   }

@@ -58,14 +58,22 @@ Widget _host(MockClient transport) {
   );
 }
 
+Future<void> _pumpHost(WidgetTester tester, MockClient transport) async {
+  await tester.pumpWidget(_host(transport));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('starts on the server form with an enabled check button', (
     tester,
   ) async {
-    await tester.pumpWidget(_host(_happyTransport()));
+    await _pumpHost(tester, _happyTransport());
 
     expect(find.text('Connect to Jellyfin'), findsOneWidget);
-    expect(find.widgetWithText(TextField, 'http://server:8096'), findsOneWidget);
+    expect(
+      find.widgetWithText(TextField, 'http://server:8096'),
+      findsOneWidget,
+    );
     final button = find.widgetWithText(FilledButton, 'Check connection');
     expect(button, findsOneWidget);
     expect(tester.widget<FilledButton>(button).onPressed, isNotNull);
@@ -74,7 +82,7 @@ void main() {
   testWidgets('successful server check reveals the sign-in form', (
     tester,
   ) async {
-    await tester.pumpWidget(_host(_happyTransport()));
+    await _pumpHost(tester, _happyTransport());
 
     await tester.enterText(
       find.widgetWithText(TextField, 'http://server:8096'),
@@ -105,7 +113,7 @@ void main() {
       }
       return http.Response(jsonEncode(_publicInfoJson), 200);
     });
-    await tester.pumpWidget(_host(transport));
+    await _pumpHost(tester, transport);
 
     await tester.enterText(
       find.widgetWithText(TextField, 'http://server:8096'),
@@ -117,17 +125,26 @@ void main() {
     await tester.enterText(find.byType(TextField).at(0), 'alice');
     await tester.enterText(find.byType(TextField).at(1), 'secret-pw');
     await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pump();
+    expect(find.text('Unencrypted Jellyfin connection'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Continue over HTTP'));
     await tester.pumpAndSettle();
 
     expect(find.text('Incorrect username or password.'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pump();
+    expect(find.text('Unencrypted Jellyfin connection'), findsNothing);
+    await tester.pumpAndSettle();
+    expect(find.text('Incorrect username or password.'), findsOneWidget);
   });
 
   testWidgets('correct login shows the home screen and signs out', (
     tester,
   ) async {
     jellyfinTallViewport(tester);
-    await tester.pumpWidget(_host(_happyTransport()));
+    await _pumpHost(tester, _happyTransport());
 
     await tester.enterText(
       find.widgetWithText(TextField, 'http://server:8096'),
@@ -139,6 +156,8 @@ void main() {
     await tester.enterText(find.byType(TextField).at(0), 'alice');
     await tester.enterText(find.byType(TextField).at(1), 'secret-pw');
     await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Continue over HTTP'));
     await tester.pumpAndSettle();
 
     expect(find.text('Continue watching'), findsOneWidget);
@@ -149,7 +168,10 @@ void main() {
     await tester.tap(find.byTooltip('Sign out'));
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(FilledButton, 'Check connection'), findsOneWidget);
+    expect(
+      find.widgetWithText(FilledButton, 'Check connection'),
+      findsOneWidget,
+    );
     expect(find.text('Libraries'), findsNothing);
   });
 
@@ -158,7 +180,7 @@ void main() {
   ) async {
     AppLogger.clearHistory();
 
-    await tester.pumpWidget(_host(_happyTransport()));
+    await _pumpHost(tester, _happyTransport());
     await tester.enterText(
       find.widgetWithText(TextField, 'http://server:8096'),
       'http://server:8096',
@@ -168,6 +190,8 @@ void main() {
     await tester.enterText(find.byType(TextField).at(0), 'alice');
     await tester.enterText(find.byType(TextField).at(1), 'secret-pw');
     await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Continue over HTTP'));
     await tester.pumpAndSettle();
 
     final messages = AppLogger.recentEvents
@@ -177,5 +201,100 @@ void main() {
     expect(messages, isNot(contains('token-abc-123')));
     expect(messages, isNot(contains('secret-pw')));
     expect(messages, contains('Authentication succeeded'));
+  });
+
+  testWidgets('HTTP warning can be cancelled before authentication', (
+    tester,
+  ) async {
+    var authenticationCalls = 0;
+    final transport = MockClient((request) async {
+      if (request.url.path == '/Users/AuthenticateByName') {
+        authenticationCalls++;
+        return http.Response(jsonEncode(_authResponseJson), 200);
+      }
+      return http.Response(jsonEncode(_publicInfoJson), 200);
+    });
+
+    await _pumpHost(tester, transport);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'http://server:8096'),
+      'http://server:8096',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Check connection'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('uses HTTP'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).at(0), 'alice');
+    await tester.enterText(find.byType(TextField).at(1), 'secret-pw');
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pump();
+    expect(find.text('Unencrypted Jellyfin connection'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(authenticationCalls, 0);
+    expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
+  });
+
+  testWidgets('password Enter key uses the HTTP confirmation flow', (
+    tester,
+  ) async {
+    var authenticationCalls = 0;
+    final library = jellyfinHappyHandler();
+    final transport = MockClient((request) async {
+      if (request.url.path == '/Users/AuthenticateByName') {
+        authenticationCalls++;
+        return http.Response(jsonEncode(_authResponseJson), 200);
+      }
+      if (request.url.path == '/System/Info/Public') {
+        return http.Response(jsonEncode(_publicInfoJson), 200);
+      }
+      return library(request);
+    });
+
+    await _pumpHost(tester, transport);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'http://server:8096'),
+      'http://server:8096',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Check connection'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).at(0), 'alice');
+    await tester.enterText(find.byType(TextField).at(1), 'secret-pw');
+    await tester.tap(find.byType(TextField).at(1));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+
+    expect(find.text('Unencrypted Jellyfin connection'), findsOneWidget);
+    expect(authenticationCalls, 0);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Continue over HTTP'));
+    await tester.pumpAndSettle();
+
+    expect(authenticationCalls, 1);
+    expect(find.text('Continue watching'), findsOneWidget);
+  });
+
+  testWidgets('HTTPS login has no HTTP warning or confirmation dialog', (
+    tester,
+  ) async {
+    await _pumpHost(tester, _happyTransport());
+    await tester.enterText(
+      find.widgetWithText(TextField, 'http://server:8096'),
+      'https://server:8096',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Check connection'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('uses HTTP'), findsNothing);
+    await tester.enterText(find.byType(TextField).at(0), 'alice');
+    await tester.enterText(find.byType(TextField).at(1), 'secret-pw');
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unencrypted Jellyfin connection'), findsNothing);
+    expect(find.text('Continue watching'), findsOneWidget);
   });
 }

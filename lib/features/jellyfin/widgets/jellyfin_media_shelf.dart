@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_media_card.dart';
 
 const double jellyfinShelfCardWidth = 150;
 
@@ -41,7 +42,7 @@ class JellyfinMediaShelf extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: jellyfinShelfCardWidth * 1.5 + 68,
+          height: jellyfinMediaCardExtentFor(jellyfinShelfCardWidth),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: children.length,

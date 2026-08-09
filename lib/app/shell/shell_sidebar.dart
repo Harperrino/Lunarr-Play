@@ -14,6 +14,7 @@ class ShellSidebar extends StatelessWidget {
     required this.onTap,
     required this.onToggleExpanded,
     required this.debugModeEnabled,
+    this.hiddenTabKinds = const {},
     required this.isExpanded,
   });
 
@@ -21,16 +22,24 @@ class ShellSidebar extends StatelessWidget {
   final ValueChanged<int> onTap;
   final VoidCallback onToggleExpanded;
   final bool debugModeEnabled;
+  final Set<ShellTabKind> hiddenTabKinds;
   final bool isExpanded;
 
   static const double _expandedContentMinWidth = 160;
 
   @override
   Widget build(BuildContext context) {
-    final tabs = shellVisibleTabs(debugModeEnabled: debugModeEnabled);
+    final tabs = shellVisibleTabs(
+      debugModeEnabled: debugModeEnabled,
+      hiddenKinds: hiddenTabKinds,
+    );
     final navigationIndex = shellNavigationIndexFor(activeIndex);
     final effectiveActiveIndex =
-        shellTabVisible(navigationIndex, debugModeEnabled: debugModeEnabled)
+        shellTabVisible(
+          navigationIndex,
+          debugModeEnabled: debugModeEnabled,
+          hiddenKinds: hiddenTabKinds,
+        )
         ? navigationIndex
         : shellFallbackTabIndex();
     final width = shellSidebarWidth(isExpanded);

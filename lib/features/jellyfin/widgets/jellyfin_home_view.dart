@@ -306,6 +306,7 @@ class _HomeSections extends StatelessWidget {
       ),
       title: item.name,
       subtitle: subtitle,
+      description: item.overview,
       semanticLabel: item.name,
       progress: progress,
       onTap: () => onOpenItem(item),

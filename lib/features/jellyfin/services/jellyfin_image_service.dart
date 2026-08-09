@@ -35,6 +35,22 @@ class JellyfinImageService {
       kind: 'Backdrop',
       imageTag: imageTag,
       maxWidth: maxWidth,
+      imageIndex: 0,
+    );
+  }
+
+  String? logoUrl(
+    JellyfinConnection connection, {
+    required String itemId,
+    required String? imageTag,
+    int maxWidth = 500,
+  }) {
+    return _imageUrl(
+      connection,
+      itemId: itemId,
+      kind: 'Logo',
+      imageTag: imageTag,
+      maxWidth: maxWidth,
     );
   }
 
@@ -44,10 +60,25 @@ class JellyfinImageService {
     required String kind,
     required String? imageTag,
     required int maxWidth,
+    int? imageIndex,
   }) {
     if (imageTag == null || imageTag.isEmpty) return null;
-    return '${connection.baseUrl}/Items/$itemId/Images/$kind'
-        '?maxWidth=$maxWidth&tag=$imageTag'
-        '&api_key=${connection.accessToken}';
+    final base = Uri.tryParse(connection.baseUrl);
+    if (base == null || base.host.isEmpty) return null;
+    final basePath = base.path.endsWith('/')
+        ? base.path.substring(0, base.path.length - 1)
+        : base.path;
+    final indexPath = imageIndex == null ? '' : '/$imageIndex';
+    return base
+        .replace(
+          path:
+              '$basePath/Items/${Uri.encodeComponent(itemId)}/Images/$kind$indexPath',
+          queryParameters: {
+            'maxWidth': '$maxWidth',
+            'tag': imageTag,
+            'api_key': connection.accessToken,
+          },
+        )
+        .toString();
   }
 }

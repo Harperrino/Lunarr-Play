@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/shared/providers/app_shell_state_providers.dart';
+import 'package:m3uxtream_player/shared/providers/shell_tab_visibility_providers.dart';
 import 'package:m3uxtream_player/app/providers/app_shutdown_providers.dart';
 import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/app/bootstrap/desktop_window_bootstrap.dart';
@@ -28,6 +29,7 @@ import 'package:m3uxtream_player/app/widgets/live_tab_shell.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/app/widgets/top_bar_playlist_menu.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_connection_menu.dart';
 import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/features/settings/providers/debug_mode_providers.dart';
 import 'package:m3uxtream_player/features/xtream/providers/media_library_providers.dart';
@@ -306,6 +308,26 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
       }
     });
 
+    ref.listen<AsyncValue<Set<ShellTabKind>>>(hiddenShellTabKindsProvider, (
+      _,
+      next,
+    ) {
+      final hidden = next.valueOrNull;
+      if (hidden == null) return;
+      final active = shellNavigationIndexFor(
+        ref.read(activeSidebarIndexProvider),
+      );
+      final debug = ref.read(debugModeProvider).valueOrNull ?? false;
+      if (!shellTabVisible(
+        active,
+        debugModeEnabled: debug,
+        hiddenKinds: hidden,
+      )) {
+        ref.read(activeSidebarIndexProvider.notifier).state =
+            shellSettingsTabIndex;
+      }
+    });
+
     ref.listen<AsyncValue<List<Playlist>>>(playlistsStreamProvider, (_, _) {
       _syncSelectedPlaylist();
       unawaited(ref.read(epgAutoRefreshCoordinatorProvider).refreshNow());
@@ -316,6 +338,9 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
     });
 
     final debugModeEnabled = ref.watch(debugModeProvider).valueOrNull ?? false;
+    final hiddenTabKinds =
+        ref.watch(hiddenShellTabKindsProvider).valueOrNull ??
+        const <ShellTabKind>{};
     final databaseHealth = ref.watch(databaseHealthProvider);
     final immersive = ref.watch(immersiveLayoutProvider);
     final activeIndex = shellNavigationIndexFor(
@@ -381,6 +406,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
                         playerPanelKey: _playerPanelKey,
                         activeSidebarIndex: activeIndex,
                         debugModeEnabled: debugModeEnabled,
+                        hiddenTabKinds: hiddenTabKinds,
                         sidebarExpanded: _sidebarExpanded,
                         onSidebarTap: (index) =>
                             ref
@@ -404,6 +430,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
                     : StandardAppShell(
                         activeIndex: activeIndex,
                         debugModeEnabled: debugModeEnabled,
+                        hiddenTabKinds: hiddenTabKinds,
                         sidebarExpanded: _sidebarExpanded,
                         onSidebarToggle: _toggleSidebarExpanded,
                         onSidebarTap: (index) =>
@@ -486,8 +513,8 @@ class _DatabaseFatalStatus extends StatelessWidget {
 }
 
 /// Isolates the custom title bar from broad [MainLayoutScreen] rebuilds.
-/// It only watches [immersiveLayoutProvider]; the close callback is supplied
-/// by [MainLayoutScreen] so the existing shutdown path is preserved.
+/// It watches only title-bar state; the close callback preserves the existing
+/// shutdown path.
 class _AppBarWrapper extends ConsumerWidget {
   const _AppBarWrapper({required this.onCloseRequested});
 
@@ -496,6 +523,9 @@ class _AppBarWrapper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final immersive = ref.watch(immersiveLayoutProvider);
+    final activeIndex = shellNavigationIndexFor(
+      ref.watch(activeSidebarIndexProvider),
+    );
 
     return IgnorePointer(
       ignoring: immersive,
@@ -504,15 +534,16 @@ class _AppBarWrapper extends ConsumerWidget {
         opacity: immersive ? 0 : 1,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final playlistWidth = TopBarPlaylistMenu.widthFor(
-              constraints.maxWidth,
-            );
+            final jellyfinActive = activeIndex == shellJellyfinTabIndex;
+            final leadingWidth = jellyfinActive
+                ? JellyfinConnectionMenu.widthFor(constraints.maxWidth)
+                : TopBarPlaylistMenu.widthFor(constraints.maxWidth);
             return CustomAppBar(
               onCloseRequested: onCloseRequested,
-              leadingCommand: TopBarPlaylistMenu(
-                availableWidth: constraints.maxWidth,
-              ),
-              leadingCommandWidth: playlistWidth,
+              leadingCommand: jellyfinActive
+                  ? JellyfinConnectionMenu(availableWidth: constraints.maxWidth)
+                  : TopBarPlaylistMenu(availableWidth: constraints.maxWidth),
+              leadingCommandWidth: leadingWidth,
               search: const GlobalSearchField(),
               searchHeight: GlobalSearchField.fieldHeight,
             );

@@ -1,4 +1,5 @@
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_playback_resolver.dart';
+import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_info.dart';
 
 /// Immutable UI state of the Jellyfin player instance.
 class JellyfinPlayerState {
@@ -14,6 +15,11 @@ class JellyfinPlayerState {
     this.error = false,
     this.title = '',
     this.method,
+    this.audioTracks = const [],
+    this.subtitleTracks = const [],
+    this.selectedAudioStreamIndex = -1,
+    this.selectedSubtitleStreamIndex = -1,
+    this.switchingTrack = false,
   });
 
   /// True once a media source has been opened on the player.
@@ -30,6 +36,11 @@ class JellyfinPlayerState {
   final bool error;
   final String title;
   final JellyfinPlaybackMethod? method;
+  final List<JellyfinMediaStream> audioTracks;
+  final List<JellyfinMediaStream> subtitleTracks;
+  final int selectedAudioStreamIndex;
+  final int selectedSubtitleStreamIndex;
+  final bool switchingTrack;
 
   JellyfinPlayerState copyWith({
     bool? initialized,
@@ -43,6 +54,12 @@ class JellyfinPlayerState {
     bool? error,
     String? title,
     JellyfinPlaybackMethod? method,
+    bool clearMethod = false,
+    List<JellyfinMediaStream>? audioTracks,
+    List<JellyfinMediaStream>? subtitleTracks,
+    int? selectedAudioStreamIndex,
+    int? selectedSubtitleStreamIndex,
+    bool? switchingTrack,
   }) {
     return JellyfinPlayerState(
       initialized: initialized ?? this.initialized,
@@ -55,7 +72,14 @@ class JellyfinPlayerState {
       duration: duration ?? this.duration,
       error: error ?? this.error,
       title: title ?? this.title,
-      method: method ?? this.method,
+      method: clearMethod ? null : method ?? this.method,
+      audioTracks: audioTracks ?? this.audioTracks,
+      subtitleTracks: subtitleTracks ?? this.subtitleTracks,
+      selectedAudioStreamIndex:
+          selectedAudioStreamIndex ?? this.selectedAudioStreamIndex,
+      selectedSubtitleStreamIndex:
+          selectedSubtitleStreamIndex ?? this.selectedSubtitleStreamIndex,
+      switchingTrack: switchingTrack ?? this.switchingTrack,
     );
   }
 }

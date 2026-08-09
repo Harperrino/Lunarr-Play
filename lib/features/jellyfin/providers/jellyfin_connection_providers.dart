@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_client.dart';
@@ -12,10 +14,17 @@ final jellyfinApiClientProvider = Provider<JellyfinApiClient>(
   (ref) => JellyfinApiClient(),
 );
 
-/// Credential boundary; memory-only until a verified secure Windows backend
-/// exists.
 final jellyfinCredentialsStoreProvider = Provider<JellyfinCredentialsStore>(
-  (ref) => InMemoryJellyfinCredentialsStore(),
+  (ref) => Platform.isWindows
+      ? PersistentJellyfinCredentialsStore(
+          cipher: const WindowsDpapiCredentialCipher(),
+        )
+      : InMemoryJellyfinCredentialsStore(),
+);
+
+/// Saved accounts for the Jellyfin title-bar selector.
+final jellyfinConnectionsProvider = FutureProvider<List<JellyfinConnection>>(
+  (ref) => ref.watch(jellyfinCredentialsStoreProvider).readAll(),
 );
 
 final jellyfinAuthRepositoryProvider = Provider<JellyfinAuthRepository>((ref) {
@@ -32,6 +41,10 @@ sealed class JellyfinSessionState {
 
 class JellyfinIdle extends JellyfinSessionState {
   const JellyfinIdle();
+}
+
+class JellyfinRestoringSession extends JellyfinSessionState {
+  const JellyfinRestoringSession();
 }
 
 class JellyfinVerifyingServer extends JellyfinSessionState {
@@ -72,10 +85,35 @@ class JellyfinSessionFailure extends JellyfinSessionState {
 }
 
 class JellyfinSessionController extends Notifier<JellyfinSessionState> {
+  var _operation = 0;
+
   @override
-  JellyfinSessionState build() => const JellyfinIdle();
+  JellyfinSessionState build() {
+    final operation = ++_operation;
+    Future<void>(() async {
+      try {
+        final connection = await ref
+            .read(jellyfinCredentialsStoreProvider)
+            .readActive();
+        if (operation == _operation && connection != null) {
+          state = JellyfinAuthenticated(connection: connection);
+        } else if (operation == _operation) {
+          state = const JellyfinIdle();
+        }
+      } catch (error, stackTrace) {
+        AppLogger.error(
+          'JellyfinSessionController: Could not restore saved session.',
+          error,
+          stackTrace,
+        );
+        if (operation == _operation) state = const JellyfinIdle();
+      }
+    });
+    return const JellyfinRestoringSession();
+  }
 
   Future<void> checkServer(String inputUrl) async {
+    ++_operation;
     state = JellyfinVerifyingServer(inputUrl: inputUrl);
     try {
       final server = await ref
@@ -104,12 +142,18 @@ class JellyfinSessionController extends Notifier<JellyfinSessionState> {
     final current = state;
     if (current is! JellyfinServerVerified) return;
 
+    ++_operation;
     state = JellyfinSigningIn(server: current.server);
     try {
       final connection = await ref
           .read(jellyfinAuthRepositoryProvider)
-          .login(server: current.server, username: username, password: password);
+          .login(
+            server: current.server,
+            username: username,
+            password: password,
+          );
       state = JellyfinAuthenticated(connection: connection);
+      ref.invalidate(jellyfinConnectionsProvider);
     } on JellyfinApiException catch (error) {
       state = JellyfinSessionFailure(
         kind: error.kind,
@@ -130,10 +174,26 @@ class JellyfinSessionController extends Notifier<JellyfinSessionState> {
   }
 
   Future<void> signOut() async {
+    ++_operation;
     final current = state;
     if (current is JellyfinAuthenticated) {
       await ref.read(jellyfinAuthRepositoryProvider).logout(current.connection);
     }
+    state = const JellyfinIdle();
+    ref.invalidate(jellyfinConnectionsProvider);
+  }
+
+  Future<void> selectConnection(JellyfinConnection connection) async {
+    ++_operation;
+    await ref
+        .read(jellyfinCredentialsStoreProvider)
+        .select(connection.credentialId);
+    state = JellyfinAuthenticated(connection: connection);
+    ref.invalidate(jellyfinConnectionsProvider);
+  }
+
+  void startAddingConnection() {
+    ++_operation;
     state = const JellyfinIdle();
   }
 }

@@ -5,6 +5,7 @@ import 'package:m3uxtream_player/features/settings/widgets/appearance_settings_c
 import 'package:m3uxtream_player/app/composition/settings/widgets/playback_settings_card.dart';
 import 'package:m3uxtream_player/features/settings/widgets/settings_debug_mode_card.dart';
 import 'package:m3uxtream_player/features/settings/widgets/settings_layout.dart';
+import 'package:m3uxtream_player/features/settings/widgets/shell_tab_visibility_settings_card.dart';
 
 /// Settings is intentionally limited to app, display, diagnostic, and
 /// playback preferences. Playlist CRUD and EPG operations belong to the
@@ -32,6 +33,8 @@ class SettingsScreen extends ConsumerWidget {
               ),
               SizedBox(height: compact ? 12 : 16),
               PlaybackSettingsCard(compact: compact),
+              SizedBox(height: compact ? 12 : 16),
+              ShellTabVisibilitySettingsCard(compact: compact),
               SizedBox(height: compact ? 12 : 16),
               AppearanceSettingsCard(compact: compact),
             ],

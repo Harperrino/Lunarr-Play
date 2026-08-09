@@ -32,7 +32,21 @@ void main() {
       expect(
         url,
         'http://server:8096/Items/item-1/Images/Backdrop'
-        '?maxWidth=1600&tag=tag-backdrop&api_key=token-abc-123',
+        '/0?maxWidth=1600&tag=tag-backdrop&api_key=token-abc-123',
+      );
+    });
+
+    test('builds a logo URL without an image index', () {
+      final url = images.logoUrl(
+        jellyfinTestConnection,
+        itemId: 'item-1',
+        imageTag: 'tag-logo',
+      );
+
+      expect(
+        url,
+        'http://server:8096/Items/item-1/Images/Logo'
+        '?maxWidth=500&tag=tag-logo&api_key=token-abc-123',
       );
     });
 

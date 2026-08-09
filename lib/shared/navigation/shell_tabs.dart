@@ -106,11 +106,17 @@ const List<ShellTabSpec> shellTabSpecs = [
   ),
 ];
 
-List<ShellTabSpec> shellVisibleTabs({required bool debugModeEnabled}) {
+List<ShellTabSpec> shellVisibleTabs({
+  required bool debugModeEnabled,
+  Set<ShellTabKind> hiddenKinds = const {},
+}) {
   return shellTabSpecs
       .where(
         (tab) =>
-            tab.visibleInNavigation && (!tab.debugOnly || debugModeEnabled),
+            tab.visibleInNavigation &&
+            (!tab.debugOnly || debugModeEnabled) &&
+            (tab.kind == ShellTabKind.settings ||
+                !hiddenKinds.contains(tab.kind)),
       )
       .toList(growable: false);
 }
@@ -118,19 +124,30 @@ List<ShellTabSpec> shellVisibleTabs({required bool debugModeEnabled}) {
 ShellTabSpec? shellTabForIndex(
   int activeIndex, {
   required bool debugModeEnabled,
+  Set<ShellTabKind> hiddenKinds = const {},
 }) {
   for (final tab in shellTabSpecs) {
     if (tab.index == activeIndex &&
         tab.visibleInNavigation &&
-        (!tab.debugOnly || debugModeEnabled)) {
+        (!tab.debugOnly || debugModeEnabled) &&
+        (tab.kind == ShellTabKind.settings ||
+            !hiddenKinds.contains(tab.kind))) {
       return tab;
     }
   }
   return null;
 }
 
-bool shellTabVisible(int activeIndex, {required bool debugModeEnabled}) {
-  return shellTabForIndex(activeIndex, debugModeEnabled: debugModeEnabled) !=
+bool shellTabVisible(
+  int activeIndex, {
+  required bool debugModeEnabled,
+  Set<ShellTabKind> hiddenKinds = const {},
+}) {
+  return shellTabForIndex(
+        activeIndex,
+        debugModeEnabled: debugModeEnabled,
+        hiddenKinds: hiddenKinds,
+      ) !=
       null;
 }
 

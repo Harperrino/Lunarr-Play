@@ -52,6 +52,9 @@ class _ControllablePlayer extends Fake implements Player {
   final openedMedia = <Media>[];
   final seekCalls = <Duration>[];
   final volumeCalls = <double>[];
+  Completer<void>? openStarted;
+  Completer<void>? openGate;
+  Object? openFailure;
   int playOrPauseCount = 0;
   int playCount = 0;
   int stopCount = 0;
@@ -66,6 +69,11 @@ class _ControllablePlayer extends Fake implements Player {
   @override
   Future<void> open(Playable media, {bool play = true}) async {
     openedMedia.add(media as Media);
+    openStarted?.complete();
+    final failure = openFailure;
+    if (failure != null) throw failure;
+    final gate = openGate;
+    if (gate != null) await gate.future;
   }
 
   @override
@@ -104,6 +112,12 @@ const _item = JellyfinItem(
   name: 'Test Movie',
   type: 'Movie',
   playbackPositionTicks: 900000000,
+);
+
+const _secondItem = JellyfinItem(
+  id: 'movie-2',
+  name: 'Second Movie',
+  type: 'Movie',
 );
 
 void main() {
@@ -153,11 +167,126 @@ void main() {
     expect(media.httpHeaders, {'X-Emby-Token': 'token-abc-123'});
     expect(media.start, const Duration(seconds: 90));
     expect(controller.state.value.initialized, isTrue);
-    expect(
-      controller.state.value.method,
-      JellyfinPlaybackMethod.directPlay,
-    );
+    expect(controller.state.value.method, JellyfinPlaybackMethod.directPlay);
     expect(controller.state.value.title, 'Test Movie');
+  });
+
+  test(
+    'opens Jellyfin direct stream fallback and forwards its decision flags',
+    () async {
+      final playbackInfoBodies = <Map<String, dynamic>>[];
+      final transport = MockClient((request) async {
+        if (request.url.path.endsWith('/PlaybackInfo')) {
+          playbackInfoBodies.add(
+            jsonDecode(request.body) as Map<String, dynamic>,
+          );
+          return http.Response(
+            jsonEncode({
+              'MediaSources': [
+                {
+                  'Id': 'ms-remux',
+                  'Container': 'ts',
+                  'SupportsDirectStream': true,
+                  'TranscodingUrl': '/Videos/movie-1/master.m3u8',
+                },
+              ],
+              'PlaySessionId': 'ps-remux',
+            }),
+            200,
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final instance = JellyfinPlayerController(
+        connection: jellyfinTestConnection,
+        apiClient: JellyfinApiClient(transport: transport),
+        player: player,
+      );
+      controller = instance;
+
+      await instance.play(_item);
+
+      expect(instance.state.value.method, JellyfinPlaybackMethod.directStream);
+      expect(player.openedMedia.single.uri, isNot(contains('static=true')));
+      expect(
+        Uri.parse(player.openedMedia.single.uri).queryParameters['api_key'],
+        'token-abc-123',
+      );
+      expect(playbackInfoBodies, hasLength(2));
+      expect(playbackInfoBodies.first['EnableDirectPlay'], isTrue);
+      expect(playbackInfoBodies.first['EnableDirectStream'], isFalse);
+      expect(playbackInfoBodies.first['EnableTranscoding'], isFalse);
+      expect(playbackInfoBodies.last['EnableDirectPlay'], isTrue);
+      expect(playbackInfoBodies.last['EnableDirectStream'], isTrue);
+      expect(playbackInfoBodies.last['EnableTranscoding'], isTrue);
+    },
+  );
+
+  test('re-resolves PlaybackInfo when audio and subtitles change', () async {
+    final requestBodies = <Map<String, dynamic>>[];
+    final transport = MockClient((request) async {
+      if (request.url.path.endsWith('/PlaybackInfo')) {
+        requestBodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+        return http.Response(
+          jsonEncode({
+            'MediaSources': [
+              {
+                'Id': 'ms-1',
+                'SupportsDirectPlay': true,
+                'DefaultAudioStreamIndex': 1,
+                'MediaStreams': [
+                  {'Index': 0, 'Type': 1, 'Codec': 'h264'},
+                  {
+                    'Index': 1,
+                    'Type': 0,
+                    'Codec': 'eac3',
+                    'Language': 'deu',
+                    'DisplayTitle': 'Deutsch - EAC3 - 5.1',
+                  },
+                  {
+                    'Index': 2,
+                    'Type': 0,
+                    'Codec': 'aac',
+                    'Language': 'eng',
+                    'DisplayTitle': 'English - AAC - Stereo',
+                  },
+                  {
+                    'Index': 3,
+                    'Type': 2,
+                    'Codec': 'subrip',
+                    'Language': 'deu',
+                    'DisplayTitle': 'Deutsch - SRT',
+                  },
+                ],
+              },
+            ],
+          }),
+          200,
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    final instance = JellyfinPlayerController(
+      connection: jellyfinTestConnection,
+      apiClient: JellyfinApiClient(transport: transport),
+      player: player,
+    );
+    controller = instance;
+
+    await instance.play(_item);
+    expect(instance.state.value.audioTracks, hasLength(2));
+    expect(instance.state.value.subtitleTracks, hasLength(1));
+    expect(instance.state.value.selectedAudioStreamIndex, 1);
+
+    await instance.selectAudioTrack(2);
+    expect(requestBodies.last['AudioStreamIndex'], 2);
+    expect(player.openedMedia.last.uri, contains('AudioStreamIndex=2'));
+    expect(instance.state.value.selectedAudioStreamIndex, 2);
+
+    await instance.selectSubtitleTrack(null);
+    expect(requestBodies.last['SubtitleStreamIndex'], -1);
+    expect(player.openedMedia.last.uri, contains('SubtitleStreamIndex=-1'));
+    expect(instance.state.value.selectedSubtitleStreamIndex, -1);
   });
 
   test('player streams mirror into the UI state', () async {
@@ -166,7 +295,7 @@ void main() {
 
     player._stream.playingController.add(true);
     player._stream.bufferingController.add(true);
-    player._stream.volumeController.add(0.4);
+    player._stream.volumeController.add(40.0);
     player._stream.durationController.add(const Duration(minutes: 90));
     player._stream.positionController.add(const Duration(seconds: 5));
     player._stream.positionController.add(const Duration(seconds: 6));
@@ -205,14 +334,21 @@ void main() {
     await controller.play(_item);
 
     await controller.setVolume(0.7);
+    expect(player.volumeCalls.last, 70.0);
+    expect(controller.state.value.muted, isFalse);
     await controller.toggleMute();
     expect(controller.state.value.muted, isTrue);
     expect(player.volumeCalls.last, 0.0);
 
     await controller.toggleMute();
     expect(controller.state.value.muted, isFalse);
-    expect(player.volumeCalls.last, 0.7);
+    expect(player.volumeCalls.last, 70.0);
     expect(controller.state.value.volume, 0.7);
+
+    await controller.toggleMute();
+    await controller.setVolume(0.3);
+    expect(player.volumeCalls.last, 30.0);
+    expect(controller.state.value.muted, isFalse);
   });
 
   test('stop resets playback state without disposing the player', () async {
@@ -228,18 +364,65 @@ void main() {
     expect(player.disposeCount, 0);
   });
 
-  test('disposeAsync is idempotent and stops the player exactly once', () async {
-    final controller = buildController();
-    await controller.play(_item);
+  test(
+    'disposeAsync is idempotent and stops the player exactly once',
+    () async {
+      final controller = buildController();
+      await controller.play(_item);
 
-    await controller.disposeAsync();
-    await controller.disposeAsync();
+      await controller.disposeAsync();
+      await controller.disposeAsync();
 
-    expect(player.disposeCount, 1);
+      expect(player.disposeCount, 1);
+      expect(player.stopCount, 1);
+      // No state mutation after dispose.
+      player._stream.playingController.add(true);
+      expect(controller.state.value.playing, isFalse);
+    },
+  );
+
+  test(
+    'stop waits for a pending open and leaves no initialized playback',
+    () async {
+      final instance = buildController();
+      final openGate = Completer<void>();
+      player.openGate = openGate;
+      player.openStarted = Completer<void>();
+
+      final playFuture = instance.play(_item);
+      await player.openStarted!.future;
+      var stopCompleted = false;
+      final stopFuture = instance.stop().then((_) => stopCompleted = true);
+
+      await Future<void>.delayed(Duration.zero);
+      expect(stopCompleted, isFalse);
+      openGate.complete();
+      await Future.wait([playFuture, stopFuture]);
+
+      expect(stopCompleted, isTrue);
+      expect(player.stopCount, 1);
+      expect(instance.state.value.initialized, isFalse);
+    },
+  );
+
+  test('dispose waits for a pending open before disposing Player B', () async {
+    final instance = buildController();
+    final openGate = Completer<void>();
+    player.openGate = openGate;
+    player.openStarted = Completer<void>();
+
+    final playFuture = instance.play(_item);
+    await player.openStarted!.future;
+    final disposeFuture = instance.disposeAsync();
+
+    await Future<void>.delayed(Duration.zero);
+    expect(player.disposeCount, 0);
+    openGate.complete();
+    await Future.wait([playFuture, disposeFuture]);
+
     expect(player.stopCount, 1);
-    // No state mutation after dispose.
-    player._stream.playingController.add(true);
-    expect(controller.state.value.playing, isFalse);
+    expect(player.disposeCount, 1);
+    expect(instance.state.value.initialized, isFalse);
   });
 
   test('a failing playback info request surfaces the error state', () async {
@@ -274,5 +457,104 @@ void main() {
 
     expect(instance.state.value.error, isTrue);
     expect(player.openedMedia, isEmpty);
+  });
+
+  test('stale playback info cannot open after a newer item starts', () async {
+    final firstResponse = Completer<http.Response>();
+    final secondResponse = Completer<http.Response>();
+    final firstRequestSeen = Completer<void>();
+    final secondRequestSeen = Completer<void>();
+    var playbackRequests = 0;
+    final happyHandler = jellyfinHappyHandler();
+    final transport = MockClient((request) async {
+      if (request.url.path.endsWith('/PlaybackInfo')) {
+        playbackRequests++;
+        if (playbackRequests == 1) {
+          firstRequestSeen.complete();
+          return firstResponse.future;
+        }
+        secondRequestSeen.complete();
+        return secondResponse.future;
+      }
+      return happyHandler(request);
+    });
+    final instance = JellyfinPlayerController(
+      connection: jellyfinTestConnection,
+      apiClient: JellyfinApiClient(transport: transport),
+      player: player,
+    );
+    controller = instance;
+
+    final firstPlay = instance.play(_item);
+    await firstRequestSeen.future;
+    final secondPlay = instance.play(_secondItem);
+    await secondRequestSeen.future;
+
+    firstResponse.complete(
+      http.Response(
+        jsonEncode({
+          'MediaSources': [
+            {'Id': 'ms-first', 'SupportsDirectPlay': true},
+          ],
+          'PlaySessionId': 'ps-first',
+        }),
+        200,
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    secondResponse.complete(
+      http.Response(
+        jsonEncode({
+          'MediaSources': [
+            {'Id': 'ms-second', 'SupportsDirectPlay': true},
+          ],
+          'PlaySessionId': 'ps-second',
+        }),
+        200,
+      ),
+    );
+
+    await Future.wait([firstPlay, secondPlay]);
+
+    expect(player.openedMedia, hasLength(1));
+    expect(player.openedMedia.single.uri, contains('/Videos/movie-2/stream'));
+    expect(instance.state.value.title, 'Second Movie');
+  });
+
+  test('dispose invalidates a pending playback request', () async {
+    final response = Completer<http.Response>();
+    final requestSeen = Completer<void>();
+    final transport = MockClient((request) async {
+      if (request.url.path.endsWith('/PlaybackInfo')) {
+        requestSeen.complete();
+        return response.future;
+      }
+      return jellyfinHappyHandler()(request);
+    });
+    final instance = JellyfinPlayerController(
+      connection: jellyfinTestConnection,
+      apiClient: JellyfinApiClient(transport: transport),
+      player: player,
+    );
+    controller = instance;
+
+    final pendingPlay = instance.play(_item);
+    await requestSeen.future;
+    await instance.disposeAsync();
+    response.complete(
+      http.Response(
+        jsonEncode({
+          'MediaSources': [
+            {'Id': 'ms-1', 'SupportsDirectPlay': true},
+          ],
+        }),
+        200,
+      ),
+    );
+    await pendingPlay;
+
+    expect(player.openedMedia, isEmpty);
+    expect(player.stopCount, 1);
+    expect(player.disposeCount, 1);
   });
 }

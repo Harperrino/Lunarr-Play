@@ -61,7 +61,7 @@ class JellyfinAuthRepository {
     return connection;
   }
 
-  /// Ends the server session and always clears the local credential store.
+  /// Ends one server session and removes only its local credential record.
   Future<void> logout(JellyfinConnection connection) async {
     try {
       await _apiClient.logout(connection);
@@ -78,7 +78,7 @@ class JellyfinAuthRepository {
         stackTrace,
       );
     } finally {
-      await _credentialsStore.clear();
+      await _credentialsStore.remove(connection.credentialId);
     }
   }
 

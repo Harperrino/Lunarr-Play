@@ -22,7 +22,7 @@ const _authResponseJson = {
   'ServerId': 'server-id-1',
 };
 
-class _MemoryStore implements JellyfinCredentialsStore {
+class _MemoryStore extends JellyfinCredentialsStore {
   JellyfinConnection? stored;
 
   @override
@@ -167,7 +167,10 @@ void main() {
 
     await controller.signOut();
 
-    expect(container.read(jellyfinSessionControllerProvider), isA<JellyfinIdle>());
+    expect(
+      container.read(jellyfinSessionControllerProvider),
+      isA<JellyfinIdle>(),
+    );
     expect(store.stored, isNull);
   });
 }

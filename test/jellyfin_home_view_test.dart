@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_home_view.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_media_card.dart';
+import 'package:m3uxtream_player/shared/widgets/media/media_poster_frame.dart';
 
 import 'jellyfin_test_helpers.dart';
 
 void main() {
-  testWidgets('home shows shelves only for non-empty sections', (
-    tester,
-  ) async {
+  testWidgets('home shows shelves only for non-empty sections', (tester) async {
     jellyfinTallViewport(tester);
     await tester.pumpWidget(
       jellyfinTestHost(
@@ -22,14 +22,13 @@ void main() {
     expect(find.text('Recently added'), findsOneWidget);
     expect(find.text('Libraries'), findsOneWidget);
     expect(find.text('Test Movie'), findsWidgets);
+    expect(find.text('A test movie overview.'), findsWidgets);
     expect(find.text('Movies'), findsWidgets);
     expect(find.text('TV Shows'), findsOneWidget);
     expect(find.text('http://server:8096'), findsOneWidget);
   });
 
-  testWidgets('a broken resume endpoint hides only that shelf', (
-    tester,
-  ) async {
+  testWidgets('a broken resume endpoint hides only that shelf', (tester) async {
     jellyfinTallViewport(tester);
     await tester.pumpWidget(
       jellyfinTestHost(
@@ -43,6 +42,32 @@ void main() {
     expect(find.text('Next up'), findsOneWidget);
     expect(find.text('Recently added'), findsOneWidget);
     expect(find.text('Libraries'), findsOneWidget);
+  });
+
+  testWidgets('library posters keep their 2:3 frame in the home shelf', (
+    tester,
+  ) async {
+    jellyfinTallViewport(tester);
+    await tester.pumpWidget(
+      jellyfinTestHost(
+        JellyfinHomeView(connection: jellyfinTestConnection, onSignOut: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final moviesCard = find.ancestor(
+      of: find.text('Movies'),
+      matching: find.byType(JellyfinMediaCard),
+    );
+    final poster = find.descendant(
+      of: moviesCard,
+      matching: find.byType(MediaPosterFrame),
+    );
+    final size = tester.getSize(poster);
+
+    expect(size.width, 150);
+    expect(size.height, 225);
+    expect(size.width / size.height, closeTo(2 / 3, 0.001));
   });
 
   testWidgets('a broken library list shows an error with retry', (
@@ -61,7 +86,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Could not load from the Jellyfin server.'), findsOneWidget);
+    expect(
+      find.text('Could not load from the Jellyfin server.'),
+      findsOneWidget,
+    );
     expect(find.text('Retry'), findsOneWidget);
 
     // Retry after the server recovers shows the shelves again.

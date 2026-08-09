@@ -14,6 +14,7 @@ class JellyfinMediaCard extends StatelessWidget {
     required this.title,
     required this.semanticLabel,
     this.subtitle,
+    this.description,
     this.progress,
     this.fallbackIcon = Icons.movie_rounded,
     this.onTap,
@@ -23,42 +24,87 @@ class JellyfinMediaCard extends StatelessWidget {
   final String title;
   final String semanticLabel;
   final String? subtitle;
+  final String? description;
   final double? progress;
   final IconData fallbackIcon;
   final VoidCallback? onTap;
 
+  static const posterAspectRatio = 2 / 3;
+
+  static double posterHeightFor(double cardWidth) =>
+      cardWidth / posterAspectRatio;
+
+  /// Reserved card extent for a 2:3 poster, metadata, two-line overview and
+  /// optional progress indicator. Grid and shelf parents use this same value
+  /// so the text block cannot collide with the next row.
+  static double extentFor(double cardWidth) =>
+      posterHeightFor(cardWidth) + jellyfinMediaCardInfoExtent;
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final trimmedDescription = description?.trim();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        MediaPosterFrame(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final hasFiniteWidth = constraints.maxWidth.isFinite;
+        final poster = MediaPosterFrame(
           semanticLabel: semanticLabel,
           onActivate: onTap,
           poster: _JellyfinPosterImage(
             imageUrl: imageUrl,
             fallbackIcon: fallbackIcon,
           ),
-        ),
-        const SizedBox(height: 8),
-        MediaMetadataRow(title: title, subtitle: subtitle),
-        if (progress != null && progress! > 0) ...[
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(3),
-            child: LinearProgressIndicator(
-              value: progress!.clamp(0.0, 1.0),
-              minHeight: 4,
-              backgroundColor: colors.surfaceContainerHigh,
-            ),
-          ),
-        ],
-      ],
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (hasFiniteWidth)
+              SizedBox(
+                height: posterHeightFor(constraints.maxWidth),
+                child: poster,
+              )
+            else
+              poster,
+            const SizedBox(height: 8),
+            MediaMetadataRow(title: title, subtitle: subtitle),
+            if (trimmedDescription != null &&
+                trimmedDescription.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                trimmedDescription,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                  height: 1.25,
+                ),
+              ),
+            ],
+            if (progress != null && progress! > 0) ...[
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: progress!.clamp(0.0, 1.0),
+                  minHeight: 4,
+                  backgroundColor: colors.surfaceContainerHigh,
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }
+
+/// Fixed space below the poster for card text and optional progress.
+const double jellyfinMediaCardInfoExtent = 112;
+
+double jellyfinMediaCardExtentFor(double cardWidth) =>
+    JellyfinMediaCard.extentFor(cardWidth);
 
 class _JellyfinPosterImage extends StatelessWidget {
   const _JellyfinPosterImage({
@@ -84,18 +130,12 @@ class _JellyfinPosterImage extends StatelessWidget {
           constraints.maxWidth.isFinite ? constraints.maxWidth : 150,
           dpr,
         );
-        final cacheHeight = _cachePixels(
-          constraints.maxHeight.isFinite ? constraints.maxHeight : 225,
-          dpr,
-        );
-
         return CachedNetworkImage(
           imageUrl: url,
           fit: BoxFit.cover,
           width: double.infinity,
           height: double.infinity,
           memCacheWidth: cacheWidth,
-          memCacheHeight: cacheHeight,
           placeholder: (_, _) => Container(
             color: colors.surfaceContainerHigh,
             child: const Center(

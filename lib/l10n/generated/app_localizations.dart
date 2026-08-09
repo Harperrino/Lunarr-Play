@@ -2728,6 +2728,36 @@ abstract class AppLocalizations {
   /// **'Sign out'**
   String get jellyfinSignOut;
 
+  /// No description provided for @jellyfinHttpWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This server uses HTTP. Your password and Jellyfin session token will be sent without transport encryption.'**
+  String get jellyfinHttpWarning;
+
+  /// No description provided for @jellyfinHttpDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unencrypted Jellyfin connection'**
+  String get jellyfinHttpDialogTitle;
+
+  /// No description provided for @jellyfinHttpDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This server uses HTTP. Continue only if you trust the network. Your password and session token can be intercepted.'**
+  String get jellyfinHttpDialogMessage;
+
+  /// No description provided for @jellyfinHttpCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get jellyfinHttpCancel;
+
+  /// No description provided for @jellyfinHttpContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue over HTTP'**
+  String get jellyfinHttpContinue;
+
   /// No description provided for @jellyfinSignedInAs.
   ///
   /// In en, this message translates to:
@@ -2812,6 +2842,12 @@ abstract class AppLocalizations {
   /// **'Libraries'**
   String get jellyfinLibraries;
 
+  /// No description provided for @jellyfinOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get jellyfinOverview;
+
   /// No description provided for @jellyfinHomeEmptyTitle.
   ///
   /// In en, this message translates to:
@@ -2848,6 +2884,120 @@ abstract class AppLocalizations {
   /// **'Play'**
   String get jellyfinPlay;
 
+  /// No description provided for @jellyfinTrailer.
+  ///
+  /// In en, this message translates to:
+  /// **'Trailer'**
+  String get jellyfinTrailer;
+
+  /// No description provided for @jellyfinFavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite'**
+  String get jellyfinFavorite;
+
+  /// No description provided for @jellyfinRemoveFavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove favorite'**
+  String get jellyfinRemoveFavorite;
+
+  /// No description provided for @jellyfinMarkWatched.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark watched'**
+  String get jellyfinMarkWatched;
+
+  /// No description provided for @jellyfinMarkUnwatched.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark unwatched'**
+  String get jellyfinMarkUnwatched;
+
+  /// No description provided for @jellyfinStatusSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the item status.'**
+  String get jellyfinStatusSaveFailed;
+
+  /// No description provided for @jellyfinTrailerOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the trailer.'**
+  String get jellyfinTrailerOpenFailed;
+
+  /// No description provided for @jellyfinProviderOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the metadata provider.'**
+  String get jellyfinProviderOpenFailed;
+
+  /// No description provided for @jellyfinCommunityRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Community'**
+  String get jellyfinCommunityRating;
+
+  /// No description provided for @jellyfinCriticRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Critics'**
+  String get jellyfinCriticRating;
+
+  /// No description provided for @jellyfinImdbProviderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'IMDb'**
+  String get jellyfinImdbProviderLabel;
+
+  /// No description provided for @jellyfinTmdbProviderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'TMDb'**
+  String get jellyfinTmdbProviderLabel;
+
+  /// No description provided for @jellyfinOpenProviderTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {provider}'**
+  String jellyfinOpenProviderTooltip(String provider);
+
+  /// No description provided for @jellyfinImdbProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'IMDb {id}'**
+  String jellyfinImdbProvider(String id);
+
+  /// No description provided for @jellyfinTmdbProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'TMDb {id}'**
+  String jellyfinTmdbProvider(String id);
+
+  /// No description provided for @jellyfinGenres.
+  ///
+  /// In en, this message translates to:
+  /// **'Genres'**
+  String get jellyfinGenres;
+
+  /// No description provided for @jellyfinDirectors.
+  ///
+  /// In en, this message translates to:
+  /// **'Directors'**
+  String get jellyfinDirectors;
+
+  /// No description provided for @jellyfinWriters.
+  ///
+  /// In en, this message translates to:
+  /// **'Writers'**
+  String get jellyfinWriters;
+
+  /// No description provided for @jellyfinStudios.
+  ///
+  /// In en, this message translates to:
+  /// **'Studios'**
+  String get jellyfinStudios;
+
   /// No description provided for @jellyfinPlayerFailed.
   ///
   /// In en, this message translates to:
@@ -2883,6 +3033,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Volume'**
   String get jellyfinVolumeTooltip;
+
+  /// No description provided for @jellyfinVolumePercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String jellyfinVolumePercent(int percent);
+
+  /// No description provided for @jellyfinAudioTrackTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio track'**
+  String get jellyfinAudioTrackTooltip;
+
+  /// No description provided for @jellyfinSubtitleTrackTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtitles'**
+  String get jellyfinSubtitleTrackTooltip;
+
+  /// No description provided for @jellyfinSubtitleOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get jellyfinSubtitleOff;
+
+  /// No description provided for @jellyfinPreviousEpisodeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous episode'**
+  String get jellyfinPreviousEpisodeTooltip;
+
+  /// No description provided for @jellyfinNextEpisodeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Next episode'**
+  String get jellyfinNextEpisodeTooltip;
+
+  /// No description provided for @jellyfinShowEpisodesTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Show episodes'**
+  String get jellyfinShowEpisodesTooltip;
+
+  /// No description provided for @jellyfinHideEpisodesTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide episodes'**
+  String get jellyfinHideEpisodesTooltip;
+
+  /// No description provided for @jellyfinEpisodesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Episodes'**
+  String get jellyfinEpisodesTitle;
 
   /// No description provided for @jellyfinDurationUnknown.
   ///
@@ -3181,6 +3385,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Multichannel audio decoded. If no sound is audible, try Force stereo.'**
   String get playbackAudioMultichannelHint;
+
+  /// No description provided for @jellyfinConnectionMenuTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Jellyfin accounts'**
+  String get jellyfinConnectionMenuTitle;
+
+  /// No description provided for @jellyfinConnectionMenuChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose account'**
+  String get jellyfinConnectionMenuChoose;
+
+  /// No description provided for @jellyfinConnectionMenuEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved Jellyfin accounts yet.'**
+  String get jellyfinConnectionMenuEmpty;
+
+  /// No description provided for @jellyfinConnectionMenuAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect another account'**
+  String get jellyfinConnectionMenuAdd;
+
+  /// No description provided for @shellTabVisibilityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation tabs'**
+  String get shellTabVisibilityTitle;
+
+  /// No description provided for @shellTabVisibilityDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which main tabs appear in the sidebar.'**
+  String get shellTabVisibilityDescription;
+
+  /// No description provided for @shellTabVisibilityReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get shellTabVisibilityReset;
+
+  /// No description provided for @shellTabVisibilitySettingsAlwaysVisible.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings always remains visible so you can restore tabs.'**
+  String get shellTabVisibilitySettingsAlwaysVisible;
 }
 
 class _AppLocalizationsDelegate

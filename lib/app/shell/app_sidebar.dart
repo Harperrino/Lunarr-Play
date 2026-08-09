@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:m3uxtream_player/app/shell/shell_sidebar.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 
 /// Primary navigation rail for non-live tabs.
 class AppSidebar extends StatelessWidget {
@@ -7,6 +8,7 @@ class AppSidebar extends StatelessWidget {
     super.key,
     required this.activeIndex,
     required this.debugModeEnabled,
+    this.hiddenTabKinds = const {},
     required this.isExpanded,
     required this.onToggleExpanded,
     required this.onTap,
@@ -14,6 +16,7 @@ class AppSidebar extends StatelessWidget {
 
   final int activeIndex;
   final bool debugModeEnabled;
+  final Set<ShellTabKind> hiddenTabKinds;
   final bool isExpanded;
   final VoidCallback onToggleExpanded;
   final ValueChanged<int> onTap;
@@ -23,6 +26,7 @@ class AppSidebar extends StatelessWidget {
     return ShellSidebar(
       activeIndex: activeIndex,
       debugModeEnabled: debugModeEnabled,
+      hiddenTabKinds: hiddenTabKinds,
       isExpanded: isExpanded,
       onToggleExpanded: onToggleExpanded,
       onTap: onTap,

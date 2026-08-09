@@ -65,6 +65,7 @@ class AppStateRepository {
   static const String appearanceSurfaceToneKey =
       AppStateKeys.appearanceSurfaceTone;
   static const String categoryPaneWidthKey = AppStateKeys.categoryPaneWidth;
+  static const String hiddenShellTabsKey = AppStateKeys.hiddenShellTabs;
 
   Future<double> getAppearanceAccentHue({double defaultHue = 170}) =>
       _appearance.getAccentHue(defaultHue: defaultHue);
@@ -137,6 +138,9 @@ class AppStateRepository {
       _layout.getCategoryPaneWidth(defaultWidth: defaultWidth);
   Future<void> setCategoryPaneWidth(double width) =>
       _layout.setCategoryPaneWidth(width);
+  Future<Set<String>> getHiddenShellTabs() => _layout.getHiddenShellTabs();
+  Future<void> setHiddenShellTabs(Set<String> tabKinds) =>
+      _layout.setHiddenShellTabs(tabKinds);
 
   Future<bool> isEpgReminderDismissed(int playlistId) =>
       _epgReminder.isDismissed(playlistId);

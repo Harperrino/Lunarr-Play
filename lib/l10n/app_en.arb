@@ -724,6 +724,11 @@
   "jellyfinPasswordLabel": "Password",
   "jellyfinSignIn": "Sign in",
   "jellyfinSignOut": "Sign out",
+  "jellyfinHttpWarning": "This server uses HTTP. Your password and Jellyfin session token will be sent without transport encryption.",
+  "jellyfinHttpDialogTitle": "Unencrypted Jellyfin connection",
+  "jellyfinHttpDialogMessage": "This server uses HTTP. Continue only if you trust the network. Your password and session token can be intercepted.",
+  "jellyfinHttpCancel": "Cancel",
+  "jellyfinHttpContinue": "Continue over HTTP",
   "jellyfinSignedInAs": "Signed in as {username}",
   "@jellyfinSignedInAs": {
     "placeholders": {
@@ -743,18 +748,67 @@
   "jellyfinNextUp": "Next up",
   "jellyfinRecentlyAdded": "Recently added",
   "jellyfinLibraries": "Libraries",
+  "jellyfinOverview": "Overview",
   "jellyfinHomeEmptyTitle": "Nothing here yet",
   "jellyfinHomeEmptySubtitle": "Add media to your Jellyfin libraries and refresh.",
   "jellyfinRefreshTooltip": "Refresh",
   "jellyfinLoadFailed": "Could not load from the Jellyfin server.",
   "jellyfinLibraryEmpty": "This library is empty.",
   "jellyfinPlay": "Play",
+  "jellyfinTrailer": "Trailer",
+  "jellyfinFavorite": "Favorite",
+  "jellyfinRemoveFavorite": "Remove favorite",
+  "jellyfinMarkWatched": "Mark watched",
+  "jellyfinMarkUnwatched": "Mark unwatched",
+  "jellyfinStatusSaveFailed": "Could not update the item status.",
+  "jellyfinTrailerOpenFailed": "Could not open the trailer.",
+  "jellyfinProviderOpenFailed": "Could not open the metadata provider.",
+  "jellyfinCommunityRating": "Community",
+  "jellyfinCriticRating": "Critics",
+  "jellyfinImdbProviderLabel": "IMDb",
+  "jellyfinTmdbProviderLabel": "TMDb",
+  "jellyfinOpenProviderTooltip": "Open {provider}",
+  "@jellyfinOpenProviderTooltip": {
+    "placeholders": {
+      "provider": {"type": "String"}
+    }
+  },
+  "jellyfinImdbProvider": "IMDb {id}",
+  "@jellyfinImdbProvider": {
+    "placeholders": {
+      "id": {"type": "String"}
+    }
+  },
+  "jellyfinTmdbProvider": "TMDb {id}",
+  "@jellyfinTmdbProvider": {
+    "placeholders": {
+      "id": {"type": "String"}
+    }
+  },
+  "jellyfinGenres": "Genres",
+  "jellyfinDirectors": "Directors",
+  "jellyfinWriters": "Writers",
+  "jellyfinStudios": "Studios",
   "jellyfinPlayerFailed": "Playback could not be started.",
   "jellyfinPlayerDirectPlay": "Direct Play",
   "jellyfinPlayerDirectStream": "Direct Stream",
   "jellyfinPlayerTranscode": "Transcode",
   "jellyfinStopTooltip": "Stop and go back",
   "jellyfinVolumeTooltip": "Volume",
+  "jellyfinVolumePercent": "{percent}%",
+  "@jellyfinVolumePercent": {
+    "placeholders": {
+      "percent": {"type": "int"}
+    }
+  },
+  "jellyfinAudioTrackTooltip": "Audio track",
+  "jellyfinSubtitleTrackTooltip": "Subtitles",
+  "jellyfinSubtitleOff": "Off",
+  "jellyfinPreviousEpisodeTooltip": "Previous episode",
+  "jellyfinNextEpisodeTooltip": "Next episode",
+  "jellyfinShowEpisodesTooltip": "Show episodes",
+  "jellyfinHideEpisodesTooltip": "Hide episodes",
+  "jellyfinEpisodesTitle": "Episodes",
   "jellyfinDurationUnknown": "--:--",
   "jellyfinResumeLabel": "Resume",
   "jellyfinRuntimeMinutes": "{minutes} min",
@@ -884,5 +938,13 @@
       "playlist": {"type": "String"}
     }
   },
-  "playbackAudioMultichannelHint": "Multichannel audio decoded. If no sound is audible, try Force stereo."
+  "playbackAudioMultichannelHint": "Multichannel audio decoded. If no sound is audible, try Force stereo.",
+  "jellyfinConnectionMenuTitle": "Jellyfin accounts",
+  "jellyfinConnectionMenuChoose": "Choose account",
+  "jellyfinConnectionMenuEmpty": "No saved Jellyfin accounts yet.",
+  "jellyfinConnectionMenuAdd": "Connect another account",
+  "shellTabVisibilityTitle": "Navigation tabs",
+  "shellTabVisibilityDescription": "Choose which main tabs appear in the sidebar.",
+  "shellTabVisibilityReset": "Show all",
+  "shellTabVisibilitySettingsAlwaysVisible": "Settings always remains visible so you can restore tabs."
 }

@@ -26,14 +26,21 @@ JellyfinApiClient _client(MockClientHandler handler) =>
     JellyfinApiClient(transport: MockClient(handler));
 
 void main() {
+  const connection = JellyfinConnection(
+    baseUrl: 'http://server:8096',
+    serverId: 'server-id-1',
+    serverVersion: '10.10.3',
+    userId: 'user-id-1',
+    username: 'alice',
+    accessToken: 'token-abc-123',
+    deviceId: 'device-42',
+  );
+
   group('fetchPublicServerInfo', () {
     test('returns server info from a normalized base URL', () async {
       final client = _client((request) async {
         expect(request.method, 'GET');
-        expect(
-          request.url.toString(),
-          'http://server:8096/System/Info/Public',
-        );
+        expect(request.url.toString(), 'http://server:8096/System/Info/Public');
         return http.Response(jsonEncode(_publicInfoJson), 200);
       });
 
@@ -61,28 +68,31 @@ void main() {
       );
     });
 
-    test('classifies unparsable or incomplete payloads as not Jellyfin', () async {
-      for (final body in ['<html>not json</html>', '{}', '{"Version":"1"}']) {
-        final client = _client(
-          (request) async => http.Response(body, 200),
-        );
-        await expectLater(
-          client.fetchPublicServerInfo('http://server:8096'),
-          throwsA(
-            isA<JellyfinApiException>().having(
-              (e) => e.kind,
-              'kind',
-              JellyfinFailureKind.notJellyfin,
+    test(
+      'classifies unparsable or incomplete payloads as not Jellyfin',
+      () async {
+        for (final body in ['<html>not json</html>', '{}', '{"Version":"1"}']) {
+          final client = _client((request) async => http.Response(body, 200));
+          await expectLater(
+            client.fetchPublicServerInfo('http://server:8096'),
+            throwsA(
+              isA<JellyfinApiException>().having(
+                (e) => e.kind,
+                'kind',
+                JellyfinFailureKind.notJellyfin,
+              ),
             ),
-          ),
-        );
-      }
-    });
+          );
+        }
+      },
+    );
 
     test('classifies connection refused by socket error code', () async {
       final client = _client(
-        (_) async =>
-            throw SocketException('refused', osError: OSError('refused', 10061)),
+        (_) async => throw SocketException(
+          'refused',
+          osError: OSError('refused', 10061),
+        ),
       );
 
       await expectLater(
@@ -99,10 +109,8 @@ void main() {
 
     test('classifies DNS failures by socket error code and message', () async {
       final byCode = _client(
-        (_) async => throw SocketException(
-          'lookup',
-          osError: OSError('lookup', 11001),
-        ),
+        (_) async =>
+            throw SocketException('lookup', osError: OSError('lookup', 11001)),
       );
       await expectLater(
         byCode.fetchPublicServerInfo('http://nope.example'),
@@ -116,9 +124,8 @@ void main() {
       );
 
       final byMessage = _client(
-        (_) async => throw SocketException(
-          "Failed host lookup: 'nope.example'",
-        ),
+        (_) async =>
+            throw SocketException("Failed host lookup: 'nope.example'"),
       );
       await expectLater(
         byMessage.fetchPublicServerInfo('http://nope.example'),
@@ -164,33 +171,36 @@ void main() {
   });
 
   group('authenticateByName', () {
-    test('sends credentials body and device headers, returns the session', () async {
-      final client = _client((request) async {
-        expect(request.method, 'POST');
-        expect(request.url.path, '/Users/AuthenticateByName');
-        final authorization = request.headers['X-Emby-Authorization']!;
-        expect(authorization, contains('DeviceId="device-42"'));
-        expect(authorization, contains('Token=""'));
+    test(
+      'sends credentials body and device headers, returns the session',
+      () async {
+        final client = _client((request) async {
+          expect(request.method, 'POST');
+          expect(request.url.path, '/Users/AuthenticateByName');
+          final authorization = request.headers['X-Emby-Authorization']!;
+          expect(authorization, contains('DeviceId="device-42"'));
+          expect(authorization, contains('Token=""'));
 
-        final body = jsonDecode(request.body) as Map<String, dynamic>;
-        expect(body['Username'], 'alice');
-        expect(body['Pw'], 'secret-pw');
+          final body = jsonDecode(request.body) as Map<String, dynamic>;
+          expect(body['Username'], 'alice');
+          expect(body['Pw'], 'secret-pw');
 
-        return http.Response(jsonEncode(_authResponseJson), 200);
-      });
+          return http.Response(jsonEncode(_authResponseJson), 200);
+        });
 
-      final auth = await client.authenticateByName(
-        baseUrl: 'http://server:8096',
-        username: 'alice',
-        password: 'secret-pw',
-        deviceId: 'device-42',
-      );
+        final auth = await client.authenticateByName(
+          baseUrl: 'http://server:8096',
+          username: 'alice',
+          password: 'secret-pw',
+          deviceId: 'device-42',
+        );
 
-      expect(auth.accessToken, 'token-abc-123');
-      expect(auth.userId, 'user-id-1');
-      expect(auth.username, 'alice');
-      expect(auth.serverId, 'server-id-1');
-    });
+        expect(auth.accessToken, 'token-abc-123');
+        expect(auth.userId, 'user-id-1');
+        expect(auth.username, 'alice');
+        expect(auth.serverId, 'server-id-1');
+      },
+    );
 
     test('classifies 401 as invalid credentials', () async {
       final client = _client(
@@ -260,6 +270,49 @@ void main() {
 
       await client.logout(connection);
       expect(logoutSeen, isTrue);
+    });
+  });
+
+  group('item status', () {
+    test('uses the Jellyfin favorite and played endpoints', () async {
+      final requests = <http.BaseRequest>[];
+      final client = _client((request) async {
+        requests.add(request);
+        expect(request.headers['X-Emby-Token'], connection.accessToken);
+        return http.Response('', 204);
+      });
+
+      await client.markFavorite(connection, itemId: 'item-1');
+      await client.unmarkFavorite(connection, itemId: 'item-1');
+      await client.markPlayed(connection, itemId: 'item-1');
+      await client.markUnplayed(connection, itemId: 'item-1');
+
+      expect(
+        requests.map((request) => '${request.method} ${request.url.path}'),
+        [
+          'POST /Users/user-id-1/FavoriteItems/item-1',
+          'DELETE /Users/user-id-1/FavoriteItems/item-1',
+          'POST /Users/user-id-1/PlayedItems/item-1',
+          'DELETE /Users/user-id-1/PlayedItems/item-1',
+        ],
+      );
+    });
+
+    test('rolls API errors up as a typed failure', () async {
+      final client = _client((request) async => http.Response('failed', 503));
+
+      await expectLater(
+        client.markFavorite(connection, itemId: 'item-1'),
+        throwsA(
+          isA<JellyfinApiException>()
+              .having((error) => error.statusCode, 'statusCode', 503)
+              .having(
+                (error) => error.kind,
+                'kind',
+                JellyfinFailureKind.unknown,
+              ),
+        ),
+      );
     });
   });
 }

@@ -1519,6 +1519,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jellyfinSignOut => 'Sign out';
 
   @override
+  String get jellyfinHttpWarning =>
+      'This server uses HTTP. Your password and Jellyfin session token will be sent without transport encryption.';
+
+  @override
+  String get jellyfinHttpDialogTitle => 'Unencrypted Jellyfin connection';
+
+  @override
+  String get jellyfinHttpDialogMessage =>
+      'This server uses HTTP. Continue only if you trust the network. Your password and session token can be intercepted.';
+
+  @override
+  String get jellyfinHttpCancel => 'Cancel';
+
+  @override
+  String get jellyfinHttpContinue => 'Continue over HTTP';
+
+  @override
   String jellyfinSignedInAs(String username) {
     return 'Signed in as $username';
   }
@@ -1568,6 +1585,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jellyfinLibraries => 'Libraries';
 
   @override
+  String get jellyfinOverview => 'Overview';
+
+  @override
   String get jellyfinHomeEmptyTitle => 'Nothing here yet';
 
   @override
@@ -1587,6 +1607,70 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jellyfinPlay => 'Play';
 
   @override
+  String get jellyfinTrailer => 'Trailer';
+
+  @override
+  String get jellyfinFavorite => 'Favorite';
+
+  @override
+  String get jellyfinRemoveFavorite => 'Remove favorite';
+
+  @override
+  String get jellyfinMarkWatched => 'Mark watched';
+
+  @override
+  String get jellyfinMarkUnwatched => 'Mark unwatched';
+
+  @override
+  String get jellyfinStatusSaveFailed => 'Could not update the item status.';
+
+  @override
+  String get jellyfinTrailerOpenFailed => 'Could not open the trailer.';
+
+  @override
+  String get jellyfinProviderOpenFailed =>
+      'Could not open the metadata provider.';
+
+  @override
+  String get jellyfinCommunityRating => 'Community';
+
+  @override
+  String get jellyfinCriticRating => 'Critics';
+
+  @override
+  String get jellyfinImdbProviderLabel => 'IMDb';
+
+  @override
+  String get jellyfinTmdbProviderLabel => 'TMDb';
+
+  @override
+  String jellyfinOpenProviderTooltip(String provider) {
+    return 'Open $provider';
+  }
+
+  @override
+  String jellyfinImdbProvider(String id) {
+    return 'IMDb $id';
+  }
+
+  @override
+  String jellyfinTmdbProvider(String id) {
+    return 'TMDb $id';
+  }
+
+  @override
+  String get jellyfinGenres => 'Genres';
+
+  @override
+  String get jellyfinDirectors => 'Directors';
+
+  @override
+  String get jellyfinWriters => 'Writers';
+
+  @override
+  String get jellyfinStudios => 'Studios';
+
+  @override
   String get jellyfinPlayerFailed => 'Playback could not be started.';
 
   @override
@@ -1603,6 +1687,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get jellyfinVolumeTooltip => 'Volume';
+
+  @override
+  String jellyfinVolumePercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get jellyfinAudioTrackTooltip => 'Audio track';
+
+  @override
+  String get jellyfinSubtitleTrackTooltip => 'Subtitles';
+
+  @override
+  String get jellyfinSubtitleOff => 'Off';
+
+  @override
+  String get jellyfinPreviousEpisodeTooltip => 'Previous episode';
+
+  @override
+  String get jellyfinNextEpisodeTooltip => 'Next episode';
+
+  @override
+  String get jellyfinShowEpisodesTooltip => 'Show episodes';
+
+  @override
+  String get jellyfinHideEpisodesTooltip => 'Hide episodes';
+
+  @override
+  String get jellyfinEpisodesTitle => 'Episodes';
 
   @override
   String get jellyfinDurationUnknown => '--:--';
@@ -1800,4 +1913,30 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get playbackAudioMultichannelHint =>
       'Multichannel audio decoded. If no sound is audible, try Force stereo.';
+
+  @override
+  String get jellyfinConnectionMenuTitle => 'Jellyfin accounts';
+
+  @override
+  String get jellyfinConnectionMenuChoose => 'Choose account';
+
+  @override
+  String get jellyfinConnectionMenuEmpty => 'No saved Jellyfin accounts yet.';
+
+  @override
+  String get jellyfinConnectionMenuAdd => 'Connect another account';
+
+  @override
+  String get shellTabVisibilityTitle => 'Navigation tabs';
+
+  @override
+  String get shellTabVisibilityDescription =>
+      'Choose which main tabs appear in the sidebar.';
+
+  @override
+  String get shellTabVisibilityReset => 'Show all';
+
+  @override
+  String get shellTabVisibilitySettingsAlwaysVisible =>
+      'Settings always remains visible so you can restore tabs.';
 }

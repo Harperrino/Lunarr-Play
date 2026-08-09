@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_controller.dart';
+import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_playback_reporter.dart';
+import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_library_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_connection_providers.dart';
 
 /// Host hook that stops an existing Lunarr/Xtream stream before Jellyfin
@@ -9,6 +11,14 @@ import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_connection
 /// overrides it with `JellyfinPlaybackHostBridge`.
 final jellyfinExistingPlaybackStopperProvider =
     Provider<JellyfinExistingPlaybackStopper?>((ref) => null);
+
+/// Session reporting stays injectable so playback tests can remain fully
+/// deterministic without issuing network calls.
+final jellyfinPlaybackReporterProvider = Provider<JellyfinPlaybackReporter>(
+  (ref) => JellyfinPlaybackReporter(
+    apiClient: ref.watch(jellyfinApiClientProvider),
+  ),
+);
 
 /// Feature/screen-scoped Jellyfin player instance.
 ///
@@ -30,6 +40,8 @@ final jellyfinPlayerControllerProvider =
         stopExistingPlayback: ref.watch(
           jellyfinExistingPlaybackStopperProvider,
         ),
+        playbackReporter: ref.watch(jellyfinPlaybackReporterProvider),
+        onPlaybackStopped: () => ref.invalidate(jellyfinHomeDataProvider),
       );
       ref.onDispose(() => unawaited(controller.disposeAsync()));
       return controller;

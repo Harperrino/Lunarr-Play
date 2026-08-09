@@ -112,7 +112,7 @@ class JellyfinLibraryView extends ConsumerWidget {
                     crossAxisCount: columns,
                     crossAxisSpacing: 14,
                     mainAxisSpacing: 22,
-                    mainAxisExtent: cardWidth * 1.5 + 64,
+                    mainAxisExtent: jellyfinMediaCardExtentFor(cardWidth),
                   ),
                   itemCount: data.length,
                   itemBuilder: (context, index) {
@@ -125,6 +125,7 @@ class JellyfinLibraryView extends ConsumerWidget {
                       ),
                       title: item.name,
                       subtitle: item.productionYear?.toString() ?? '',
+                      description: item.overview,
                       semanticLabel: item.name,
                       progress: item.hasResume ? item.resumeFraction : null,
                       onTap: () => jellyfinOpenDetails(ref, item),

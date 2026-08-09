@@ -14,6 +14,7 @@ class StandardAppShell extends StatelessWidget {
     super.key,
     required this.activeIndex,
     required this.debugModeEnabled,
+    this.hiddenTabKinds = const {},
     required this.sidebarExpanded,
     required this.onSidebarToggle,
     required this.onSidebarTap,
@@ -21,6 +22,7 @@ class StandardAppShell extends StatelessWidget {
 
   final int activeIndex;
   final bool debugModeEnabled;
+  final Set<ShellTabKind> hiddenTabKinds;
   final bool sidebarExpanded;
   final VoidCallback onSidebarToggle;
   final ValueChanged<int> onSidebarTap;
@@ -41,6 +43,7 @@ class StandardAppShell extends StatelessWidget {
               child: AppSidebar(
                 activeIndex: activeIndex,
                 debugModeEnabled: debugModeEnabled,
+                hiddenTabKinds: hiddenTabKinds,
                 isExpanded: sidebarExpanded,
                 onToggleExpanded: onSidebarToggle,
                 onTap: onSidebarTap,
@@ -79,6 +82,7 @@ class StandardAppShell extends StatelessWidget {
                           child: NonLiveTabBody(
                             activeIndex: activeIndex,
                             debugModeEnabled: debugModeEnabled,
+                            hiddenTabKinds: hiddenTabKinds,
                           ),
                         ),
                       ],

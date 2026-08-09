@@ -23,4 +23,49 @@ class JellyfinConnection {
 
   /// Device identity sent to the server; stable for the current app run.
   final String deviceId;
+
+  /// Stable identifier for selecting and removing one saved account.
+  String get credentialId => '$serverId:$userId';
+
+  Map<String, Object> toJson() => {
+    'baseUrl': baseUrl,
+    'serverId': serverId,
+    'serverVersion': serverVersion,
+    'userId': userId,
+    'username': username,
+    'accessToken': accessToken,
+    'deviceId': deviceId,
+  };
+
+  static JellyfinConnection? fromJson(Object? value) {
+    if (value is! Map) return null;
+    String? text(String key) => value[key]?.toString().trim();
+    final baseUrl = text('baseUrl');
+    final serverId = text('serverId');
+    final serverVersion = text('serverVersion');
+    final userId = text('userId');
+    final username = text('username');
+    final accessToken = text('accessToken');
+    final deviceId = text('deviceId');
+    if ([
+      baseUrl,
+      serverId,
+      serverVersion,
+      userId,
+      username,
+      accessToken,
+      deviceId,
+    ].any((entry) => entry == null || entry.isEmpty)) {
+      return null;
+    }
+    return JellyfinConnection(
+      baseUrl: baseUrl!,
+      serverId: serverId!,
+      serverVersion: serverVersion!,
+      userId: userId!,
+      username: username!,
+      accessToken: accessToken!,
+      deviceId: deviceId!,
+    );
+  }
 }

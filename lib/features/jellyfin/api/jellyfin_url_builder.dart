@@ -59,12 +59,21 @@ class JellyfinUrlBuilder {
     return normalized;
   }
 
-  Uri systemInfoPublic(String baseUrl) => Uri.parse('$baseUrl/System/Info/Public');
+  Uri systemInfoPublic(String baseUrl) =>
+      Uri.parse('$baseUrl/System/Info/Public');
 
   Uri authenticateByName(String baseUrl) =>
       Uri.parse('$baseUrl/Users/AuthenticateByName');
 
   Uri sessionsLogout(String baseUrl) => Uri.parse('$baseUrl/Sessions/Logout');
+
+  Uri sessionsPlaying(String baseUrl) => Uri.parse('$baseUrl/Sessions/Playing');
+
+  Uri sessionsPlayingProgress(String baseUrl) =>
+      Uri.parse('$baseUrl/Sessions/Playing/Progress');
+
+  Uri sessionsPlayingStopped(String baseUrl) =>
+      Uri.parse('$baseUrl/Sessions/Playing/Stopped');
 
   Uri userViews(String baseUrl, String userId) =>
       Uri.parse('$baseUrl/Users/$userId/Views');
@@ -77,15 +86,11 @@ class JellyfinUrlBuilder {
   }
 
   Uri nextUp(String baseUrl, String userId, {int limit = 12}) {
-    return Uri.parse(
-      '$baseUrl/Shows/NextUp?UserId=$userId&Limit=$limit',
-    );
+    return Uri.parse('$baseUrl/Shows/NextUp?UserId=$userId&Limit=$limit');
   }
 
   Uri latestItems(String baseUrl, String userId, {int limit = 16}) {
-    return Uri.parse(
-      '$baseUrl/Users/$userId/Items/Latest?Limit=$limit',
-    );
+    return Uri.parse('$baseUrl/Users/$userId/Items/Latest?Limit=$limit');
   }
 
   Uri libraryItems(
@@ -118,11 +123,20 @@ class JellyfinUrlBuilder {
   Uri playbackInfo(String baseUrl, String itemId) =>
       Uri.parse('$baseUrl/Items/$itemId/PlaybackInfo');
 
-  static const itemFields = 'Overview,ProductionYear,RuntimeTicks';
+  Uri favoriteItem(String baseUrl, String userId, String itemId) =>
+      Uri.parse('$baseUrl/Users/$userId/FavoriteItems/$itemId');
 
-  Uri _withFields(Uri uri) {
+  Uri playedItem(String baseUrl, String userId, String itemId) =>
+      Uri.parse('$baseUrl/Users/$userId/PlayedItems/$itemId');
+
+  static const itemFields = 'Overview,ProductionYear,RuntimeTicks';
+  static const detailItemFields =
+      'Overview,ProductionYear,RuntimeTicks,Genres,People,ProviderIds,Studios,Taglines,RemoteTrailers';
+
+  Uri _withFields(Uri uri, {String fields = itemFields, String? extraQuery}) {
     final separator = uri.hasQuery ? '&' : '?';
-    return Uri.parse('$uri${separator}Fields=$itemFields');
+    final suffix = extraQuery == null ? '' : '&$extraQuery';
+    return Uri.parse('$uri${separator}Fields=$fields$suffix');
   }
 
   Uri userViewsWithFields(String baseUrl, String userId) =>
@@ -142,19 +156,22 @@ class JellyfinUrlBuilder {
     String userId, {
     required String parentId,
     List<String> itemTypes = const [],
-  }) =>
-      _withFields(
-        libraryItems(
-          baseUrl,
-          userId,
-          parentId: parentId,
-          itemTypes: itemTypes,
-        ),
-      );
+  }) => _withFields(
+    libraryItems(baseUrl, userId, parentId: parentId, itemTypes: itemTypes),
+  );
 
   Uri itemDetailWithFields(String baseUrl, String userId, String itemId) =>
-      _withFields(itemDetail(baseUrl, userId, itemId));
+      _withFields(
+        itemDetail(baseUrl, userId, itemId),
+        fields: detailItemFields,
+        extraQuery:
+            'EnableImages=true&EnableImageTypes=Primary,Backdrop,Logo&'
+            'ImageTypeLimit=1&EnableUserData=true',
+      );
 
-  Uri seriesEpisodesWithFields(String baseUrl, String userId, String seriesId) =>
-      _withFields(seriesEpisodes(baseUrl, userId, seriesId));
+  Uri seriesEpisodesWithFields(
+    String baseUrl,
+    String userId,
+    String seriesId,
+  ) => _withFields(seriesEpisodes(baseUrl, userId, seriesId));
 }

@@ -18,16 +18,22 @@ class NonLiveTabBody extends StatelessWidget {
     super.key,
     required this.activeIndex,
     required this.debugModeEnabled,
+    this.hiddenTabKinds = const {},
   });
 
   final int activeIndex;
   final bool debugModeEnabled;
+  final Set<ShellTabKind> hiddenTabKinds;
 
   @override
   Widget build(BuildContext context) {
     final navigationIndex = shellNavigationIndexFor(activeIndex);
     final effectiveActiveIndex =
-        shellTabVisible(navigationIndex, debugModeEnabled: debugModeEnabled)
+        shellTabVisible(
+          navigationIndex,
+          debugModeEnabled: debugModeEnabled,
+          hiddenKinds: hiddenTabKinds,
+        )
         ? navigationIndex
         : shellFallbackTabIndex();
 

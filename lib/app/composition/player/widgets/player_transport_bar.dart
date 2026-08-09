@@ -12,6 +12,7 @@ import 'package:m3uxtream_player/features/player/widgets/player_playback_info_di
 import 'package:m3uxtream_player/shared/theme/app_status_colors.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_expressive_slider.dart';
+import 'package:m3uxtream_player/shared/widgets/m3_transport_icon_button.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// Player transport - seek scrubber (VOD/series), play/stop, volume, fullscreen.
@@ -285,7 +286,7 @@ class _PrimaryTransportControls extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (isLiveChannel) ...[
-          _M3TransportIconButton(
+          M3TransportIconButton(
             icon: Icons.keyboard_arrow_left_rounded,
             tooltip: context.l10n.playerPreviousChannelTooltip,
             size: compact ? 36 : 40,
@@ -294,7 +295,7 @@ class _PrimaryTransportControls extends ConsumerWidget {
           ),
           SizedBox(width: compact ? 6 : 8),
         ],
-        _M3TransportIconButton(
+        M3TransportIconButton(
           icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
           tooltip: isPlaying
               ? context.l10n.playerPauseTooltip
@@ -305,7 +306,7 @@ class _PrimaryTransportControls extends ConsumerWidget {
           onPressed: onTogglePlay,
         ),
         SizedBox(width: compact ? 6 : 8),
-        _M3TransportIconButton(
+        M3TransportIconButton(
           icon: Icons.stop_rounded,
           tooltip: context.l10n.playerStopTooltip,
           size: compact ? 36 : 40,
@@ -314,7 +315,7 @@ class _PrimaryTransportControls extends ConsumerWidget {
         ),
         if (isLiveChannel) ...[
           SizedBox(width: compact ? 6 : 8),
-          _M3TransportIconButton(
+          M3TransportIconButton(
             icon: Icons.keyboard_arrow_right_rounded,
             tooltip: context.l10n.playerNextChannelTooltip,
             size: compact ? 36 : 40,
@@ -345,7 +346,7 @@ class _TrailingTransportControls extends ConsumerWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _M3TransportIconButton(
+        M3TransportIconButton(
           icon: Icons.info_outline_rounded,
           tooltip: context.l10n.playerPlaybackInfoTooltip,
           size: compact ? 36 : 40,
@@ -370,7 +371,7 @@ class _TrailingTransportControls extends ConsumerWidget {
         ),
         if (onToggleFullscreen != null) ...[
           SizedBox(width: compact ? 4 : 6),
-          _M3TransportIconButton(
+          M3TransportIconButton(
             icon: Icons.fullscreen_rounded,
             tooltip: context.l10n.playerFullscreenTooltip,
             size: compact ? 36 : 40,
@@ -380,56 +381,6 @@ class _TrailingTransportControls extends ConsumerWidget {
         ],
       ],
     );
-  }
-}
-
-class _M3TransportIconButton extends StatelessWidget {
-  const _M3TransportIconButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onPressed,
-    required this.size,
-    required this.iconSize,
-    this.emphasized = false,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onPressed;
-  final double size;
-  final double iconSize;
-  final bool emphasized;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final style = IconButton.styleFrom(
-      fixedSize: Size.square(size),
-      minimumSize: Size.square(size),
-      maximumSize: Size.square(size),
-      padding: EdgeInsets.zero,
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
-      shape: const CircleBorder(),
-      backgroundColor: emphasized ? colors.primary : colors.secondaryContainer,
-      foregroundColor: emphasized
-          ? colors.onPrimary
-          : colors.onSecondaryContainer,
-    );
-
-    return emphasized
-        ? IconButton.filled(
-            tooltip: tooltip,
-            onPressed: onPressed,
-            style: style,
-            icon: Icon(icon, size: iconSize),
-          )
-        : IconButton.filledTonal(
-            tooltip: tooltip,
-            onPressed: onPressed,
-            style: style,
-            icon: Icon(icon, size: iconSize),
-          );
   }
 }
 
@@ -812,7 +763,7 @@ class _VolumeControlState extends ConsumerState<_VolumeControl> {
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _M3TransportIconButton(
+              M3TransportIconButton(
                 icon: _volumeIcon(displayedVolume),
                 tooltip: displayedVolume <= 0
                     ? context.l10n.playerUnmuteTooltip

@@ -12,6 +12,7 @@ import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_credentials_sto
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_controller.dart';
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_connection_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_playback_providers.dart';
+import 'package:m3uxtream_player/shared/providers/app_shell_state_providers.dart';
 
 const jellyfinTestConnection = JellyfinConnection(
   baseUrl: 'http://server:8096',
@@ -79,6 +80,7 @@ Map<String, dynamic> jellyfinSeriesJson({
 Map<String, dynamic> jellyfinEpisodeJson({
   String id = 'episode-1',
   String name = 'Test Episode',
+  String seriesId = 'series-1',
   int season = 1,
   int episode = 2,
   int runtimeTicks = 2400000000,
@@ -88,6 +90,7 @@ Map<String, dynamic> jellyfinEpisodeJson({
     'Id': id,
     'Name': name,
     'Type': 'Episode',
+    'SeriesId': seriesId,
     'SeriesName': 'Test Series',
     'ParentIndexNumber': season,
     'IndexNumber': episode,
@@ -172,9 +175,7 @@ MockClientHandler jellyfinHappyHandler({
           ? http.Response('nope', 500)
           : http.Response(
               jsonEncode({
-                'Items': [
-                  jellyfinMovieJson(positionTicks: 2700000000),
-                ],
+                'Items': [jellyfinMovieJson(positionTicks: 2700000000)],
               }),
               200,
             );
@@ -183,7 +184,9 @@ MockClientHandler jellyfinHappyHandler({
       return failNextUp
           ? http.Response('nope', 500)
           : http.Response(
-              jsonEncode({'Items': [jellyfinEpisodeJson()]}),
+              jsonEncode({
+                'Items': [jellyfinEpisodeJson()],
+              }),
               200,
             );
     }
@@ -224,10 +227,7 @@ MockClientHandler jellyfinHappyHandler({
           ? http.Response('nope', 500)
           : http.Response(
               jsonEncode({
-                'Items': [
-                  jellyfinMovieJson(),
-                  jellyfinSeriesJson(),
-                ],
+                'Items': [jellyfinMovieJson(), jellyfinSeriesJson()],
               }),
               200,
             );
@@ -296,10 +296,12 @@ Widget jellyfinTestHost(
   MockClient? transport,
   JellyfinConnection? connection,
   JellyfinPlayerController? playbackControllerOverride,
+  bool fullscreen = false,
 }) {
   final overrides = jellyfinTestOverrides(
     transport: transport,
     connection: connection,
+    fullscreen: fullscreen,
   );
   if (playbackControllerOverride != null) {
     overrides.add(
@@ -325,8 +327,11 @@ Widget jellyfinTestHost(
 List<Override> jellyfinTestOverrides({
   MockClient? transport,
   JellyfinConnection? connection,
+  bool fullscreen = false,
 }) {
   return [
+    isDesktopPlatformProvider.overrideWithValue(false),
+    isFullscreenProvider.overrideWith((ref) => fullscreen),
     jellyfinApiClientProvider.overrideWithValue(
       JellyfinApiClient(transport: transport ?? jellyfinHappyTransport()),
     ),
