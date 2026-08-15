@@ -39,10 +39,15 @@ class JellyfinPlayerView extends ConsumerStatefulWidget {
 }
 
 class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
+  static const _fullscreenControlsHideDelay = Duration(seconds: 3);
+  static const _fullscreenControlsAnimDuration = Duration(milliseconds: 280);
+
   late JellyfinItem _currentItem;
   late final OverlayPortalController _fullscreenOverlayController;
+  Timer? _fullscreenControlsHideTimer;
   bool _leavingPlayer = false;
   bool _fullscreenBusy = false;
+  bool _fullscreenControlsVisible = true;
   bool _episodePickerExpanded = false;
   bool _switchingEpisode = false;
 
@@ -54,8 +59,17 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         ref.read(jellyfinPlayerControllerProvider).play(_currentItem);
+        if (ref.read(isFullscreenProvider)) {
+          _scheduleFullscreenControlsHide();
+        }
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _cancelFullscreenControlsHide();
+    super.dispose();
   }
 
   @override
@@ -106,10 +120,12 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
       final current = await windowManager.isFullScreen();
       final target = !current;
       ref.read(isFullscreenProvider.notifier).state = target;
+      _syncFullscreenControls(target);
       await windowManager.setFullScreen(target);
       final actual = await windowManager.isFullScreen();
       if (mounted) {
         ref.read(isFullscreenProvider.notifier).state = actual;
+        _syncFullscreenControls(actual);
       }
     } finally {
       _fullscreenBusy = false;
@@ -120,7 +136,58 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     if (!ref.read(isDesktopPlatformProvider)) return;
     if (!await windowManager.isFullScreen()) return;
     await windowManager.setFullScreen(false);
-    if (mounted) ref.read(isFullscreenProvider.notifier).state = false;
+    if (mounted) {
+      ref.read(isFullscreenProvider.notifier).state = false;
+      _syncFullscreenControls(false);
+    }
+  }
+
+  void _cancelFullscreenControlsHide() {
+    _fullscreenControlsHideTimer?.cancel();
+    _fullscreenControlsHideTimer = null;
+  }
+
+  void _scheduleFullscreenControlsHide() {
+    if (!ref.read(isFullscreenProvider) || _episodePickerExpanded) return;
+    _cancelFullscreenControlsHide();
+    _fullscreenControlsHideTimer = Timer(_fullscreenControlsHideDelay, () {
+      if (!mounted ||
+          !ref.read(isFullscreenProvider) ||
+          _episodePickerExpanded) {
+        return;
+      }
+      setState(() => _fullscreenControlsVisible = false);
+    });
+  }
+
+  void _syncFullscreenControls(bool fullscreen) {
+    _cancelFullscreenControlsHide();
+    if (!_fullscreenControlsVisible && mounted) {
+      setState(() => _fullscreenControlsVisible = true);
+    }
+    if (fullscreen) _scheduleFullscreenControlsHide();
+  }
+
+  void _onFullscreenUserActivity() {
+    if (!ref.read(isFullscreenProvider)) return;
+    if (!_fullscreenControlsVisible) {
+      setState(() => _fullscreenControlsVisible = true);
+    }
+    _scheduleFullscreenControlsHide();
+  }
+
+  void _toggleEpisodePicker() {
+    final expanded = !_episodePickerExpanded;
+    setState(() {
+      _episodePickerExpanded = expanded;
+      if (expanded) _fullscreenControlsVisible = true;
+    });
+    if (!ref.read(isFullscreenProvider)) return;
+    if (expanded) {
+      _cancelFullscreenControlsHide();
+    } else {
+      _scheduleFullscreenControlsHide();
+    }
   }
 
   @override
@@ -165,10 +232,7 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
       onNextEpisode: nextEpisode == null || _switchingEpisode
           ? null
           : () => unawaited(_playEpisode(nextEpisode)),
-      onToggleEpisodePicker: hasEpisodeNavigation
-          ? () =>
-                setState(() => _episodePickerExpanded = !_episodePickerExpanded)
-          : null,
+      onToggleEpisodePicker: hasEpisodeNavigation ? _toggleEpisodePicker : null,
       episodePickerExpanded: _episodePickerExpanded,
       onToggleFullscreen: () => unawaited(_toggleFullscreen()),
       isFullscreen: fullscreen,
@@ -192,37 +256,70 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     final fullscreenPlayer = Material(
       key: const ValueKey('jellyfin-fullscreen-overlay'),
       color: Colors.black,
-      child: _withShortcuts(
-        controller,
-        Stack(
-          fit: StackFit.expand,
-          children: [
-            videoSurface,
-            Positioned(
-              left: 12,
-              right: 12,
-              top: 8,
-              child: SafeArea(
-                bottom: false,
-                child: _PlayerHeader(
-                  controller: controller,
-                  onBack: () => unawaited(_leavePlayer()),
+      child: Listener(
+        onPointerDown: (_) => _onFullscreenUserActivity(),
+        onPointerMove: (_) => _onFullscreenUserActivity(),
+        child: _withShortcuts(
+          controller,
+          Stack(
+            fit: StackFit.expand,
+            children: [
+              videoSurface,
+              Positioned.fill(
+                child: MouseRegion(
+                  onEnter: (_) => _onFullscreenUserActivity(),
+                  onHover: (_) => _onFullscreenUserActivity(),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: _onFullscreenUserActivity,
+                    child: const SizedBox.expand(),
+                  ),
                 ),
               ),
-            ),
-            Positioned(
-              left: 12,
-              right: 12,
-              bottom: 8,
-              child: SafeArea(
-                top: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [episodePicker, controls],
+              Positioned(
+                left: 12,
+                right: 12,
+                top: 8,
+                child: AnimatedOpacity(
+                  key: const ValueKey('jellyfin-fullscreen-header-layer'),
+                  opacity: _fullscreenControlsVisible ? 1 : 0,
+                  duration: _fullscreenControlsAnimDuration,
+                  curve: Curves.easeOutCubic,
+                  child: IgnorePointer(
+                    ignoring: !_fullscreenControlsVisible,
+                    child: SafeArea(
+                      bottom: false,
+                      child: _PlayerHeader(
+                        controller: controller,
+                        onBack: () => unawaited(_leavePlayer()),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 8,
+                child: AnimatedOpacity(
+                  key: const ValueKey('jellyfin-fullscreen-controls-layer'),
+                  opacity: _fullscreenControlsVisible ? 1 : 0,
+                  duration: _fullscreenControlsAnimDuration,
+                  curve: Curves.easeOutCubic,
+                  child: IgnorePointer(
+                    ignoring: !_fullscreenControlsVisible,
+                    child: SafeArea(
+                      top: false,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [episodePicker, controls],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -241,18 +338,26 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
   }
 
   Widget _withShortcuts(JellyfinPlayerController controller, Widget child) {
+    void runWithActivity(Future<void> Function() action) {
+      _onFullscreenUserActivity();
+      unawaited(action());
+    }
+
     return Focus(
       autofocus: true,
       child: CallbackShortcuts(
         bindings: <ShortcutActivator, VoidCallback>{
           SingleActivator(LogicalKeyboardKey.space): () =>
-              unawaited(controller.togglePlayPause()),
+              runWithActivity(controller.togglePlayPause),
           SingleActivator(LogicalKeyboardKey.keyM): () =>
-              unawaited(controller.toggleMute()),
-          SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
-              unawaited(controller.seekRelative(const Duration(seconds: -10))),
+              runWithActivity(controller.toggleMute),
+          SingleActivator(LogicalKeyboardKey.arrowLeft): () => runWithActivity(
+            () => controller.seekRelative(const Duration(seconds: -10)),
+          ),
           SingleActivator(LogicalKeyboardKey.arrowRight): () =>
-              unawaited(controller.seekRelative(const Duration(seconds: 10))),
+              runWithActivity(
+                () => controller.seekRelative(const Duration(seconds: 10)),
+              ),
         },
         child: child,
       ),

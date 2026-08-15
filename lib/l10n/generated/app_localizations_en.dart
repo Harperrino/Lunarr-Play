@@ -1718,6 +1718,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jellyfinEpisodesTitle => 'Episodes';
 
   @override
+  String get jellyfinSeasonSelectorLabel => 'Season';
+
+  @override
   String get jellyfinDurationUnknown => '--:--';
 
   @override

@@ -3088,6 +3088,12 @@ abstract class AppLocalizations {
   /// **'Episodes'**
   String get jellyfinEpisodesTitle;
 
+  /// No description provided for @jellyfinSeasonSelectorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Season'**
+  String get jellyfinSeasonSelectorLabel;
+
   /// No description provided for @jellyfinDurationUnknown.
   ///
   /// In en, this message translates to:

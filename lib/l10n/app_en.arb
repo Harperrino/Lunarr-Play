@@ -809,6 +809,7 @@
   "jellyfinShowEpisodesTooltip": "Show episodes",
   "jellyfinHideEpisodesTooltip": "Hide episodes",
   "jellyfinEpisodesTitle": "Episodes",
+  "jellyfinSeasonSelectorLabel": "Season",
   "jellyfinDurationUnknown": "--:--",
   "jellyfinResumeLabel": "Resume",
   "jellyfinRuntimeMinutes": "{minutes} min",

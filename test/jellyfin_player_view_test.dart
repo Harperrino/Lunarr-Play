@@ -253,6 +253,25 @@ void main() {
       find.byKey(const ValueKey('jellyfin-fullscreen-placeholder')),
       findsOneWidget,
     );
+
+    final controlsLayer = find.byKey(
+      const ValueKey('jellyfin-fullscreen-controls-layer'),
+    );
+    final headerLayer = find.byKey(
+      const ValueKey('jellyfin-fullscreen-header-layer'),
+    );
+    expect(tester.widget<AnimatedOpacity>(controlsLayer).opacity, 1);
+    expect(tester.widget<AnimatedOpacity>(headerLayer).opacity, 1);
+
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.widget<AnimatedOpacity>(controlsLayer).opacity, 0);
+    expect(tester.widget<AnimatedOpacity>(headerLayer).opacity, 0);
+
+    await tester.tapAt(const Offset(640, 360));
+    await tester.pump();
+    expect(tester.widget<AnimatedOpacity>(controlsLayer).opacity, 1);
+    expect(tester.widget<AnimatedOpacity>(headerLayer).opacity, 1);
   });
 
   testWidgets('local shortcuts control the jellyfin player instance', (

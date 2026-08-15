@@ -1124,15 +1124,24 @@ Future<void> _openProvider(BuildContext context, Uri uri) async {
   }
 }
 
-class _EpisodeSeasons extends ConsumerWidget {
+class _EpisodeSeasons extends ConsumerStatefulWidget {
   const _EpisodeSeasons({required this.connection, required this.seriesId});
 
   final JellyfinConnection connection;
   final String seriesId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final episodes = ref.watch(jellyfinSeriesEpisodesProvider(seriesId));
+  ConsumerState<_EpisodeSeasons> createState() => _EpisodeSeasonsState();
+}
+
+class _EpisodeSeasonsState extends ConsumerState<_EpisodeSeasons> {
+  int? _selectedSeason;
+
+  @override
+  Widget build(BuildContext context) {
+    final episodes = ref.watch(
+      jellyfinSeriesEpisodesProvider(widget.seriesId),
+    );
     final l10n = context.l10n;
     final value = episodes.valueOrNull;
 
@@ -1144,7 +1153,9 @@ class _EpisodeSeasons extends ConsumerWidget {
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: () => ref
-                .read(jellyfinSeriesEpisodesProvider(seriesId).notifier)
+                .read(
+                  jellyfinSeriesEpisodesProvider(widget.seriesId).notifier,
+                )
                 .refresh(),
             icon: const Icon(Icons.refresh_rounded, size: 18),
             label: Text(l10n.commonRetry),
@@ -1155,30 +1166,78 @@ class _EpisodeSeasons extends ConsumerWidget {
         padding: EdgeInsets.symmetric(vertical: 24),
         child: Center(child: CircularProgressIndicator()),
       ),
-      (_, final data?) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (final entry in jellyfinGroupEpisodesBySeason(data).entries) ...[
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Text(
-                l10n.jellyfinSeasonLabel(entry.key),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+      (_, final data?) => _buildSeasonSelector(context, data),
+    };
+  }
+
+  Widget _buildSeasonSelector(
+    BuildContext context,
+    List<JellyfinItem> episodes,
+  ) {
+    final l10n = context.l10n;
+    final grouped = jellyfinGroupEpisodesBySeason(episodes);
+    if (grouped.isEmpty) return const SizedBox.shrink();
+
+    final selectedSeason = grouped.containsKey(_selectedSeason)
+        ? _selectedSeason!
+        : grouped.keys.first;
+    final selectedEpisodes = grouped[selectedSeason]!;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 560;
+        final title = Text(
+          l10n.jellyfinEpisodesTitle,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        );
+        final selector = DropdownMenu<int>(
+          key: const ValueKey('jellyfin-season-selector'),
+          width: compact ? constraints.maxWidth : 240,
+          initialSelection: selectedSeason,
+          label: Text(l10n.jellyfinSeasonSelectorLabel),
+          leadingIcon: const Icon(Icons.video_library_rounded),
+          dropdownMenuEntries: [
+            for (final season in grouped.keys)
+              DropdownMenuEntry<int>(
+                value: season,
+                label: l10n.jellyfinSeasonLabel(season),
               ),
-            ),
-            for (final episode in entry.value)
+          ],
+          onSelected: (season) {
+            if (season != null && season != _selectedSeason) {
+              setState(() => _selectedSeason = season);
+            }
+          },
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (compact) ...[
+              title,
+              const SizedBox(height: 10),
+              selector,
+            ] else
+              Row(
+                children: [
+                  Expanded(child: title),
+                  const SizedBox(width: 16),
+                  selector,
+                ],
+              ),
+            const SizedBox(height: 14),
+            for (final episode in selectedEpisodes)
               _EpisodeRow(
-                connection: connection,
+                connection: widget.connection,
                 episode: episode,
                 onTap: () => jellyfinOpenDetails(ref, episode),
               ),
-            const SizedBox(height: 22),
           ],
-        ],
-      ),
-    };
+        );
+      },
+    );
   }
 }
 

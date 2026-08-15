@@ -51,6 +51,31 @@ MockClient _detailTransport(Map<String, dynamic> detailItem) {
   });
 }
 
+MockClient _seriesTransportWithSeasons() {
+  final happyHandler = jellyfinHappyHandler();
+  return MockClient((request) async {
+    if (request.url.path.contains('/Shows/') &&
+        request.url.path.endsWith('/Episodes')) {
+      return http.Response(
+        jsonEncode({
+          'Items': [
+            jellyfinEpisodeJson(id: 's1e1', name: 'Season One First', episode: 1),
+            jellyfinEpisodeJson(id: 's1e2', name: 'Season One Second', episode: 2),
+            jellyfinEpisodeJson(
+              id: 's2e1',
+              name: 'Season Two First',
+              season: 2,
+              episode: 1,
+            ),
+          ],
+        }),
+        200,
+      );
+    }
+    return happyHandler(request);
+  });
+}
+
 void main() {
   testWidgets('movie detail shows Material 3 metadata, resume state and play', (
     tester,
@@ -90,7 +115,9 @@ void main() {
     expect(tester.widget<FilledButton>(play).onPressed, isNotNull);
   });
 
-  testWidgets('series detail lists episodes grouped by season', (tester) async {
+  testWidgets('series detail switches seasons with a Material 3 dropdown', (
+    tester,
+  ) async {
     jellyfinTallViewport(tester);
     await tester.pumpWidget(
       jellyfinTestHost(
@@ -98,16 +125,34 @@ void main() {
           connection: jellyfinTestConnection,
           item: _series,
         ),
+        transport: _seriesTransportWithSeasons(),
       ),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('Test Series'), findsWidgets);
-    expect(find.text('Season 1'), findsOneWidget);
+    expect(find.byType(DropdownMenu<int>), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('jellyfin-season-selector')),
+      findsOneWidget,
+    );
+    expect(find.text('Season 1'), findsWidgets);
     expect(find.text('E1'), findsOneWidget);
     expect(find.text('E2'), findsOneWidget);
-    expect(find.text('Test Episode'), findsWidgets);
+    expect(find.text('Season One First'), findsOneWidget);
+    expect(find.text('Season Two First'), findsNothing);
     expect(find.widgetWithText(FilledButton, 'Play'), findsNothing);
+
+    await tester.tap(
+      find.byKey(const ValueKey('jellyfin-season-selector')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Season 2').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Season 2'), findsWidgets);
+    expect(find.text('Season Two First'), findsOneWidget);
+    expect(find.text('Season One First'), findsNothing);
   });
 
   testWidgets('episode detail shows the SxxExx metadata and play', (
@@ -129,6 +174,32 @@ void main() {
     final play = find.widgetWithText(FilledButton, 'Play');
     expect(play, findsOneWidget);
     expect(tester.widget<FilledButton>(play).onPressed, isNotNull);
+  });
+
+  testWidgets('season selector remains overflow-free on a narrow layout', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(520, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      jellyfinTestHost(
+        const JellyfinDetailsView(
+          connection: jellyfinTestConnection,
+          item: _series,
+        ),
+        transport: _seriesTransportWithSeasons(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('jellyfin-season-selector')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('a broken episodes endpoint shows an inline retry', (
