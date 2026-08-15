@@ -40,9 +40,17 @@ docs/SECURITY_HARDENING_IMPLEMENTATION_PLAN.md
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
+# Local editor/workspace state
+.vs/
+.vscode/settings.json
+*.code-workspace
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Keep shareable VS Code launch/tasks configuration commit-capable; only the
+# user-specific settings file is ignored above.
 #.vscode/
 
 # Flutter/Dart/Pub related
@@ -74,7 +82,30 @@ docs/SECURITY_HARDENING_IMPLEMENTATION_PLAN.md
 *.xmltv
 *.epg.xml
 *.env
+.env.*
+!.env.example
+.envrc
+.direnv/
 *.local
+credentials*.json
+secrets*.json
+service-account*.json
+pub-credentials.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+*.db-wal
+*.db-shm
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.dmp
+*.dump
 diagnostics_exports/
 exports/
 dist/

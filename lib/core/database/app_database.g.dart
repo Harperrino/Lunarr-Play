@@ -2604,34 +2604,32 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   ]);
 }
 
-typedef $$PlaylistsTableCreateCompanionBuilder =
-    PlaylistsCompanion Function({
-      Value<int> id,
-      required String name,
-      required String type,
-      required String urlOrHost,
-      Value<String?> username,
-      Value<String?> password,
-      Value<DateTime> createdAt,
-      Value<DateTime?> lastSyncedAt,
-      Value<String?> epgUrl,
-      Value<String?> epgUrlOverride,
-      Value<DateTime?> epgLastSyncedAt,
-    });
-typedef $$PlaylistsTableUpdateCompanionBuilder =
-    PlaylistsCompanion Function({
-      Value<int> id,
-      Value<String> name,
-      Value<String> type,
-      Value<String> urlOrHost,
-      Value<String?> username,
-      Value<String?> password,
-      Value<DateTime> createdAt,
-      Value<DateTime?> lastSyncedAt,
-      Value<String?> epgUrl,
-      Value<String?> epgUrlOverride,
-      Value<DateTime?> epgLastSyncedAt,
-    });
+typedef $$PlaylistsTableCreateCompanionBuilder = PlaylistsCompanion Function({
+  Value<int> id,
+  required String name,
+  required String type,
+  required String urlOrHost,
+  Value<String?> username,
+  Value<String?> password,
+  Value<DateTime> createdAt,
+  Value<DateTime?> lastSyncedAt,
+  Value<String?> epgUrl,
+  Value<String?> epgUrlOverride,
+  Value<DateTime?> epgLastSyncedAt,
+});
+typedef $$PlaylistsTableUpdateCompanionBuilder = PlaylistsCompanion Function({
+  Value<int> id,
+  Value<String> name,
+  Value<String> type,
+  Value<String> urlOrHost,
+  Value<String?> username,
+  Value<String?> password,
+  Value<DateTime> createdAt,
+  Value<DateTime?> lastSyncedAt,
+  Value<String?> epgUrl,
+  Value<String?> epgUrlOverride,
+  Value<DateTime?> epgLastSyncedAt,
+});
 
 final class $$PlaylistsTableReferences
     extends BaseReferences<_$AppDatabase, $PlaylistsTable, Playlist> {
@@ -3217,44 +3215,42 @@ typedef $$PlaylistsTableProcessedTableManager =
         bool epgChannelsRefs,
       })
     >;
-typedef $$ChannelsTableCreateCompanionBuilder =
-    ChannelsCompanion Function({
-      Value<int> id,
-      required int playlistId,
-      Value<String?> streamId,
-      required String name,
-      Value<String?> logo,
-      Value<String?> groupName,
-      Value<String?> tvgId,
-      required String streamUrl,
-      Value<int> providerOrder,
-      Value<String?> channelNumber,
-      Value<bool> isFavorite,
-      Value<bool> isWatchLater,
-      required String channelType,
-      Value<int?> lastWatchedPosition,
-      Value<int?> duration,
-      Value<DateTime?> lastWatchedAt,
-    });
-typedef $$ChannelsTableUpdateCompanionBuilder =
-    ChannelsCompanion Function({
-      Value<int> id,
-      Value<int> playlistId,
-      Value<String?> streamId,
-      Value<String> name,
-      Value<String?> logo,
-      Value<String?> groupName,
-      Value<String?> tvgId,
-      Value<String> streamUrl,
-      Value<int> providerOrder,
-      Value<String?> channelNumber,
-      Value<bool> isFavorite,
-      Value<bool> isWatchLater,
-      Value<String> channelType,
-      Value<int?> lastWatchedPosition,
-      Value<int?> duration,
-      Value<DateTime?> lastWatchedAt,
-    });
+typedef $$ChannelsTableCreateCompanionBuilder = ChannelsCompanion Function({
+  Value<int> id,
+  required int playlistId,
+  Value<String?> streamId,
+  required String name,
+  Value<String?> logo,
+  Value<String?> groupName,
+  Value<String?> tvgId,
+  required String streamUrl,
+  Value<int> providerOrder,
+  Value<String?> channelNumber,
+  Value<bool> isFavorite,
+  Value<bool> isWatchLater,
+  required String channelType,
+  Value<int?> lastWatchedPosition,
+  Value<int?> duration,
+  Value<DateTime?> lastWatchedAt,
+});
+typedef $$ChannelsTableUpdateCompanionBuilder = ChannelsCompanion Function({
+  Value<int> id,
+  Value<int> playlistId,
+  Value<String?> streamId,
+  Value<String> name,
+  Value<String?> logo,
+  Value<String?> groupName,
+  Value<String?> tvgId,
+  Value<String> streamUrl,
+  Value<int> providerOrder,
+  Value<String?> channelNumber,
+  Value<bool> isFavorite,
+  Value<bool> isWatchLater,
+  Value<String> channelType,
+  Value<int?> lastWatchedPosition,
+  Value<int?> duration,
+  Value<DateTime?> lastWatchedAt,
+});
 
 final class $$ChannelsTableReferences
     extends BaseReferences<_$AppDatabase, $ChannelsTable, Channel> {
@@ -3713,17 +3709,15 @@ class $$ChannelsTableTableManager
                     >
                   >(state) {
                     if (playlistId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.playlistId,
-                                referencedTable: $$ChannelsTableReferences
-                                    ._playlistIdTable(db),
-                                referencedColumn: $$ChannelsTableReferences
-                                    ._playlistIdTable(db)
-                                    .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.playlistId,
+                        referencedTable: $$ChannelsTableReferences
+                            ._playlistIdTable(db),
+                        referencedColumn: $$ChannelsTableReferences
+                            ._playlistIdTable(db)
+                            .id,
+                      ) as T;
                     }
 
                     return state;
@@ -3751,26 +3745,24 @@ typedef $$ChannelsTableProcessedTableManager =
       Channel,
       PrefetchHooks Function({bool playlistId})
     >;
-typedef $$EpgEntriesTableCreateCompanionBuilder =
-    EpgEntriesCompanion Function({
-      Value<int> id,
-      required int playlistId,
-      required String channelId,
-      required String title,
-      Value<String?> description,
-      required DateTime startTime,
-      required DateTime endTime,
-    });
-typedef $$EpgEntriesTableUpdateCompanionBuilder =
-    EpgEntriesCompanion Function({
-      Value<int> id,
-      Value<int> playlistId,
-      Value<String> channelId,
-      Value<String> title,
-      Value<String?> description,
-      Value<DateTime> startTime,
-      Value<DateTime> endTime,
-    });
+typedef $$EpgEntriesTableCreateCompanionBuilder = EpgEntriesCompanion Function({
+  Value<int> id,
+  required int playlistId,
+  required String channelId,
+  required String title,
+  Value<String?> description,
+  required DateTime startTime,
+  required DateTime endTime,
+});
+typedef $$EpgEntriesTableUpdateCompanionBuilder = EpgEntriesCompanion Function({
+  Value<int> id,
+  Value<int> playlistId,
+  Value<String> channelId,
+  Value<String> title,
+  Value<String?> description,
+  Value<DateTime> startTime,
+  Value<DateTime> endTime,
+});
 
 final class $$EpgEntriesTableReferences
     extends BaseReferences<_$AppDatabase, $EpgEntriesTable, EpgEntry> {
@@ -4064,17 +4056,15 @@ class $$EpgEntriesTableTableManager
                     >
                   >(state) {
                     if (playlistId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.playlistId,
-                                referencedTable: $$EpgEntriesTableReferences
-                                    ._playlistIdTable(db),
-                                referencedColumn: $$EpgEntriesTableReferences
-                                    ._playlistIdTable(db)
-                                    .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.playlistId,
+                        referencedTable: $$EpgEntriesTableReferences
+                            ._playlistIdTable(db),
+                        referencedColumn: $$EpgEntriesTableReferences
+                            ._playlistIdTable(db)
+                            .id,
+                      ) as T;
                     }
 
                     return state;
@@ -4345,17 +4335,15 @@ class $$EpgChannelsTableTableManager
                     >
                   >(state) {
                     if (playlistId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.playlistId,
-                                referencedTable: $$EpgChannelsTableReferences
-                                    ._playlistIdTable(db),
-                                referencedColumn: $$EpgChannelsTableReferences
-                                    ._playlistIdTable(db)
-                                    .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.playlistId,
+                        referencedTable: $$EpgChannelsTableReferences
+                            ._playlistIdTable(db),
+                        referencedColumn: $$EpgChannelsTableReferences
+                            ._playlistIdTable(db)
+                            .id,
+                      ) as T;
                     }
 
                     return state;
@@ -4383,18 +4371,16 @@ typedef $$EpgChannelsTableProcessedTableManager =
       EpgChannel,
       PrefetchHooks Function({bool playlistId})
     >;
-typedef $$AppStatesTableCreateCompanionBuilder =
-    AppStatesCompanion Function({
-      required String key,
-      Value<String?> value,
-      Value<int> rowid,
-    });
-typedef $$AppStatesTableUpdateCompanionBuilder =
-    AppStatesCompanion Function({
-      Value<String> key,
-      Value<String?> value,
-      Value<int> rowid,
-    });
+typedef $$AppStatesTableCreateCompanionBuilder = AppStatesCompanion Function({
+  required String key,
+  Value<String?> value,
+  Value<int> rowid,
+});
+typedef $$AppStatesTableUpdateCompanionBuilder = AppStatesCompanion Function({
+  Value<String> key,
+  Value<String?> value,
+  Value<int> rowid,
+});
 
 class $$AppStatesTableFilterComposer
     extends Composer<_$AppDatabase, $AppStatesTable> {
@@ -4478,22 +4464,16 @@ class $$AppStatesTableTableManager
               $$AppStatesTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$AppStatesTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<String> key = const Value.absent(),
-                Value<String?> value = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => AppStatesCompanion(key: key, value: value, rowid: rowid),
-          createCompanionCallback:
-              ({
-                required String key,
-                Value<String?> value = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => AppStatesCompanion.insert(
-                key: key,
-                value: value,
-                rowid: rowid,
-              ),
+          updateCompanionCallback: ({
+            Value<String> key = const Value.absent(),
+            Value<String?> value = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) => AppStatesCompanion(key: key, value: value, rowid: rowid),
+          createCompanionCallback: ({
+            required String key,
+            Value<String?> value = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) => AppStatesCompanion.insert(key: key, value: value, rowid: rowid),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
               .toList(),

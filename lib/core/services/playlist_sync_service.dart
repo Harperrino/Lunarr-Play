@@ -190,7 +190,7 @@ class PlaylistSyncService {
             'M3U fetch failed with HTTP ${response.statusCode}.',
           );
         }
-        return _readBudgetedUtf8(
+        return await _readBudgetedUtf8(
           response,
           budget: budget,
           transportPhase: 'm3u_transport',

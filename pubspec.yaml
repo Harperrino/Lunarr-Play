@@ -4,8 +4,8 @@ publish_to: 'none'
 version: 0.9.1-rc.2+2
 
 environment:
-  sdk: '>=3.12.2 <4.0.0'
-  flutter: '>=3.44.4'
+  sdk: '>=3.13.0 <4.0.0'
+  flutter: '>=3.47.0'
 
 dependencies:
   flutter:
@@ -25,8 +25,8 @@ dependencies:
   media_kit_libs_ios_video: 1.1.4
 
   # Local SQLite Database & Path Utilities
-  drift: 2.34.2
-  sqlite3: 3.4.0
+  drift: 2.34.3
+  sqlite3: 3.5.1
   path_provider: 2.1.6
   screen_retriever: 0.2.2
   path: 1.9.1
@@ -38,8 +38,8 @@ dependencies:
   # UI & Material 3 Design System
   cached_network_image: 3.4.1
   shimmer: 3.0.0
-  google_fonts: 8.2.0
-  intl: 0.20.2
+  google_fonts: 8.2.1
+  intl: 0.20.3
   url_launcher: 6.3.2
 
   # Data Parsing & Utilities
@@ -52,9 +52,9 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: 6.0.0
 
-  # Code Generation Tools (drift_dev-Version = drift-Version)
-  build_runner: 2.15.1
-  drift_dev: 2.34.4
+  # Code Generation Tools (drift_dev und drift gemeinsam kompatibel aktualisieren)
+  build_runner: 2.16.0
+  drift_dev: 2.34.5
 
 flutter:
   generate: true
