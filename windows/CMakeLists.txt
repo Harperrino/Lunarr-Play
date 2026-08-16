@@ -92,7 +92,11 @@ set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/windows/")
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"
    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
    OPTIONAL
-   COMPONENT Runtime)
+   COMPONENT Runtime
+   PATTERN "native_assets.json" EXCLUDE)
+install(CODE "
+  file(REMOVE \"${INSTALL_BUNDLE_LIB_DIR}/native_assets.json\")
+" COMPONENT Runtime)
 
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.

@@ -4,21 +4,27 @@
        width="720">
 </p>
 
-Lunarr Player is a modern M3U/Xtream player for Windows. It brings live television,
-movies, series and the programme guide together in a focused desktop app with a
-clean Material 3 interface.
+Lunarr Player is a modern IPTV and Jellyfin player for Windows. It brings live
+television, movies, series, the programme guide and personal Jellyfin libraries
+together in a focused desktop app with a clean Material 3 interface.
 
 It is designed for quick navigation, large media libraries and comfortable
 everyday use — whether you are switching between live channels, continuing a
 series or looking through your provider's catalogue.
 
 > Lunarr does not include channels, playlists or media content. You need
-> your own M3U playlist or access to an Xtream-compatible provider.
+> your own M3U playlist, access to an Xtream-compatible provider or a Jellyfin
+> server and account.
 
 ## Features
 
 - Live TV playback with quick channel switching and fullscreen controls
 - Support for M3U playlists and Xtream-compatible providers
+- Multiple saved Jellyfin server and user profiles
+- Jellyfin libraries, Continue Watching, Next Up and recently added media
+- Jellyfin movie and series details with artwork, metadata and external IDs
+- Direct Play-first Jellyfin playback with server-controlled fallback
+- Episode navigation, season selection and immersive fullscreen playback
 - A shared media library for movies, series and Watch Later
 - Playback progress and resume support for VOD and series
 - EPG grid, compact agenda and current-programme information
@@ -44,15 +50,18 @@ SmartScreen warning because the application is not currently code-signed.
 
 ## Current Status
 
-The current release candidate is **Lunarr Player 0.9.1 RC2**
-(`v0.9.1-rc.2`).
+The current release candidate is **Lunarr Player 0.10.0 RC1**
+(`v0.10.0-rc.1`).
 
-[See what is new in RC2](CHANGELOG.md).
+[See what is new in 0.10.0 RC1](CHANGELOG.md).
 
-Windows desktop is the currently supported platform, Linux is planned. Also there are plans to integrate Jellyfin Support for a simple AiO Media Center solution on Windows.
+Windows desktop is the currently supported platform. Linux remains planned.
+Jellyfin support is integrated directly and can be hidden completely when it
+is not needed; the other main navigation tabs are configurable as well.
 
-Existing Beta 5 and RC1 installations can continue using their local `v2`
-database, so playlists and settings remain available after updating to RC2.
+Existing 0.9.x installations keep using their local application database, so
+playlists, settings, favorites and playback progress remain available after
+updating. Jellyfin connection profiles are stored locally per Windows user.
 
 ## Data and Privacy
 
@@ -65,7 +74,7 @@ contents first.
 
 Lunarr is built with Flutter. A Windows build requires:
 
-- Flutter with Windows desktop support
+- Flutter 3.47 or newer with Windows desktop support
 - Visual Studio with the Desktop development with C++ workload
 
 ```powershell

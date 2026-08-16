@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.10.0 RC1
+
+This release turns Lunarr Player into a combined IPTV and Jellyfin desktop
+client while keeping both integrations modular and independently configurable.
+
+### Jellyfin libraries and accounts
+
+- Connect multiple Jellyfin servers or users and switch profiles from the
+  account selector beside the search field.
+- Connection profiles persist locally, while signing out and switching servers
+  cleanly reset the active Jellyfin session.
+- Browse server libraries from a dedicated Material 3 sidebar with Overview,
+  Continue Watching, Next Up and recently added shelves.
+- Hide the Jellyfin tab completely when it is not used. All primary navigation
+  tabs except Settings can now be enabled or disabled individually.
+
+### Details and artwork
+
+- New responsive Material 3 movie, series and episode detail pages with
+  backdrops, posters, descriptions, genres, people and technical metadata.
+- IMDb and TMDb provider IDs open their corresponding external pages instead
+  of being shown as ratings. Jellyfin community and critic ratings remain
+  clearly labelled.
+- Posters keep a consistent 2:3 crop without stretching, including library and
+  Continue Watching shelves.
+- Series use a compact season dropdown instead of rendering every season at
+  once.
+
+### Jellyfin playback
+
+- Direct Play is preferred whenever the server reports a compatible source;
+  Direct Stream or transcoding is used only as the server-selected fallback.
+- A dedicated media_kit player shares Lunarr's Material 3 control language,
+  rounded video surface, volume, mute, seek and fullscreen behavior.
+- Resume actions now open playback at the stored position.
+- Previous/next episode actions and an expandable in-player episode picker
+  make continuous series playback easier.
+- Fullscreen covers the complete app window and automatically hides its chrome
+  after inactivity while restoring controls on mouse or keyboard input.
+
+### Reliability, privacy and tooling
+
+- HTTP playlist imports finish reading before their client is closed, avoiding
+  truncated responses and ensuring asynchronous failures use the intended
+  cleanup path.
+- Repository ignore rules now cover local credentials, environment files,
+  keys, databases, diagnostics, dumps and editor-specific workspace state.
+- Windows release packaging excludes Flutter's intermediate native-assets
+  manifest so absolute local build paths are not shipped in portable archives.
+- Updated the project baseline to Flutter 3.47, Dart 3.13 and current compatible
+  Drift, SQLite, Google Fonts and build tooling releases.
+- Expanded Jellyfin, player, responsive-layout, accessibility, database and
+  privacy regression coverage. The release gate passes 930 tests with three
+  explicitly skipped opt-in performance tests.
+
+### Updating
+
+- Existing 0.9.x playlists, settings, favorites, Watch Later entries and
+  playback progress remain available.
+- Replace the complete previous application folder with the contents of the
+  new portable ZIP. Do not copy only the executable.
+- The Windows build is not code-signed, so SmartScreen may show a warning.
+
 ## 0.9.1 RC2
 
 RC2 makes large libraries faster to browse, fixes playlist and programme-guide
