@@ -206,6 +206,7 @@ class JellyfinPlayerController {
         duration: Duration.zero,
         initialized: false,
         clearMethod: true,
+        clearMediaSourceId: true,
         audioTracks: resetSelections ? const [] : s.audioTracks,
         subtitleTracks: resetSelections ? const [] : s.subtitleTracks,
         selectedAudioStreamIndex: resetSelections
@@ -334,6 +335,7 @@ class JellyfinPlayerController {
         (s) => s.copyWith(
           initialized: true,
           method: resolved.method,
+          mediaSourceId: resolved.mediaSourceId,
           switchingTrack: false,
         ),
       );
@@ -423,6 +425,7 @@ class JellyfinPlayerController {
         completed: false,
         position: Duration.zero,
         initialized: false,
+        clearMediaSourceId: true,
       ),
     );
   }

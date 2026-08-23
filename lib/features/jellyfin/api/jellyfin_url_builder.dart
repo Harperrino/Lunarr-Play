@@ -123,6 +123,22 @@ class JellyfinUrlBuilder {
   Uri playbackInfo(String baseUrl, String itemId) =>
       Uri.parse('$baseUrl/Items/$itemId/PlaybackInfo');
 
+  Uri mediaSegments(String baseUrl, String itemId) =>
+      Uri.parse('$baseUrl/MediaSegments/$itemId');
+
+  Uri trickplayItem(String baseUrl, String userId, String itemId) =>
+      _withFields(itemDetail(baseUrl, userId, itemId), fields: 'Trickplay');
+
+  Uri trickplayTile(
+    String baseUrl,
+    String itemId, {
+    required int width,
+    required int index,
+    required String mediaSourceId,
+  }) =>
+      Uri.parse('$baseUrl/Videos/$itemId/Trickplay/$width/$index.jpg')
+          .replace(queryParameters: {'MediaSourceId': mediaSourceId});
+
   Uri favoriteItem(String baseUrl, String userId, String itemId) =>
       Uri.parse('$baseUrl/Users/$userId/FavoriteItems/$itemId');
 

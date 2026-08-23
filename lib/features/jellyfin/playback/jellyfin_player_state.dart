@@ -15,6 +15,7 @@ class JellyfinPlayerState {
     this.error = false,
     this.title = '',
     this.method,
+    this.mediaSourceId,
     this.audioTracks = const [],
     this.subtitleTracks = const [],
     this.selectedAudioStreamIndex = -1,
@@ -36,6 +37,7 @@ class JellyfinPlayerState {
   final bool error;
   final String title;
   final JellyfinPlaybackMethod? method;
+  final String? mediaSourceId;
   final List<JellyfinMediaStream> audioTracks;
   final List<JellyfinMediaStream> subtitleTracks;
   final int selectedAudioStreamIndex;
@@ -55,6 +57,8 @@ class JellyfinPlayerState {
     String? title,
     JellyfinPlaybackMethod? method,
     bool clearMethod = false,
+    String? mediaSourceId,
+    bool clearMediaSourceId = false,
     List<JellyfinMediaStream>? audioTracks,
     List<JellyfinMediaStream>? subtitleTracks,
     int? selectedAudioStreamIndex,
@@ -73,6 +77,9 @@ class JellyfinPlayerState {
       error: error ?? this.error,
       title: title ?? this.title,
       method: clearMethod ? null : method ?? this.method,
+      mediaSourceId: clearMediaSourceId
+          ? null
+          : mediaSourceId ?? this.mediaSourceId,
       audioTracks: audioTracks ?? this.audioTracks,
       subtitleTracks: subtitleTracks ?? this.subtitleTracks,
       selectedAudioStreamIndex:

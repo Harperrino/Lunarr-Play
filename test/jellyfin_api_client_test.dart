@@ -315,4 +315,102 @@ void main() {
       );
     });
   });
+
+  group('playback assist data', () {
+    test('parses media segments and treats 404 as unavailable', () async {
+      var unavailable = false;
+      final client = _client((request) async {
+        expect(request.headers['X-Emby-Token'], connection.accessToken);
+        if (unavailable) return http.Response('', 404);
+        return http.Response(
+          jsonEncode({
+            'Items': [
+              {
+                'Id': 'intro',
+                'Type': 'Intro',
+                'StartTicks': 0,
+                'EndTicks': 100000000,
+              },
+            ],
+          }),
+          200,
+        );
+      });
+
+      expect(
+        await client.fetchMediaSegments(connection, itemId: 'episode'),
+        hasLength(1),
+      );
+      unavailable = true;
+      expect(
+        await client.fetchMediaSegments(connection, itemId: 'episode'),
+        isEmpty,
+      );
+    });
+
+    test('couples trickplay metadata and tiles to the media source', () async {
+      final client = _client((request) async {
+        expect(request.headers['X-Emby-Token'], connection.accessToken);
+        if (request.url.path.contains('/Trickplay/')) {
+          expect(request.url.queryParameters['MediaSourceId'], 'source-a');
+          return http.Response.bytes([1, 2, 3], 200);
+        }
+        return http.Response(
+          jsonEncode({
+            'Trickplay': {
+              'source-a': {
+                '320': {
+                  'Width': 320,
+                  'Height': 180,
+                  'TileWidth': 4,
+                  'TileHeight': 3,
+                  'ThumbnailCount': 12,
+                  'Interval': 10000,
+                },
+              },
+              'source-b': {},
+            },
+          }),
+          200,
+        );
+      });
+
+      final manifest = await client.fetchTrickplayManifest(
+        connection,
+        itemId: 'episode',
+        mediaSourceId: 'source-a',
+      );
+      expect(manifest?.mediaSourceId, 'source-a');
+      expect(manifest?.bestResolution()?.width, 320);
+      expect(
+        await client.fetchTrickplayTile(
+          connection,
+          itemId: 'episode',
+          mediaSourceId: 'source-a',
+          width: 320,
+          index: 0,
+        ),
+        [1, 2, 3],
+      );
+    });
+
+    test('rejects oversized trickplay tiles', () async {
+      final client = _client(
+        (_) async => http.Response.bytes(
+          List<int>.filled(JellyfinApiClient.maximumTrickplayTileBytes + 1, 0),
+          200,
+        ),
+      );
+      expect(
+        await client.fetchTrickplayTile(
+          connection,
+          itemId: 'episode',
+          mediaSourceId: 'source-a',
+          width: 320,
+          index: 0,
+        ),
+        isNull,
+      );
+    });
+  });
 }

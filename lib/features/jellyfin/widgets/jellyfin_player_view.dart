@@ -6,11 +6,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
+import 'package:m3uxtream_player/core/models/playback_preferences.dart';
+import 'package:m3uxtream_player/core/providers/playback_preferences_providers.dart';
+import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_assist.dart';
+import 'package:m3uxtream_player/features/jellyfin/services/jellyfin_image_service.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_playback_resolver.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_controller.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_state.dart';
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_library_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_playback_providers.dart';
+import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_connection_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_player_controls.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_formatting.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
@@ -50,6 +55,18 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
   bool _fullscreenControlsVisible = true;
   bool _episodePickerExpanded = false;
   bool _switchingEpisode = false;
+  List<JellyfinMediaSegment> _segments = const [];
+  JellyfinTrickplayManifest? _trickplayManifest;
+  JellyfinMediaSegment? _activeSkipSegment;
+  final Set<String> _consumedSegments = {};
+  JellyfinItem? _nextEpisode;
+  Timer? _endcardTimer;
+  int? _endcardRemaining;
+  bool _endcardVisible = false;
+  bool _endcardCancelled = false;
+  int _assistGeneration = 0;
+  String? _loadedTrickplayKey;
+  JellyfinPlayerController? _listenedController;
 
   @override
   void initState() {
@@ -58,7 +75,10 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     _fullscreenOverlayController = OverlayPortalController()..show();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(jellyfinPlayerControllerProvider).play(_currentItem);
+        final controller = ref.read(jellyfinPlayerControllerProvider);
+        _listenToController(controller);
+        _resetAssistForItem();
+        controller.play(_currentItem);
         if (ref.read(isFullscreenProvider)) {
           _scheduleFullscreenControlsHide();
         }
@@ -69,6 +89,8 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
   @override
   void dispose() {
     _cancelFullscreenControlsHide();
+    _endcardTimer?.cancel();
+    _listenedController?.state.removeListener(_onPlayerStateChanged);
     super.dispose();
   }
 
@@ -78,6 +100,7 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     if (oldWidget.item.id != widget.item.id) {
       _currentItem = widget.item;
       _episodePickerExpanded = false;
+      _resetAssistForItem();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ref.read(jellyfinPlayerControllerProvider).play(_currentItem);
@@ -91,7 +114,9 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     setState(() {
       _switchingEpisode = true;
       _currentItem = episode;
+      _episodePickerExpanded = false;
     });
+    _resetAssistForItem();
     try {
       await ref.read(jellyfinPlayerControllerProvider).play(episode);
     } finally {
@@ -102,6 +127,7 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
   Future<void> _leavePlayer() async {
     if (_leavingPlayer) return;
     _leavingPlayer = true;
+    _endcardTimer?.cancel();
 
     try {
       await ref.read(jellyfinPlayerControllerProvider).stop();
@@ -111,6 +137,146 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
         jellyfinGoBack(ref);
       }
     }
+  }
+
+  void _listenToController(JellyfinPlayerController controller) {
+    if (identical(_listenedController, controller)) return;
+    _listenedController?.state.removeListener(_onPlayerStateChanged);
+    _listenedController = controller;
+    controller.state.addListener(_onPlayerStateChanged);
+  }
+
+  void _resetAssistForItem() {
+    final generation = ++_assistGeneration;
+    _endcardTimer?.cancel();
+    _segments = const [];
+    _trickplayManifest = null;
+    _loadedTrickplayKey = null;
+    _activeSkipSegment = null;
+    _consumedSegments.clear();
+    _endcardVisible = false;
+    _endcardCancelled = false;
+    _endcardRemaining = null;
+    unawaited(_loadSegments(_currentItem, generation));
+  }
+
+  Future<void> _loadSegments(JellyfinItem item, int generation) async {
+    final segments = await ref
+        .read(jellyfinApiClientProvider)
+        .fetchMediaSegments(widget.connection, itemId: item.id);
+    if (!mounted ||
+        generation != _assistGeneration ||
+        item.id != _currentItem.id) {
+      return;
+    }
+    setState(() => _segments = segments);
+    _onPlayerStateChanged();
+  }
+
+  Future<void> _loadTrickplay(String mediaSourceId, int generation) async {
+    final key = '${_currentItem.id}:$mediaSourceId';
+    if (_loadedTrickplayKey == key) return;
+    _loadedTrickplayKey = key;
+    final manifest = await ref
+        .read(jellyfinApiClientProvider)
+        .fetchTrickplayManifest(
+          widget.connection,
+          itemId: _currentItem.id,
+          mediaSourceId: mediaSourceId,
+        );
+    if (!mounted ||
+        generation != _assistGeneration ||
+        key != _loadedTrickplayKey) {
+      return;
+    }
+    setState(() => _trickplayManifest = manifest);
+  }
+
+  void _onPlayerStateChanged() {
+    if (!mounted || _listenedController == null) return;
+    final state = _listenedController!.state.value;
+    final preferences =
+        ref.read(playbackPreferencesProvider).valueOrNull ??
+        const PlaybackPreferences();
+    final sourceId = state.mediaSourceId;
+    if (preferences.trickplayEnabled && sourceId != null) {
+      unawaited(_loadTrickplay(sourceId, _assistGeneration));
+    }
+
+    JellyfinMediaSegment? active;
+    for (final segment in _segments) {
+      if (segment.contains(state.position) &&
+          (segment.type == JellyfinMediaSegmentType.intro ||
+              segment.type == JellyfinMediaSegmentType.recap)) {
+        active = segment;
+        break;
+      }
+    }
+    if (active != null &&
+        preferences.mediaSegmentSkipMode == MediaSegmentSkipMode.automatic &&
+        _consumedSegments.add(active.id)) {
+      unawaited(_listenedController!.seek(active.end));
+      active = null;
+    }
+    if (preferences.mediaSegmentSkipMode != MediaSegmentSkipMode.button) {
+      active = null;
+    }
+    if (_activeSkipSegment?.id != active?.id) {
+      setState(() => _activeSkipSegment = active);
+    }
+
+    final inOutro = _segments.any(
+      (segment) =>
+          segment.type == JellyfinMediaSegmentType.outro &&
+          segment.contains(state.position),
+    );
+    if (inOutro || state.completed) _showEndcard();
+  }
+
+  void _showEndcard() {
+    if (_endcardVisible ||
+        _endcardCancelled ||
+        !_currentItem.isEpisode ||
+        _nextEpisode == null) {
+      return;
+    }
+    final preferences =
+        ref.read(playbackPreferencesProvider).valueOrNull ??
+        const PlaybackPreferences();
+    setState(() {
+      _endcardVisible = true;
+      _endcardRemaining = preferences.nextEpisodeAutoplayEnabled
+          ? preferences.endcardCountdownSeconds
+          : null;
+    });
+    if (preferences.nextEpisodeAutoplayEnabled) {
+      _endcardTimer?.cancel();
+      _endcardTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (!mounted || !_endcardVisible || _nextEpisode == null) {
+          timer.cancel();
+          return;
+        }
+        final state = _listenedController!.state.value;
+        final inUnfinishedPlayback = !state.completed;
+        if (inUnfinishedPlayback && !state.playing) return;
+        final remaining = (_endcardRemaining ?? 1) - 1;
+        if (remaining <= 0) {
+          timer.cancel();
+          unawaited(_playEpisode(_nextEpisode!));
+        } else {
+          setState(() => _endcardRemaining = remaining);
+        }
+      });
+    }
+  }
+
+  void _cancelEndcard() {
+    _endcardTimer?.cancel();
+    setState(() {
+      _endcardVisible = false;
+      _endcardCancelled = true;
+      _endcardRemaining = null;
+    });
   }
 
   Future<void> _toggleFullscreen() async {
@@ -209,6 +375,16 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     final nextEpisode = currentIndex >= 0 && currentIndex + 1 < episodes.length
         ? episodes[currentIndex + 1]
         : null;
+    _nextEpisode = nextEpisode;
+    if (controller.state.value.completed &&
+        nextEpisode != null &&
+        !_endcardVisible &&
+        !_endcardCancelled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showEndcard());
+    }
+    final preferences =
+        ref.watch(playbackPreferencesProvider).valueOrNull ??
+        const PlaybackPreferences();
 
     final videoSurface = _buildVideoSurface(controller, fullscreen: fullscreen);
     final episodePicker = AnimatedSize(
@@ -236,10 +412,18 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
       episodePickerExpanded: _episodePickerExpanded,
       onToggleFullscreen: () => unawaited(_toggleFullscreen()),
       isFullscreen: fullscreen,
+      seekIntervalSeconds: preferences.seekIntervalSeconds,
+      trickplayManifest: preferences.trickplayEnabled
+          ? _trickplayManifest
+          : null,
+      apiClient: ref.watch(jellyfinApiClientProvider),
+      connection: widget.connection,
+      itemId: _currentItem.id,
     );
 
     final windowedPlayer = _withShortcuts(
       controller,
+      preferences.seekIntervalSeconds,
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -261,6 +445,7 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
         onPointerMove: (_) => _onFullscreenUserActivity(),
         child: _withShortcuts(
           controller,
+          preferences.seekIntervalSeconds,
           Stack(
             fit: StackFit.expand,
             children: [
@@ -337,7 +522,11 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     );
   }
 
-  Widget _withShortcuts(JellyfinPlayerController controller, Widget child) {
+  Widget _withShortcuts(
+    JellyfinPlayerController controller,
+    int seekIntervalSeconds,
+    Widget child,
+  ) {
     void runWithActivity(Future<void> Function() action) {
       _onFullscreenUserActivity();
       unawaited(action());
@@ -352,12 +541,14 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
           SingleActivator(LogicalKeyboardKey.keyM): () =>
               runWithActivity(controller.toggleMute),
           SingleActivator(LogicalKeyboardKey.arrowLeft): () => runWithActivity(
-            () => controller.seekRelative(const Duration(seconds: -10)),
+            () => controller.seekRelative(
+              Duration(seconds: -seekIntervalSeconds),
+            ),
           ),
-          SingleActivator(LogicalKeyboardKey.arrowRight): () =>
-              runWithActivity(
-                () => controller.seekRelative(const Duration(seconds: 10)),
-              ),
+          SingleActivator(LogicalKeyboardKey.arrowRight): () => runWithActivity(
+            () =>
+                controller.seekRelative(Duration(seconds: seekIntervalSeconds)),
+          ),
         },
         child: child,
       ),
@@ -396,9 +587,186 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
                       child: CircularProgressIndicator(strokeWidth: 3),
                     ),
                   ),
+                if (_activeSkipSegment != null && !_endcardVisible)
+                  Positioned(
+                    right: 24,
+                    bottom: 24,
+                    child: FilledButton.tonalIcon(
+                      onPressed: () {
+                        final segment = _activeSkipSegment!;
+                        _consumedSegments.add(segment.id);
+                        setState(() => _activeSkipSegment = null);
+                        unawaited(controller.seek(segment.end));
+                      },
+                      icon: const Icon(Icons.fast_forward_rounded),
+                      label: Text(
+                        _activeSkipSegment!.type ==
+                                JellyfinMediaSegmentType.recap
+                            ? context.l10n.jellyfinSkipRecap
+                            : context.l10n.jellyfinSkipIntro,
+                      ),
+                    ),
+                  ),
+                if (_endcardVisible && _nextEpisode != null)
+                  _JellyfinEndcard(
+                    connection: widget.connection,
+                    episode: _nextEpisode!,
+                    remaining: _endcardRemaining,
+                    onPlayNow: () => unawaited(_playEpisode(_nextEpisode!)),
+                    onCancel: _cancelEndcard,
+                  ),
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _JellyfinEndcard extends StatelessWidget {
+  const _JellyfinEndcard({
+    required this.connection,
+    required this.episode,
+    required this.remaining,
+    required this.onPlayNow,
+    required this.onCancel,
+  });
+
+  final JellyfinConnection connection;
+  final JellyfinItem episode;
+  final int? remaining;
+  final VoidCallback onPlayNow;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final imageUrl = const JellyfinImageService().posterUrl(
+      connection,
+      itemId: episode.id,
+      imageTag: episode.primaryImageTag,
+      maxWidth: 640,
+    );
+    return Positioned.fill(
+      child: ColoredBox(
+        color: Colors.black.withValues(alpha: 0.78),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: AppSurface(
+                level: AppSurfaceLevel.high,
+                padding: const EdgeInsets.all(18),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final narrow = constraints.maxWidth < 520;
+                    final artwork = ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: SizedBox(
+                        width: narrow ? double.infinity : 260,
+                        height: narrow ? 150 : 146,
+                        child: imageUrl == null
+                            ? ColoredBox(
+                                color: colors.secondaryContainer,
+                                child: Icon(
+                                  Icons.movie_filter_rounded,
+                                  size: 48,
+                                  color: colors.onSecondaryContainer,
+                                ),
+                              )
+                            : Image.network(
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => ColoredBox(
+                                  color: colors.secondaryContainer,
+                                  child: Icon(
+                                    Icons.movie_filter_rounded,
+                                    size: 48,
+                                    color: colors.onSecondaryContainer,
+                                  ),
+                                ),
+                              ),
+                      ),
+                    );
+                    final details = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          context.l10n.jellyfinUpNext,
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: colors.secondary,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          jellyfinSeasonEpisodeLabel(
+                            context.l10n,
+                            season: episode.seasonNumber,
+                            episode: episode.episodeNumber,
+                          ),
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          episode.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 14),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            FilledButton.icon(
+                              onPressed: onPlayNow,
+                              icon: const Icon(Icons.play_arrow_rounded),
+                              label: Text(
+                                remaining == null
+                                    ? context.l10n.jellyfinPlayNow
+                                    : context.l10n.jellyfinPlayNowCountdown(
+                                        remaining!,
+                                      ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: onCancel,
+                              child: Text(context.l10n.jellyfinEndcardCancel),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                    if (narrow) {
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          artwork,
+                          const SizedBox(height: 14),
+                          details,
+                        ],
+                      );
+                    }
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        artwork,
+                        const SizedBox(width: 18),
+                        Expanded(child: details),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -439,9 +807,8 @@ class _EpisodePicker extends StatelessWidget {
         children: [
           Text(
             context.l10n.jellyfinEpisodesTitle,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -480,9 +847,9 @@ class _EpisodePicker extends StatelessWidget {
                                       season: episode.seasonNumber,
                                       episode: episode.episodeNumber,
                                     ),
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.labelSmall,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
@@ -537,9 +904,8 @@ class _PlayerHeader extends StatelessWidget {
                   state.title.isEmpty ? l10n.jellyfinConnected : state.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               if (state.method != null)

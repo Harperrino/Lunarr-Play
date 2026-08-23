@@ -102,7 +102,7 @@ void _expectRoles(WidgetTester tester, ColorScheme colors) {
         find.byWidgetPredicate((widget) => widget is DropdownMenu),
       )
       .toList(growable: false);
-  expect(dropdowns, hasLength(2));
+  expect(dropdowns, hasLength(5));
   for (final dropdown in dropdowns) {
     expect(
       dropdown.inputDecorationTheme?.fillColor,
@@ -111,11 +111,15 @@ void _expectRoles(WidgetTester tester, ColorScheme colors) {
     expect(dropdown.textStyle?.color, colors.onSurface);
   }
 
-  final switchWidget = tester.widget<Switch>(find.byType(Switch));
-  expect(switchWidget.activeThumbColor, isNull);
-  expect(switchWidget.inactiveThumbColor, isNull);
-  expect(switchWidget.inactiveTrackColor, isNull);
-  final switchTheme = Theme.of(tester.element(find.byType(Switch))).switchTheme;
+  final switches = tester.widgetList<Switch>(find.byType(Switch));
+  expect(switches, hasLength(3));
+  for (final switchWidget in switches) {
+    expect(switchWidget.activeThumbColor, isNull);
+    expect(switchWidget.inactiveThumbColor, isNull);
+    expect(switchWidget.inactiveTrackColor, isNull);
+  }
+  final switchTheme = Theme.of(tester.element(find.byType(Switch).first))
+      .switchTheme;
   expect(
     switchTheme.thumbColor?.resolve(const <WidgetState>{WidgetState.selected}),
     colors.onPrimary,

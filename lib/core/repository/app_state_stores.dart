@@ -7,6 +7,7 @@ import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/core/models/series_resume_state.dart';
 import 'package:m3uxtream_player/core/models/channel_sort_mode.dart';
 import 'package:m3uxtream_player/core/models/epg_refresh_interval.dart';
+import 'package:m3uxtream_player/core/models/playback_preferences.dart';
 import 'package:m3uxtream_player/core/services/app_lifecycle_gate.dart';
 
 class AppStateKeys {
@@ -29,6 +30,14 @@ class AppStateKeys {
   static const vodPreBufferTargetSeconds = 'vod_pre_buffer_target_seconds';
   static const forceStereoEnabled = 'force_stereo_enabled';
   static const preferredAudioLanguage = 'preferred_audio_language';
+  static const playbackSeekIntervalSeconds = 'playback_seek_interval_seconds';
+  static const jellyfinTrickplayEnabled = 'jellyfin_trickplay_enabled';
+  static const jellyfinMediaSegmentSkipMode =
+      'jellyfin_media_segment_skip_mode';
+  static const jellyfinNextEpisodeAutoplayEnabled =
+      'jellyfin_next_episode_autoplay_enabled';
+  static const jellyfinEndcardCountdownSeconds =
+      'jellyfin_endcard_countdown_seconds';
   static const debugModeEnabled = 'debug_mode_enabled';
   static const streamingAutoFallbackEnabled = 'streaming_auto_fallback_enabled';
   static const streamingShowDiagnosisOnError =
@@ -225,6 +234,70 @@ class PlaybackStateStore {
     );
   }
 
+  Future<PlaybackPreferences> getPreferences() async => PlaybackPreferences(
+    seekIntervalSeconds: normalizePlaybackSeekInterval(
+      await _readInt(
+        AppStateKeys.playbackSeekIntervalSeconds,
+        defaultValue: 15,
+        min: 5,
+        max: 60,
+        label: 'playback seek interval',
+      ),
+    ),
+    trickplayEnabled: await _readBool(
+      AppStateKeys.jellyfinTrickplayEnabled,
+      defaultValue: true,
+      label: 'Jellyfin trickplay flag',
+    ),
+    mediaSegmentSkipMode: MediaSegmentSkipMode.fromStorage(
+      await _values.read(AppStateKeys.jellyfinMediaSegmentSkipMode),
+    ),
+    nextEpisodeAutoplayEnabled: await _readBool(
+      AppStateKeys.jellyfinNextEpisodeAutoplayEnabled,
+      defaultValue: true,
+      label: 'Jellyfin next episode autoplay flag',
+    ),
+    endcardCountdownSeconds: normalizeEndcardCountdown(
+      await _readInt(
+        AppStateKeys.jellyfinEndcardCountdownSeconds,
+        defaultValue: 10,
+        min: 5,
+        max: 30,
+        label: 'Jellyfin endcard countdown',
+      ),
+    ),
+  );
+
+  Future<void> setSeekIntervalSeconds(int seconds) => _write(
+    AppStateKeys.playbackSeekIntervalSeconds,
+    '${normalizePlaybackSeekInterval(seconds)}',
+    'playback seek interval',
+  );
+
+  Future<void> setTrickplayEnabled(bool enabled) => _writeBool(
+    AppStateKeys.jellyfinTrickplayEnabled,
+    enabled,
+    'Jellyfin trickplay flag',
+  );
+
+  Future<void> setMediaSegmentSkipMode(MediaSegmentSkipMode mode) => _write(
+    AppStateKeys.jellyfinMediaSegmentSkipMode,
+    mode.name,
+    'Jellyfin media segment skip mode',
+  );
+
+  Future<void> setNextEpisodeAutoplayEnabled(bool enabled) => _writeBool(
+    AppStateKeys.jellyfinNextEpisodeAutoplayEnabled,
+    enabled,
+    'Jellyfin next episode autoplay flag',
+  );
+
+  Future<void> setEndcardCountdownSeconds(int seconds) => _write(
+    AppStateKeys.jellyfinEndcardCountdownSeconds,
+    '${normalizeEndcardCountdown(seconds)}',
+    'Jellyfin endcard countdown',
+  );
+
   Future<int> _readInt(
     String key, {
     required int defaultValue,
@@ -248,7 +321,11 @@ class PlaybackStateStore {
   }) async {
     try {
       final raw = await _values.read(key);
-      return raw == null ? defaultValue : raw == 'true';
+      return switch (raw) {
+        'true' => true,
+        'false' => false,
+        _ => defaultValue,
+      };
     } catch (error, stackTrace) {
       AppLogger.error('Failed reading $label', error, stackTrace);
       return defaultValue;

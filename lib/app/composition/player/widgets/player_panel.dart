@@ -188,6 +188,9 @@ class _PlayerPanelState extends ConsumerState<PlayerPanel> {
                     onSeek: (position) => ref
                         .read(playerNotifierProvider.notifier)
                         .seek(position),
+                    onSeekRelative: (delta) => ref
+                        .read(playerNotifierProvider.notifier)
+                        .seekRelative(delta),
                     onToggleFullscreen: widget.onToggleFullscreen,
                   ),
                 ],
@@ -224,6 +227,9 @@ class _PlayerPanelState extends ConsumerState<PlayerPanel> {
                       onSeek: (position) => ref
                           .read(playerNotifierProvider.notifier)
                           .seek(position),
+                      onSeekRelative: (delta) => ref
+                          .read(playerNotifierProvider.notifier)
+                          .seekRelative(delta),
                       onUserActivity: _onImmersiveUserActivity,
                       onToggleFullscreen: widget.onToggleFullscreen,
                     ),
@@ -298,6 +304,7 @@ class _ImmersiveControlsOverlay extends ConsumerWidget {
     required this.onVolumeChangeEnd,
     required this.onToggleMute,
     required this.onSeek,
+    required this.onSeekRelative,
     required this.onUserActivity,
     this.onToggleFullscreen,
   });
@@ -308,6 +315,7 @@ class _ImmersiveControlsOverlay extends ConsumerWidget {
   final ValueChanged<double> onVolumeChangeEnd;
   final VoidCallback onToggleMute;
   final ValueChanged<Duration> onSeek;
+  final ValueChanged<Duration> onSeekRelative;
   final VoidCallback onUserActivity;
   final VoidCallback? onToggleFullscreen;
 
@@ -405,6 +413,7 @@ class _ImmersiveControlsOverlay extends ConsumerWidget {
                 onVolumeChangeEnd: onVolumeChangeEnd,
                 onToggleMute: onToggleMute,
                 onSeek: onSeek,
+                onSeekRelative: onSeekRelative,
                 onToggleFullscreen: onToggleFullscreen,
                 onUserActivity: onUserActivity,
               ),

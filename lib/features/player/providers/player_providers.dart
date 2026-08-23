@@ -1195,6 +1195,12 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     }
   }
 
+  Future<void> seekRelative(Duration delta) async {
+    final current = state.asData?.value;
+    if (current == null) return;
+    await seek(current.position + delta);
+  }
+
   Future<void> stopStream() async {
     final current = state.asData?.value;
 
@@ -1528,8 +1534,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                   mpvError: state.asData?.value.streamError,
                   duration: DateTime.now().difference(startedAt),
                   deliveryType: effectiveDelivery.diagnosticLabel,
-                  diagnosisNote:
-                      'Quick audio probe found no real tracks; switching to .ts delivery',
+                  diagnosisNote: 'Quick audio probe found no real tracks; switching to .ts delivery',
                 );
                 await _stopLivePlaybackForRetry(current.player, sessionToken);
                 if (!_isLiveOpenSessionCurrent(sessionToken)) return;
@@ -1632,8 +1637,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                 final recoverySettled = recoveryResult.settled;
                 if (!_isLiveOpenSessionCurrent(sessionToken)) return;
                 if (!recoveryOpened) {
-                  audioRecoveryNote =
-                      'Audio recovery failed: unable to reopen stream with auto demuxer';
+                  audioRecoveryNote = 'Audio recovery failed: unable to reopen stream with auto demuxer';
                   AppLogger.info('PlayerNotifier: $audioRecoveryNote');
                   lastError = StateError(audioRecoveryNote);
                   lastClassification = StreamDiagnosticsService.classifyFailure(
@@ -1657,8 +1661,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
 
                 if (!_isLiveOpenSessionCurrent(sessionToken)) return;
                 if (!recoverySettled) {
-                  audioRecoveryNote =
-                      'Audio recovery failed: stream did not settle after auto demuxer retry';
+                  audioRecoveryNote = 'Audio recovery failed: stream did not settle after auto demuxer retry';
                   AppLogger.info('PlayerNotifier: $audioRecoveryNote');
                   lastError = TimeoutException(
                     audioRecoveryNote,
@@ -1745,8 +1748,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                   rawTracks: rawTracks,
                   selectableTracks: selectable,
                 )) {
-                  audioRecoveryNote =
-                      'No real audio after recovery; trying next fallback/header profile';
+                  audioRecoveryNote = 'No real audio after recovery; trying next fallback/header profile';
                   liveAudioFallbackNeedsHeaderProfileRetryLog = true;
                   liveAudioRecoveryFallbackFailed = true;
                   AppLogger.info(
@@ -1799,8 +1801,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                 rawTracks: rawTracks,
                 selectableTracks: selectable,
               )) {
-                audioRecoveryNote =
-                    'No real audio exposed after startup; trying next fallback/header profile';
+                audioRecoveryNote = 'No real audio exposed after startup; trying next fallback/header profile';
                 liveAudioFallbackNeedsHeaderProfileRetryLog = true;
                 liveAudioRecoveryFallbackFailed = true;
                 AppLogger.info(
@@ -1915,8 +1916,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
               if (finalizationResult ==
                   LivePlaybackFinalizationResult.decodeFailed) {
                 if (!_isLiveOpenSessionCurrent(sessionToken)) return;
-                audioRecoveryNote =
-                    'Audio track exposed but decoding failed; trying next fallback/header profile';
+                audioRecoveryNote = 'Audio track exposed but decoding failed; trying next fallback/header profile';
                 liveAudioFallbackNeedsHeaderProfileRetryLog = true;
                 liveAudioRecoveryFallbackFailed = true;
                 AppLogger.info('PlayerNotifier: $audioRecoveryNote');

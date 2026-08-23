@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
@@ -10,6 +11,7 @@ import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_library.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_info.dart';
+import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_assist.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_server_info.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_device_profile.dart';
 import 'package:m3uxtream_player/features/jellyfin/services/jellyfin_log_redactor.dart';
@@ -35,6 +37,7 @@ class JellyfinAuthentication {
 /// [JellyfinLogRedactor]; passwords, tokens and request bodies are never
 /// logged.
 class JellyfinApiClient {
+  static const int maximumTrickplayTileBytes = 8 * 1024 * 1024;
   JellyfinApiClient({
     http.Client? transport,
     this._requestTimeout = const Duration(seconds: 8),
@@ -304,6 +307,115 @@ class JellyfinApiClient {
       );
     }
     return JellyfinItem.fromJson(json);
+  }
+
+  Future<List<JellyfinMediaSegment>> fetchMediaSegments(
+    JellyfinConnection connection, {
+    required String itemId,
+  }) async {
+    try {
+      final response = await _get(
+        connection,
+        _urlBuilder.mediaSegments(connection.baseUrl, itemId),
+        operation: 'MediaSegments',
+      );
+      if (response.statusCode == 404) return const [];
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return const [];
+      }
+      final decoded = jsonDecode(response.body);
+      final raw = decoded is Map<String, dynamic> ? decoded['Items'] : null;
+      if (raw is! List) return const [];
+      final segments = raw
+          .whereType<Map<String, dynamic>>()
+          .map(JellyfinMediaSegment.fromJson)
+          .whereType<JellyfinMediaSegment>()
+          .toList();
+      segments.sort((a, b) => a.start.compareTo(b.start));
+      return segments;
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<JellyfinTrickplayManifest?> fetchTrickplayManifest(
+    JellyfinConnection connection, {
+    required String itemId,
+    required String mediaSourceId,
+  }) async {
+    try {
+      final response = await _get(
+        connection,
+        _urlBuilder.trickplayItem(
+          connection.baseUrl,
+          connection.userId,
+          itemId,
+        ),
+        operation: 'TrickplayManifest',
+      );
+      if (response.statusCode != 200) return null;
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) return null;
+      final trickplay = decoded['Trickplay'];
+      if (trickplay is! Map<String, dynamic>) return null;
+      final source = trickplay[mediaSourceId];
+      if (source is! Map<String, dynamic>) return null;
+      final resolutions = source.values
+          .whereType<Map<String, dynamic>>()
+          .map(JellyfinTrickplayResolution.fromJson)
+          .whereType<JellyfinTrickplayResolution>()
+          .toList(growable: false);
+      if (resolutions.isEmpty) return null;
+      return JellyfinTrickplayManifest(
+        mediaSourceId: mediaSourceId,
+        resolutions: resolutions,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<Uint8List?> fetchTrickplayTile(
+    JellyfinConnection connection, {
+    required String itemId,
+    required String mediaSourceId,
+    required int width,
+    required int index,
+  }) async {
+    try {
+      final uri = _urlBuilder.trickplayTile(
+        connection.baseUrl,
+        itemId,
+        width: width,
+        index: index,
+        mediaSourceId: mediaSourceId,
+      );
+      final base = Uri.parse(connection.baseUrl);
+      if (uri.scheme != base.scheme ||
+          uri.host != base.host ||
+          uri.port != base.port) {
+        return null;
+      }
+      final request = http.Request('GET', uri)
+        ..headers['X-Emby-Token'] = connection.accessToken;
+      final response = await _transport.send(request).timeout(_requestTimeout);
+      if (response.statusCode != 200 ||
+          (response.contentLength != null &&
+              response.contentLength! > maximumTrickplayTileBytes)) {
+        return null;
+      }
+      final bytes = BytesBuilder(copy: false);
+      await for (final chunk in response.stream.timeout(_requestTimeout)) {
+        if (bytes.length + chunk.length > maximumTrickplayTileBytes) {
+          return null;
+        }
+        bytes.add(chunk);
+      }
+      final result = bytes.takeBytes();
+      return result.isEmpty ? null : result;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Marks an item as a favorite for the connected user.

@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_controller.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_state.dart';
+import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_client.dart';
+import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
+import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_assist.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_trickplay_preview.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_formatting.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
@@ -22,6 +26,11 @@ class JellyfinPlayerControls extends StatelessWidget {
     this.episodePickerExpanded = false,
     this.onToggleFullscreen,
     this.isFullscreen = false,
+    this.seekIntervalSeconds = 15,
+    this.trickplayManifest,
+    this.apiClient,
+    this.connection,
+    this.itemId,
   });
 
   final JellyfinPlayerController controller;
@@ -32,6 +41,11 @@ class JellyfinPlayerControls extends StatelessWidget {
   final bool episodePickerExpanded;
   final VoidCallback? onToggleFullscreen;
   final bool isFullscreen;
+  final int seekIntervalSeconds;
+  final JellyfinTrickplayManifest? trickplayManifest;
+  final JellyfinApiClient? apiClient;
+  final JellyfinConnection? connection;
+  final String? itemId;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +68,10 @@ class JellyfinPlayerControls extends StatelessWidget {
                 state: state,
                 enabled: controlsEnabled,
                 onSeek: (position) => unawaited(controller.seek(position)),
+                trickplayManifest: trickplayManifest,
+                apiClient: apiClient,
+                connection: connection,
+                itemId: itemId,
               ),
               const SizedBox(height: 10),
               LayoutBuilder(
@@ -67,6 +85,9 @@ class JellyfinPlayerControls extends StatelessWidget {
                     onPreviousEpisode: onPreviousEpisode,
                     onNextEpisode: onNextEpisode,
                     showEpisodeNavigation: onToggleEpisodePicker != null,
+                    seekIntervalSeconds: seekIntervalSeconds,
+                    onSeekRelative: (delta) =>
+                        unawaited(controller.seekRelative(delta)),
                   );
                   final volume = _JellyfinVolumeControl(
                     controller: controller,
@@ -135,11 +156,19 @@ class _JellyfinTimeline extends StatefulWidget {
     required this.state,
     required this.enabled,
     required this.onSeek,
+    this.trickplayManifest,
+    this.apiClient,
+    this.connection,
+    this.itemId,
   });
 
   final JellyfinPlayerState state;
   final bool enabled;
   final ValueChanged<Duration> onSeek;
+  final JellyfinTrickplayManifest? trickplayManifest;
+  final JellyfinApiClient? apiClient;
+  final JellyfinConnection? connection;
+  final String? itemId;
 
   @override
   State<_JellyfinTimeline> createState() => _JellyfinTimelineState();
@@ -174,6 +203,18 @@ class _JellyfinTimelineState extends State<_JellyfinTimeline> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_dragSeconds != null &&
+            widget.trickplayManifest != null &&
+            widget.apiClient != null &&
+            widget.connection != null &&
+            widget.itemId != null)
+          JellyfinTrickplayPreview(
+            apiClient: widget.apiClient!,
+            connection: widget.connection!,
+            itemId: widget.itemId!,
+            manifest: widget.trickplayManifest!,
+            position: Duration(seconds: position.round()),
+          ),
         SizedBox(
           height: 28,
           child: M3ExpressiveSlider(
@@ -218,6 +259,8 @@ class _PrimaryControls extends StatelessWidget {
     required this.onPreviousEpisode,
     required this.onNextEpisode,
     required this.showEpisodeNavigation,
+    required this.seekIntervalSeconds,
+    required this.onSeekRelative,
   });
 
   final JellyfinPlayerState state;
@@ -227,6 +270,8 @@ class _PrimaryControls extends StatelessWidget {
   final VoidCallback? onPreviousEpisode;
   final VoidCallback? onNextEpisode;
   final bool showEpisodeNavigation;
+  final int seekIntervalSeconds;
+  final ValueChanged<Duration> onSeekRelative;
 
   @override
   Widget build(BuildContext context) {
@@ -245,6 +290,16 @@ class _PrimaryControls extends StatelessWidget {
           const SizedBox(width: 8),
         ],
         M3TransportIconButton(
+          icon: Icons.replay_rounded,
+          tooltip: l10n.playerSeekBackwardTooltip(seekIntervalSeconds),
+          size: 40,
+          iconSize: 20,
+          onPressed: enabled
+              ? () => onSeekRelative(Duration(seconds: -seekIntervalSeconds))
+              : null,
+        ),
+        const SizedBox(width: 8),
+        M3TransportIconButton(
           icon: state.playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
           tooltip: state.playing
               ? l10n.playerPauseTooltip
@@ -253,6 +308,16 @@ class _PrimaryControls extends StatelessWidget {
           iconSize: 24,
           emphasized: true,
           onPressed: enabled ? onTogglePlay : null,
+        ),
+        const SizedBox(width: 8),
+        M3TransportIconButton(
+          icon: Icons.forward_rounded,
+          tooltip: l10n.playerSeekForwardTooltip(seekIntervalSeconds),
+          size: 40,
+          iconSize: 20,
+          onPressed: enabled
+              ? () => onSeekRelative(Duration(seconds: seekIntervalSeconds))
+              : null,
         ),
         if (showEpisodeNavigation) ...[
           const SizedBox(width: 8),

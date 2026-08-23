@@ -2104,6 +2104,18 @@ abstract class AppLocalizations {
   /// **'Previous channel'**
   String get playerPreviousChannelTooltip;
 
+  /// No description provided for @playerSeekBackwardTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip back {seconds} seconds'**
+  String playerSeekBackwardTooltip(int seconds);
+
+  /// No description provided for @playerSeekForwardTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip forward {seconds} seconds'**
+  String playerSeekForwardTooltip(int seconds);
+
   /// No description provided for @playerPlayTooltip.
   ///
   /// In en, this message translates to:
@@ -2571,6 +2583,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'English'**
   String get playbackSettingsLanguageEnglish;
+
+  /// No description provided for @playbackSettingsSeekIntervalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip interval'**
+  String get playbackSettingsSeekIntervalLabel;
+
+  /// No description provided for @playbackSettingsSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} seconds'**
+  String playbackSettingsSeconds(int seconds);
+
+  /// No description provided for @playbackSettingsTrickplayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline previews'**
+  String get playbackSettingsTrickplayTitle;
+
+  /// No description provided for @playbackSettingsTrickplayDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Jellyfin preview images while scrubbing.'**
+  String get playbackSettingsTrickplayDescription;
+
+  /// No description provided for @playbackSettingsMediaSegmentsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Intro and recap skipping'**
+  String get playbackSettingsMediaSegmentsLabel;
+
+  /// No description provided for @playbackSettingsMediaSegmentsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get playbackSettingsMediaSegmentsOff;
+
+  /// No description provided for @playbackSettingsMediaSegmentsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Show skip button'**
+  String get playbackSettingsMediaSegmentsButton;
+
+  /// No description provided for @playbackSettingsMediaSegmentsAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip automatically'**
+  String get playbackSettingsMediaSegmentsAutomatic;
+
+  /// No description provided for @playbackSettingsAutoplayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Play next episode automatically'**
+  String get playbackSettingsAutoplayTitle;
+
+  /// No description provided for @playbackSettingsAutoplayDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show an endcard and start the next episode after a countdown.'**
+  String get playbackSettingsAutoplayDescription;
+
+  /// No description provided for @playbackSettingsEndcardCountdownLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Endcard countdown'**
+  String get playbackSettingsEndcardCountdownLabel;
 
   /// No description provided for @playbackSettingsLanguageFrench.
   ///
@@ -3069,6 +3147,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next episode'**
   String get jellyfinNextEpisodeTooltip;
+
+  /// No description provided for @jellyfinSkipIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip intro'**
+  String get jellyfinSkipIntro;
+
+  /// No description provided for @jellyfinSkipRecap.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip recap'**
+  String get jellyfinSkipRecap;
+
+  /// No description provided for @jellyfinUpNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Up next'**
+  String get jellyfinUpNext;
+
+  /// No description provided for @jellyfinPlayNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Play now'**
+  String get jellyfinPlayNow;
+
+  /// No description provided for @jellyfinPlayNowCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Play now · {seconds}'**
+  String jellyfinPlayNowCountdown(int seconds);
+
+  /// No description provided for @jellyfinEndcardCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get jellyfinEndcardCancel;
 
   /// No description provided for @jellyfinShowEpisodesTooltip.
   ///

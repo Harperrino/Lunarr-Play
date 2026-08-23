@@ -2,6 +2,7 @@ import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/series_resume_state.dart';
 import 'package:m3uxtream_player/core/models/channel_sort_mode.dart';
 import 'package:m3uxtream_player/core/models/epg_refresh_interval.dart';
+import 'package:m3uxtream_player/core/models/playback_preferences.dart';
 import 'package:m3uxtream_player/core/repository/app_state_stores.dart';
 import 'package:m3uxtream_player/core/services/app_lifecycle_gate.dart';
 
@@ -96,6 +97,18 @@ class AppStateRepository {
       _playback.getPreferredAudioLanguage();
   Future<void> setPreferredAudioLanguage(String? language) =>
       _playback.setPreferredAudioLanguage(language);
+  Future<PlaybackPreferences> getPlaybackPreferences() =>
+      _playback.getPreferences();
+  Future<void> setPlaybackSeekIntervalSeconds(int seconds) =>
+      _playback.setSeekIntervalSeconds(seconds);
+  Future<void> setJellyfinTrickplayEnabled(bool enabled) =>
+      _playback.setTrickplayEnabled(enabled);
+  Future<void> setJellyfinMediaSegmentSkipMode(MediaSegmentSkipMode mode) =>
+      _playback.setMediaSegmentSkipMode(mode);
+  Future<void> setJellyfinNextEpisodeAutoplayEnabled(bool enabled) =>
+      _playback.setNextEpisodeAutoplayEnabled(enabled);
+  Future<void> setJellyfinEndcardCountdownSeconds(int seconds) =>
+      _playback.setEndcardCountdownSeconds(seconds);
 
   Future<bool> getDebugModeEnabled({bool defaultEnabled = false}) =>
       _diagnostics.getDebugModeEnabled(defaultEnabled: defaultEnabled);

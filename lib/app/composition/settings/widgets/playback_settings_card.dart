@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/services/player_buffer_service.dart';
+import 'package:m3uxtream_player/core/models/playback_preferences.dart';
+import 'package:m3uxtream_player/core/providers/playback_preferences_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/vod_pre_buffer_settings_providers.dart';
@@ -33,202 +35,315 @@ class PlaybackSettingsCard extends ConsumerWidget {
     final preferredLanguageAsync = ref.watch(preferredAudioLanguageProvider);
     final preferredLanguage =
         preferredLanguageAsync.valueOrNull ?? preferredAudioLanguageAutoValue;
+    final playbackPreferences =
+        ref.watch(playbackPreferencesProvider).valueOrNull ??
+        const PlaybackPreferences();
 
     return AppSurface(
       level: AppSurfaceLevel.high,
       padding: EdgeInsets.all(compact ? 16 : 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          M3SettingsSectionHeader(
-            icon: Icons.speed_rounded,
-            iconColor: colors.secondary,
-            title: context.l10n.playbackSettingsTitle,
-            description: context.l10n.playbackSettingsDescription,
-            compact: compact,
-          ),
-          SizedBox(height: compact ? 8 : 12),
-          M3SettingsControlRow(
-            label: context.l10n.playbackSettingsLiveBufferLabel,
-            compact: compact,
-            control: _LiveStartupBufferDropdown(
-              value: liveStartupBufferSeconds,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            M3SettingsSectionHeader(
+              icon: Icons.speed_rounded,
+              iconColor: colors.secondary,
+              title: context.l10n.playbackSettingsTitle,
+              description: context.l10n.playbackSettingsDescription,
               compact: compact,
-              onChanged: (value) async {
-                if (value == null) return;
-                await ref
-                    .read(playerBufferSecondsProvider.notifier)
-                    .setSeconds(value);
-                final playerState = ref
-                    .read(playerNotifierProvider)
-                    .valueOrNull;
-                if (playerState != null) {
-                  final isLive = !isSeekableChannel(
-                    ref.read(selectedChannelProvider),
-                  );
-                  await PlayerBufferService.applyPlaybackProfile(
-                    playerState.player,
-                    isLive: isLive,
-                    preloadSeconds: value,
-                    liveStartupBuffer: false,
-                  );
-                }
-              },
             ),
-          ),
-          SizedBox(height: compact ? 10 : 16),
-          if (!compact) ...[
-            Text(
-              context.l10n.playbackSettingsVodBufferDescription,
-              style: TextStyle(
-                fontSize: 11,
-                color: colors.onSurfaceVariant,
-                height: 1.35,
+            SizedBox(height: compact ? 8 : 12),
+            M3SettingsControlRow(
+              label: context.l10n.playbackSettingsLiveBufferLabel,
+              compact: compact,
+              control: _LiveStartupBufferDropdown(
+                value: liveStartupBufferSeconds,
+                compact: compact,
+                onChanged: (value) async {
+                  if (value == null) return;
+                  await ref
+                      .read(playerBufferSecondsProvider.notifier)
+                      .setSeconds(value);
+                  final playerState = ref
+                      .read(playerNotifierProvider)
+                      .valueOrNull;
+                  if (playerState != null) {
+                    final isLive = !isSeekableChannel(
+                      ref.read(selectedChannelProvider),
+                    );
+                    await PlayerBufferService.applyPlaybackProfile(
+                      playerState.player,
+                      isLive: isLive,
+                      preloadSeconds: value,
+                      liveStartupBuffer: false,
+                    );
+                  }
+                },
               ),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: compact ? 10 : 16),
+            M3SettingsControlRow(
+              label: context.l10n.playbackSettingsSeekIntervalLabel,
+              compact: compact,
+              control: M3DropdownField<int>(
+                value: playbackPreferences.seekIntervalSeconds,
+                compact: compact,
+                entries: playbackSeekIntervalOptions
+                    .map(
+                      (seconds) => DropdownMenuEntry<int>(
+                        value: seconds,
+                        label: context.l10n.playbackSettingsSeconds(seconds),
+                      ),
+                    )
+                    .toList(growable: false),
+                onSelected: (value) async {
+                  if (value == null) return;
+                  await ref
+                      .read(playbackPreferencesProvider.notifier)
+                      .setSeekIntervalSeconds(value);
+                },
+              ),
+            ),
+            SizedBox(height: compact ? 10 : 12),
+            M3SettingsControlRow(
+              label: context.l10n.playbackSettingsTrickplayTitle,
+              compact: compact,
+              control: Switch(
+                value: playbackPreferences.trickplayEnabled,
+                onChanged: (value) => ref
+                    .read(playbackPreferencesProvider.notifier)
+                    .setTrickplayEnabled(value),
+              ),
+            ),
+            SizedBox(height: compact ? 10 : 12),
+            M3SettingsControlRow(
+              label: context.l10n.playbackSettingsMediaSegmentsLabel,
+              compact: compact,
+              control: M3DropdownField<MediaSegmentSkipMode>(
+                value: playbackPreferences.mediaSegmentSkipMode,
+                compact: compact,
+                entries: MediaSegmentSkipMode.values
+                    .map(
+                      (mode) => DropdownMenuEntry<MediaSegmentSkipMode>(
+                        value: mode,
+                        label: switch (mode) {
+                          MediaSegmentSkipMode.off =>
+                            context.l10n.playbackSettingsMediaSegmentsOff,
+                          MediaSegmentSkipMode.button =>
+                            context.l10n.playbackSettingsMediaSegmentsButton,
+                          MediaSegmentSkipMode.automatic =>
+                            context.l10n.playbackSettingsMediaSegmentsAutomatic,
+                        },
+                      ),
+                    )
+                    .toList(growable: false),
+                onSelected: (value) async {
+                  if (value == null) return;
+                  await ref
+                      .read(playbackPreferencesProvider.notifier)
+                      .setMediaSegmentSkipMode(value);
+                },
+              ),
+            ),
+            SizedBox(height: compact ? 10 : 12),
+            M3SettingsControlRow(
+              label: context.l10n.playbackSettingsAutoplayTitle,
+              compact: compact,
+              control: Switch(
+                value: playbackPreferences.nextEpisodeAutoplayEnabled,
+                onChanged: (value) => ref
+                    .read(playbackPreferencesProvider.notifier)
+                    .setNextEpisodeAutoplayEnabled(value),
+              ),
+            ),
+            SizedBox(height: compact ? 10 : 12),
+            M3SettingsControlRow(
+              label: context.l10n.playbackSettingsEndcardCountdownLabel,
+              compact: compact,
+              control: IgnorePointer(
+                ignoring: !playbackPreferences.nextEpisodeAutoplayEnabled,
+                child: Opacity(
+                  opacity: playbackPreferences.nextEpisodeAutoplayEnabled
+                      ? 1
+                      : 0.45,
+                  child: M3DropdownField<int>(
+                    value: playbackPreferences.endcardCountdownSeconds,
+                    compact: compact,
+                    entries: playbackEndcardCountdownOptions
+                        .map(
+                          (seconds) => DropdownMenuEntry<int>(
+                            value: seconds,
+                            label: context.l10n.playbackSettingsSeconds(
+                              seconds,
+                            ),
+                          ),
+                        )
+                        .toList(growable: false),
+                    onSelected: (value) async {
+                      if (value == null) return;
+                      await ref
+                          .read(playbackPreferencesProvider.notifier)
+                          .setEndcardCountdownSeconds(value);
+                    },
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: compact ? 10 : 16),
+            if (!compact) ...[
+              Text(
+                context.l10n.playbackSettingsVodBufferDescription,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: colors.onSurfaceVariant,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            M3SettingsControlRow(
+              label: context.l10n.playbackSettingsVodBufferLabel,
+              compact: compact,
+              control: StepperControl(
+                value: vodPreBufferSeconds,
+                min: 15,
+                max: 300,
+                suffix: 's',
+                longPressStep: 15,
+                onChanged: (value) async {
+                  await ref
+                      .read(vodPreBufferTargetSecondsProvider.notifier)
+                      .setSeconds(value);
+                },
+              ),
+            ),
+            SizedBox(height: compact ? 12 : 16),
+            AppSurface(
+              level: AppSurfaceLevel.low,
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 14 : 16,
+                vertical: compact ? 12 : 14,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.headphones_rounded,
+                    color: colors.secondary,
+                    size: compact ? 16 : 18,
+                  ),
+                  SizedBox(width: compact ? 8 : 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.l10n.playbackSettingsForceStereoTitle,
+                          style: TextStyle(
+                            fontSize: compact ? 12 : 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: colors.onSurface,
+                          ),
+                        ),
+                        if (!compact) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            context.l10n.playbackSettingsForceStereoDescription,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colors.onSurfaceVariant,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: compact ? 10 : 12),
+                  Switch(
+                    value: forceStereoEnabled,
+                    onChanged: (value) async {
+                      await ref
+                          .read(forceStereoEnabledProvider.notifier)
+                          .setEnabled(value);
+                      final playerState = ref
+                          .read(playerNotifierProvider)
+                          .valueOrNull;
+                      if (playerState != null) {
+                        await PlayerBufferService.applyAudioCompatibility(
+                          playerState.player,
+                          forceStereo: value,
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: compact ? 10 : 12),
+            AppSurface(
+              level: AppSurfaceLevel.low,
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 14 : 16,
+                vertical: compact ? 12 : 14,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.language_rounded,
+                    color: colors.secondary,
+                    size: compact ? 16 : 18,
+                  ),
+                  SizedBox(width: compact ? 8 : 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.l10n.playbackSettingsPreferredLanguageTitle,
+                          style: TextStyle(
+                            fontSize: compact ? 12 : 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: colors.onSurface,
+                          ),
+                        ),
+                        if (!compact) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            context
+                                .l10n
+                                .playbackSettingsPreferredLanguageDescription,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colors.onSurfaceVariant,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: compact ? 10 : 12),
+                  _PreferredLanguageDropdown(
+                    value: preferredLanguage,
+                    compact: compact,
+                    onChanged: (value) async {
+                      await ref
+                          .read(preferredAudioLanguageProvider.notifier)
+                          .setLanguage(value);
+                    },
+                  ),
+                ],
+              ),
+            ),
           ],
-          M3SettingsControlRow(
-            label: context.l10n.playbackSettingsVodBufferLabel,
-            compact: compact,
-            control: StepperControl(
-              value: vodPreBufferSeconds,
-              min: 15,
-              max: 300,
-              suffix: 's',
-              longPressStep: 15,
-              onChanged: (value) async {
-                await ref
-                    .read(vodPreBufferTargetSecondsProvider.notifier)
-                    .setSeconds(value);
-              },
-            ),
-          ),
-          SizedBox(height: compact ? 12 : 16),
-          AppSurface(
-            level: AppSurfaceLevel.low,
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 14 : 16,
-              vertical: compact ? 12 : 14,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.headphones_rounded,
-                  color: colors.secondary,
-                  size: compact ? 16 : 18,
-                ),
-                SizedBox(width: compact ? 8 : 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.l10n.playbackSettingsForceStereoTitle,
-                        style: TextStyle(
-                          fontSize: compact ? 12 : 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: colors.onSurface,
-                        ),
-                      ),
-                      if (!compact) ...[
-                        const SizedBox(height: 3),
-                        Text(
-                          context.l10n.playbackSettingsForceStereoDescription,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: colors.onSurfaceVariant,
-                            height: 1.35,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                SizedBox(width: compact ? 10 : 12),
-                Switch(
-                  value: forceStereoEnabled,
-                  onChanged: (value) async {
-                    await ref
-                        .read(forceStereoEnabledProvider.notifier)
-                        .setEnabled(value);
-                    final playerState = ref
-                        .read(playerNotifierProvider)
-                        .valueOrNull;
-                    if (playerState != null) {
-                      await PlayerBufferService.applyAudioCompatibility(
-                        playerState.player,
-                        forceStereo: value,
-                      );
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: compact ? 10 : 12),
-          AppSurface(
-            level: AppSurfaceLevel.low,
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 14 : 16,
-              vertical: compact ? 12 : 14,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.language_rounded,
-                  color: colors.secondary,
-                  size: compact ? 16 : 18,
-                ),
-                SizedBox(width: compact ? 8 : 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.l10n.playbackSettingsPreferredLanguageTitle,
-                        style: TextStyle(
-                          fontSize: compact ? 12 : 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: colors.onSurface,
-                        ),
-                      ),
-                      if (!compact) ...[
-                        const SizedBox(height: 3),
-                        Text(
-                          context
-                              .l10n
-                              .playbackSettingsPreferredLanguageDescription,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: colors.onSurfaceVariant,
-                            height: 1.35,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                SizedBox(width: compact ? 10 : 12),
-                _PreferredLanguageDropdown(
-                  value: preferredLanguage,
-                  compact: compact,
-                  onChanged: (value) async {
-                    await ref
-                        .read(preferredAudioLanguageProvider.notifier)
-                        .setLanguage(value);
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

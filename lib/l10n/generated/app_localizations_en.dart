@@ -1162,6 +1162,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playerPreviousChannelTooltip => 'Previous channel';
 
   @override
+  String playerSeekBackwardTooltip(int seconds) {
+    return 'Skip back $seconds seconds';
+  }
+
+  @override
+  String playerSeekForwardTooltip(int seconds) {
+    return 'Skip forward $seconds seconds';
+  }
+
+  @override
   String get playerPlayTooltip => 'Play';
 
   @override
@@ -1437,6 +1447,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playbackSettingsLanguageEnglish => 'English';
 
   @override
+  String get playbackSettingsSeekIntervalLabel => 'Skip interval';
+
+  @override
+  String playbackSettingsSeconds(int seconds) {
+    return '$seconds seconds';
+  }
+
+  @override
+  String get playbackSettingsTrickplayTitle => 'Timeline previews';
+
+  @override
+  String get playbackSettingsTrickplayDescription =>
+      'Show Jellyfin preview images while scrubbing.';
+
+  @override
+  String get playbackSettingsMediaSegmentsLabel => 'Intro and recap skipping';
+
+  @override
+  String get playbackSettingsMediaSegmentsOff => 'Off';
+
+  @override
+  String get playbackSettingsMediaSegmentsButton => 'Show skip button';
+
+  @override
+  String get playbackSettingsMediaSegmentsAutomatic => 'Skip automatically';
+
+  @override
+  String get playbackSettingsAutoplayTitle => 'Play next episode automatically';
+
+  @override
+  String get playbackSettingsAutoplayDescription =>
+      'Show an endcard and start the next episode after a countdown.';
+
+  @override
+  String get playbackSettingsEndcardCountdownLabel => 'Endcard countdown';
+
+  @override
   String get playbackSettingsLanguageFrench => 'Français';
 
   @override
@@ -1708,6 +1755,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get jellyfinNextEpisodeTooltip => 'Next episode';
+
+  @override
+  String get jellyfinSkipIntro => 'Skip intro';
+
+  @override
+  String get jellyfinSkipRecap => 'Skip recap';
+
+  @override
+  String get jellyfinUpNext => 'Up next';
+
+  @override
+  String get jellyfinPlayNow => 'Play now';
+
+  @override
+  String jellyfinPlayNowCountdown(int seconds) {
+    return 'Play now · $seconds';
+  }
+
+  @override
+  String get jellyfinEndcardCancel => 'Cancel';
 
   @override
   String get jellyfinShowEpisodesTooltip => 'Show episodes';

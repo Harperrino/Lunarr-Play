@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:m3uxtream_player/core/services/channel_navigation.dart';
+import 'package:m3uxtream_player/core/models/playback_preferences.dart';
+import 'package:m3uxtream_player/core/providers/playback_preferences_providers.dart';
 import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
 import 'package:m3uxtream_player/features/player/models/playback_media_info.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
@@ -27,6 +29,7 @@ class PlayerTransportBar extends ConsumerStatefulWidget {
     this.compact = false,
     this.translucent = false,
     this.onSeek,
+    this.onSeekRelative,
     this.onToggleFullscreen,
     this.onUserActivity,
   });
@@ -39,6 +42,7 @@ class PlayerTransportBar extends ConsumerStatefulWidget {
   final bool compact;
   final bool translucent;
   final ValueChanged<Duration>? onSeek;
+  final ValueChanged<Duration>? onSeekRelative;
   final VoidCallback? onToggleFullscreen;
   final VoidCallback? onUserActivity;
 
@@ -70,11 +74,16 @@ class _PlayerTransportBarState extends ConsumerState<PlayerTransportBar> {
       selectedChannelProvider.select((channel) => channel != null),
     );
     final isLiveChannel = hasChannel && !isSeekable;
+    final seekIntervalSeconds =
+        ref
+            .watch(playbackPreferencesProvider)
+            .valueOrNull
+            ?.seekIntervalSeconds ??
+        const PlaybackPreferences().seekIntervalSeconds;
 
     final surfaceColor = widget.translucent
-        ? Theme.of(
-            context,
-          ).colorScheme.surfaceContainerHigh.withValues(alpha: 0.78)
+        ? Theme.of(context).colorScheme.surfaceContainerHigh
+              .withValues(alpha: 0.78)
         : null;
 
     return AppSurface(
@@ -115,6 +124,8 @@ class _PlayerTransportBarState extends ConsumerState<PlayerTransportBar> {
               final primaryControls = _PrimaryTransportControls(
                 compact: widget.compact,
                 isLiveChannel: isLiveChannel,
+                isSeekable: isSeekable,
+                seekIntervalSeconds: seekIntervalSeconds,
                 onTogglePlay: () {
                   widget.onUserActivity?.call();
                   widget.onTogglePlay();
@@ -126,6 +137,10 @@ class _PlayerTransportBarState extends ConsumerState<PlayerTransportBar> {
                 onZapChannel: (direction) {
                   widget.onUserActivity?.call();
                   _zapChannel(direction);
+                },
+                onSeekRelative: (delta) {
+                  widget.onUserActivity?.call();
+                  widget.onSeekRelative?.call(delta);
                 },
               );
 
@@ -267,16 +282,22 @@ class _PrimaryTransportControls extends ConsumerWidget {
   const _PrimaryTransportControls({
     required this.compact,
     required this.isLiveChannel,
+    required this.isSeekable,
+    required this.seekIntervalSeconds,
     required this.onTogglePlay,
     required this.onStop,
     required this.onZapChannel,
+    required this.onSeekRelative,
   });
 
   final bool compact;
   final bool isLiveChannel;
+  final bool isSeekable;
+  final int seekIntervalSeconds;
   final VoidCallback onTogglePlay;
   final VoidCallback onStop;
   final ValueChanged<int> onZapChannel;
+  final ValueChanged<Duration> onSeekRelative;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -295,6 +316,19 @@ class _PrimaryTransportControls extends ConsumerWidget {
           ),
           SizedBox(width: compact ? 6 : 8),
         ],
+        if (isSeekable) ...[
+          M3TransportIconButton(
+            icon: Icons.replay_rounded,
+            tooltip: context.l10n.playerSeekBackwardTooltip(
+              seekIntervalSeconds,
+            ),
+            size: compact ? 36 : 40,
+            iconSize: compact ? 18 : 20,
+            onPressed: () =>
+                onSeekRelative(Duration(seconds: -seekIntervalSeconds)),
+          ),
+          SizedBox(width: compact ? 6 : 8),
+        ],
         M3TransportIconButton(
           icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
           tooltip: isPlaying
@@ -305,6 +339,17 @@ class _PrimaryTransportControls extends ConsumerWidget {
           emphasized: true,
           onPressed: onTogglePlay,
         ),
+        if (isSeekable) ...[
+          SizedBox(width: compact ? 6 : 8),
+          M3TransportIconButton(
+            icon: Icons.forward_rounded,
+            tooltip: context.l10n.playerSeekForwardTooltip(seekIntervalSeconds),
+            size: compact ? 36 : 40,
+            iconSize: compact ? 18 : 20,
+            onPressed: () =>
+                onSeekRelative(Duration(seconds: seekIntervalSeconds)),
+          ),
+        ],
         SizedBox(width: compact ? 6 : 8),
         M3TransportIconButton(
           icon: Icons.stop_rounded,
