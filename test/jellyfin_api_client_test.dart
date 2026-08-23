@@ -25,6 +25,16 @@ const _authResponseJson = {
 JellyfinApiClient _client(MockClientHandler handler) =>
     JellyfinApiClient(transport: MockClient(handler));
 
+class _StreamingClient extends http.BaseClient {
+  _StreamingClient(this.handler);
+
+  final Future<http.StreamedResponse> Function(http.BaseRequest) handler;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) =>
+      handler(request);
+}
+
 void main() {
   const connection = JellyfinConnection(
     baseUrl: 'http://server:8096',
@@ -168,6 +178,68 @@ void main() {
         ),
       );
     });
+
+    test('times out and cancels a response body that never closes', () async {
+      var cancelled = false;
+      late final StreamController<List<int>> body;
+      body = StreamController<List<int>>(onCancel: () => cancelled = true);
+      addTearDown(body.close);
+      final client = JellyfinApiClient(
+        transport: _StreamingClient(
+          (request) async =>
+              http.StreamedResponse(body.stream, 200, request: request),
+        ),
+        requestTimeout: const Duration(milliseconds: 25),
+      );
+
+      await expectLater(
+        client.fetchPublicServerInfo('http://server:8096'),
+        throwsA(
+          isA<JellyfinApiException>().having(
+            (error) => error.kind,
+            'kind',
+            JellyfinFailureKind.timeout,
+          ),
+        ),
+      );
+      expect(cancelled, isTrue);
+    });
+
+    test(
+      'slow body chunks cannot extend the absolute request deadline',
+      () async {
+        late Timer trickle;
+        late final StreamController<List<int>> body;
+        body = StreamController<List<int>>(
+          onListen: () {
+            trickle = Timer.periodic(
+              const Duration(milliseconds: 5),
+              (_) => body.add(const [32]),
+            );
+          },
+          onCancel: () => trickle.cancel(),
+        );
+        addTearDown(body.close);
+        final client = JellyfinApiClient(
+          transport: _StreamingClient(
+            (request) async =>
+                http.StreamedResponse(body.stream, 200, request: request),
+          ),
+          requestTimeout: const Duration(milliseconds: 30),
+        );
+
+        await expectLater(
+          client.fetchPublicServerInfo('http://server:8096'),
+          throwsA(
+            isA<JellyfinApiException>().having(
+              (error) => error.kind,
+              'kind',
+              JellyfinFailureKind.timeout,
+            ),
+          ),
+        );
+      },
+    );
   });
 
   group('authenticateByName', () {

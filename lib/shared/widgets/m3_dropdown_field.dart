@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'dart:math' as math;
+
+import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_status_colors.dart';
 
@@ -11,6 +13,8 @@ class M3DropdownField<T> extends StatelessWidget {
     required this.onSelected,
     this.compact = false,
     this.width,
+    this.label,
+    this.leadingIcon,
   });
 
   final T value;
@@ -18,6 +22,8 @@ class M3DropdownField<T> extends StatelessWidget {
   final ValueChanged<T?> onSelected;
   final bool compact;
   final double? width;
+  final Widget? label;
+  final Widget? leadingIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -50,11 +56,19 @@ class M3DropdownField<T> extends StatelessWidget {
     );
     final textScale = MediaQuery.textScalerOf(context).scale(1).clamp(1, 2);
     final baseWidth = compact ? 136.0 : 160.0;
-    final effectiveWidth = width ?? baseWidth + 52 * (textScale - 1);
+    final defaultWidth = baseWidth + 52 * (textScale - 1);
+    final requestedWidth = width;
+    final finiteWidth = requestedWidth != null && requestedWidth.isFinite
+        ? requestedWidth
+        : defaultWidth;
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final effectiveWidth = math.max(1.0, math.min(finiteWidth, viewportWidth));
 
     return DropdownMenu<T>(
       width: effectiveWidth,
       initialSelection: value,
+      label: label,
+      leadingIcon: leadingIcon,
       dropdownMenuEntries: entries,
       onSelected: onSelected,
       enableFilter: false,
@@ -77,6 +91,9 @@ class M3DropdownField<T> extends StatelessWidget {
       menuStyle: MenuStyle(
         backgroundColor: WidgetStatePropertyAll(colors.surfaceContainerHigh),
         surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        maximumSize: WidgetStatePropertyAll(
+          Size(effectiveWidth, double.infinity),
+        ),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),

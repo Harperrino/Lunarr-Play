@@ -56,11 +56,8 @@ void main() {
     endpoint.consumeTransportBytes(2, phase: 'endpoint', endpoint: 'one');
     endpoint.consumeTransportBytes(1, phase: 'endpoint', endpoint: 'one');
     expect(
-      () => endpoint.consumeTransportBytes(
-        1,
-        phase: 'endpoint',
-        endpoint: 'one',
-      ),
+      () =>
+          endpoint.consumeTransportBytes(1, phase: 'endpoint', endpoint: 'one'),
       throwsA(
         isA<ImportLimitException>().having(
           (error) => error.code,

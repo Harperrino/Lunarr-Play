@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_exception.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
@@ -70,6 +70,16 @@ class _JellyfinScreenState extends ConsumerState<JellyfinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<String?>(
+      jellyfinSessionControllerProvider.select(
+        (session) => session is JellyfinAuthenticated
+            ? session.connection.credentialId
+            : null,
+      ),
+      (previous, next) {
+        if (next != null && next != previous) jellyfinSelectOverview(ref);
+      },
+    );
     final state = ref.watch(jellyfinSessionControllerProvider);
 
     return switch (state) {
@@ -171,6 +181,7 @@ class _JellyfinBrowseArea extends ConsumerWidget {
         library: library,
       ),
       JellyfinDetailsRoute(item: final item) => JellyfinDetailsView(
+        key: ValueKey('${connection.credentialId}:${item.id}'),
         connection: connection,
         item: item,
       ),
@@ -257,9 +268,8 @@ class _StatusView extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             message,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(color: colors.onSurfaceVariant),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(color: colors.onSurfaceVariant),
           ),
         ],
       ),

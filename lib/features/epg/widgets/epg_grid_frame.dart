@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 
 /// Tonal desktop frame for the EPG timeline without changing its scroll model.

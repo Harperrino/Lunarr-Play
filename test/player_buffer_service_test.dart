@@ -53,38 +53,35 @@ void main() {
     );
   });
 
-  test(
-    'live demuxer properties keep the normal MPEG-TS profile and allow recovery overrides',
-    () {
-      expect(
-        PlayerBufferService.liveDemuxerProperties(
-          delivery: LiveStreamDelivery.continuous,
-        ),
-        {
-          'demuxer-lavf-analyzeduration': '5',
-          'demuxer-lavf-probesize': '5000000',
-          'demuxer-lavf-format': 'mpegts',
-          'demuxer-lavf-o': 'merge_pmt_versions=1',
-        },
-      );
+  test('live demuxer properties keep the normal MPEG-TS profile and allow recovery overrides', () {
+    expect(
+      PlayerBufferService.liveDemuxerProperties(
+        delivery: LiveStreamDelivery.continuous,
+      ),
+      {
+        'demuxer-lavf-analyzeduration': '5',
+        'demuxer-lavf-probesize': '5000000',
+        'demuxer-lavf-format': 'mpegts',
+        'demuxer-lavf-o': 'merge_pmt_versions=1',
+      },
+    );
 
-      expect(
-        PlayerBufferService.liveDemuxerProperties(
-          delivery: LiveStreamDelivery.continuous,
-          analyzeDurationSeconds:
-              PlayerBufferService.liveRecoveryAnalyzeDurationSeconds,
-          probeSizeBytes: PlayerBufferService.liveRecoveryProbeSizeBytes,
-          demuxerLavfFormatOverride: '',
-        ),
-        {
-          'demuxer-lavf-analyzeduration': '10',
-          'demuxer-lavf-probesize': '10000000',
-          'demuxer-lavf-format': '',
-          'demuxer-lavf-o': 'merge_pmt_versions=1',
-        },
-      );
-    },
-  );
+    expect(
+      PlayerBufferService.liveDemuxerProperties(
+        delivery: LiveStreamDelivery.continuous,
+        analyzeDurationSeconds:
+            PlayerBufferService.liveRecoveryAnalyzeDurationSeconds,
+        probeSizeBytes: PlayerBufferService.liveRecoveryProbeSizeBytes,
+        demuxerLavfFormatOverride: '',
+      ),
+      {
+        'demuxer-lavf-analyzeduration': '10',
+        'demuxer-lavf-probesize': '10000000',
+        'demuxer-lavf-format': '',
+        'demuxer-lavf-o': 'merge_pmt_versions=1',
+      },
+    );
+  });
 
   test(
     'profile reset clears forced decoder and gates unsafe playlists per mode',

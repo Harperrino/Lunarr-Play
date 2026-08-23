@@ -4,14 +4,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/services/app_lifecycle_gate.dart';
 
 void main() {
-  test('runTracked returns the operation result and unregisters the job', () async {
-    final gate = AppLifecycleGate();
+  test(
+    'runTracked returns the operation result and unregisters the job',
+    () async {
+      final gate = AppLifecycleGate();
 
-    final result = await gate.runTracked(() async => 42);
+      final result = await gate.runTracked(() async => 42);
 
-    expect(result, 42);
-    expect(gate.trackedJobCount, 0);
-  });
+      expect(result, 42);
+      expect(gate.trackedJobCount, 0);
+    },
+  );
 
   test('runTracked registers the job while it is running', () async {
     final gate = AppLifecycleGate();
@@ -28,9 +31,7 @@ void main() {
   test('runTracked propagates errors and never blocks drain', () async {
     final gate = AppLifecycleGate();
 
-    final failing = gate.runTracked<void>(
-      () async => throw StateError('boom'),
-    );
+    final failing = gate.runTracked<void>(() async => throw StateError('boom'));
     await expectLater(failing, throwsStateError);
 
     // The failed job must not escape as an unhandled future or block drain.

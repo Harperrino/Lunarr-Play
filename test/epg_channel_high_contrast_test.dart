@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
@@ -17,7 +17,7 @@ import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_sync_providers.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:m3uxtream_player/shared/widgets/app_shimmer.dart';
 
 void main() {
   testWidgets('EPG empty state uses high-contrast neutral roles', (
@@ -124,10 +124,9 @@ void main() {
     await _pumpChannel(tester, channels: channels.stream);
 
     final colors = AppTheme.highContrastDarkTheme.colorScheme;
-    final shimmer = tester.widget<Shimmer>(find.byType(Shimmer));
-    final gradient = shimmer.gradient as LinearGradient;
-    expect(gradient.colors.first, colors.surfaceContainerLow);
-    expect(gradient.colors[2], colors.surfaceContainerHighest);
+    final shimmer = tester.widget<AppShimmer>(find.byType(AppShimmer));
+    expect(shimmer.baseColor, colors.surfaceContainerLow);
+    expect(shimmer.highlightColor, colors.surfaceContainerHighest);
 
     final tileFinder = find.byWidgetPredicate(
       (widget) =>

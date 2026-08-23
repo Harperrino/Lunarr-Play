@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_client.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_assist.dart';

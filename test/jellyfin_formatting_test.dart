@@ -19,14 +19,14 @@ void main() {
 
   group('jellyfinSeasonEpisodeLabel', () {
     test('builds SxxExx when both numbers exist', () {
-      expect(
-        jellyfinSeasonEpisodeLabel(l10n, season: 2, episode: 7),
-        'S2 E7',
-      );
+      expect(jellyfinSeasonEpisodeLabel(l10n, season: 2, episode: 7), 'S2 E7');
     });
 
     test('falls back to the episode number', () {
-      expect(jellyfinSeasonEpisodeLabel(l10n, season: null, episode: 3), 'Episode 3');
+      expect(
+        jellyfinSeasonEpisodeLabel(l10n, season: null, episode: 3),
+        'Episode 3',
+      );
       expect(jellyfinSeasonEpisodeLabel(l10n, season: 1, episode: null), '');
     });
   });

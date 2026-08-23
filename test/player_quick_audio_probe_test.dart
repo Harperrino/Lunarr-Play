@@ -183,9 +183,8 @@ void main() {
     });
 
     test('creates one safe app/mpv HLS retry before header fallbacks', () {
-      final attempts = LiveStreamUrl.playbackAttempts(
-        source,
-      ).toList(growable: true);
+      final attempts = LiveStreamUrl.playbackAttempts(source)
+          .toList(growable: true);
       final boundary = attempts.indexWhere(
         (attempt) => attempt.headerProfile != LiveStreamHeaderProfile.appMpv,
       );

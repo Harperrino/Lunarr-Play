@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:m3uxtream_player/core/imports/import_budget.dart';
 import 'package:m3uxtream_player/core/imports/import_limit_exception.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
@@ -54,8 +55,7 @@ class XtreamParser {
   static List<ParsedChannel> parseFullCatalogue(
     XtreamCataloguePayload payload, {
     ImportBudget? budget,
-  }
-  ) {
+  }) {
     final live = parseLiveStreams(
       streamsJsonStr: payload.liveStreamsJson,
       categoriesJsonStr: payload.liveCategoriesJson,
@@ -151,10 +151,7 @@ class XtreamParser {
 
     try {
       final seriesList = _decodeJsonArray(seriesJsonStr, label: 'series');
-      final categoryMap = _buildCategoryMap(
-        categoriesJsonStr,
-        budget: budget,
-      );
+      final categoryMap = _buildCategoryMap(categoriesJsonStr, budget: budget);
 
       for (var i = 0; i < seriesList.length; i++) {
         final entry = seriesList[i];
@@ -176,12 +173,7 @@ class XtreamParser {
           ]);
           final categoryId = entry['category_id']?.toString();
           final groupName = categoryId != null ? categoryMap[categoryId] : null;
-          for (final field in <String?>[
-            seriesId,
-            name,
-            logo,
-            groupName,
-          ]) {
+          for (final field in <String?>[seriesId, name, logo, groupName]) {
             if (field != null) {
               budget?.checkField(field, phase: 'xtream_parse_field');
             }
@@ -322,10 +314,7 @@ class XtreamParser {
 
     try {
       final streamsList = _decodeJsonArray(streamsJsonStr, label: channelType);
-      final categoryMap = _buildCategoryMap(
-        categoriesJsonStr,
-        budget: budget,
-      );
+      final categoryMap = _buildCategoryMap(categoriesJsonStr, budget: budget);
 
       for (var i = 0; i < streamsList.length; i++) {
         final stream = streamsList[i];

@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_credentials_store.dart';
@@ -40,6 +40,27 @@ class _TestCipher implements JellyfinCredentialCipher {
       );
 }
 
+class _FaultingCipher implements JellyfinCredentialCipher {
+  bool failTransiently = false;
+  bool failDpapi = false;
+
+  @override
+  Future<Uint8List> protect(Uint8List plainText) =>
+      const _TestCipher().protect(plainText);
+
+  @override
+  Future<Uint8List> unprotect(Uint8List protectedBytes) async {
+    if (failTransiently) {
+      failTransiently = false;
+      throw MissingPluginException('temporary channel failure');
+    }
+    if (failDpapi) {
+      throw PlatformException(code: 'dpapi_failed');
+    }
+    return const _TestCipher().unprotect(protectedBytes);
+  }
+}
+
 void main() {
   test(
     'persists multiple encrypted Jellyfin connections and active selection',
@@ -76,4 +97,77 @@ void main() {
       expect((await reloaded.readActive())?.credentialId, _bob.credentialId);
     },
   );
+
+  test(
+    'serializes concurrent credential mutations without losing accounts',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'lunarr-jellyfin-',
+      );
+      addTearDown(() => directory.delete(recursive: true));
+      final store = PersistentJellyfinCredentialsStore(
+        cipher: const _TestCipher(),
+        directoryProvider: () async => directory,
+      );
+
+      await Future.wait([store.write(_alice), store.write(_bob)]);
+
+      expect(
+        (await store.readAll()).map((connection) => connection.credentialId),
+        containsAll([_alice.credentialId, _bob.credentialId]),
+      );
+      expect((await store.readActive())?.credentialId, _bob.credentialId);
+    },
+  );
+
+  test('keeps the primary blob after a transient cipher failure', () async {
+    final directory = await Directory.systemTemp.createTemp('lunarr-jellyfin-');
+    addTearDown(() => directory.delete(recursive: true));
+    final cipher = _FaultingCipher();
+    final store = PersistentJellyfinCredentialsStore(
+      cipher: cipher,
+      directoryProvider: () async => directory,
+    );
+    await store.write(_alice);
+    final original =
+        (await directory.list().where((entry) => entry is File).single) as File;
+
+    cipher.failTransiently = true;
+    await expectLater(
+      store.readActive(),
+      throwsA(isA<MissingPluginException>()),
+    );
+
+    expect(await original.exists(), isTrue);
+    expect((await store.readActive())?.credentialId, _alice.credentialId);
+  });
+
+  test('quarantines and later restores an unreadable encrypted blob', () async {
+    final directory = await Directory.systemTemp.createTemp('lunarr-jellyfin-');
+    addTearDown(() => directory.delete(recursive: true));
+    final cipher = _FaultingCipher();
+    final store = PersistentJellyfinCredentialsStore(
+      cipher: cipher,
+      directoryProvider: () async => directory,
+    );
+    await store.write(_alice);
+
+    cipher.failDpapi = true;
+    expect(await store.readActive(), isNull);
+    final quarantined = await directory
+        .list()
+        .where((entry) => entry is File)
+        .toList();
+    expect(quarantined, hasLength(1));
+    expect(quarantined.single.path, contains('.recovery.'));
+
+    cipher.failDpapi = false;
+    expect((await store.readActive())?.credentialId, _alice.credentialId);
+    final restored = await directory
+        .list()
+        .where((entry) => entry is File)
+        .toList();
+    expect(restored, hasLength(1));
+    expect(restored.single.path, isNot(contains('.recovery.')));
+  });
 }

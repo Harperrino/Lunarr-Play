@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:m3uxtream_player/app/bootstrap/desktop_window_bootstrap.dart';
@@ -24,9 +24,8 @@ void main() async {
     ProviderScope(
       overrides: [
         jellyfinExistingPlaybackStopperProvider.overrideWith(
-          (ref) => () => JellyfinPlaybackHostBridge.stopExistingLunarrPlayback(
-            ref,
-          ),
+          (ref) =>
+              () => JellyfinPlaybackHostBridge.stopExistingLunarrPlayback(ref),
         ),
       ],
       child: MyApp(),
@@ -48,8 +47,18 @@ class MyApp extends ConsumerWidget {
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       locale: const Locale('en'),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        ...GlobalMaterialLocalizations.delegates,
+      ],
       supportedLocales: AppLocalizations.supportedLocales,
+      // Third-party packages still using Flutter's legacy Material tree require
+      // the temporary compatibility bridge during this migration.
+      // ignore: deprecated_member_use
+      builder: (context, child) => MaterialUiCompatibilityBridge(
+        key: const ValueKey('material-ui-compatibility-bridge'),
+        child: child ?? const SizedBox.shrink(),
+      ),
       themeMode: ThemeMode.dark,
       theme: darkTheme,
       darkTheme: darkTheme,

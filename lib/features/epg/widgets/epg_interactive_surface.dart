@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 
 /// Presentation-only tonal tap target with explicit hover, press and focus state.

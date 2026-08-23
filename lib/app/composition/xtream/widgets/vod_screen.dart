@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/services/detached_future.dart';
@@ -16,9 +16,9 @@ import 'package:m3uxtream_player/app/composition/xtream/widgets/playback_prep_pa
 import 'package:m3uxtream_player/app/composition/xtream/widgets/vod_grid.dart';
 import 'package:m3uxtream_player/shared/theme/catalogue_surface_roles.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
+import 'package:m3uxtream_player/shared/widgets/app_shimmer.dart';
 import 'package:m3uxtream_player/shared/widgets/category_sidebar.dart';
 import 'package:m3uxtream_player/shared/widgets/tonal_toolbar_button.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// VOD movies screen — sidebar index 3.
@@ -347,10 +347,9 @@ class _VodGridShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     final roles = CatalogueSurfaceRoles.of(context);
 
-    return Shimmer.fromColors(
+    return AppShimmer(
       baseColor: roles.shimmerBase,
       highlightColor: roles.shimmerHighlight,
-      enabled: !MediaQuery.disableAnimationsOf(context),
       child: GridView.builder(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 4,

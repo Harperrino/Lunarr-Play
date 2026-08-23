@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
+
 import 'package:m3uxtream_player/core/api/xtream_client.dart';
 import 'package:m3uxtream_player/core/imports/import_budget.dart';
 import 'package:m3uxtream_player/core/imports/import_cancellation.dart';
@@ -111,44 +112,48 @@ class PlaylistSyncService {
           vodStreamsJson,
           seriesCategoriesJson,
           seriesJson,
-        ] = await _runControlled<String>([
-          () => XtreamClient.fetchLiveCategories(
-            host: credentials.host,
-            username: credentials.username,
-            password: credentials.password,
-            budget: budget,
-          ),
-          () => XtreamClient.fetchLiveStreams(
-            host: credentials.host,
-            username: credentials.username,
-            password: credentials.password,
-            budget: budget,
-          ),
-          () => XtreamClient.fetchVodCategories(
-            host: credentials.host,
-            username: credentials.username,
-            password: credentials.password,
-            budget: budget,
-          ),
-          () => XtreamClient.fetchVodStreams(
-            host: credentials.host,
-            username: credentials.username,
-            password: credentials.password,
-            budget: budget,
-          ),
-          () => XtreamClient.fetchSeriesCategories(
-            host: credentials.host,
-            username: credentials.username,
-            password: credentials.password,
-            budget: budget,
-          ),
-          () => XtreamClient.fetchSeries(
-            host: credentials.host,
-            username: credentials.username,
-            password: credentials.password,
-            budget: budget,
-          ),
-        ], cancellation: cancellation, concurrency: 2);
+        ] = await _runControlled<String>(
+          [
+            () => XtreamClient.fetchLiveCategories(
+              host: credentials.host,
+              username: credentials.username,
+              password: credentials.password,
+              budget: budget,
+            ),
+            () => XtreamClient.fetchLiveStreams(
+              host: credentials.host,
+              username: credentials.username,
+              password: credentials.password,
+              budget: budget,
+            ),
+            () => XtreamClient.fetchVodCategories(
+              host: credentials.host,
+              username: credentials.username,
+              password: credentials.password,
+              budget: budget,
+            ),
+            () => XtreamClient.fetchVodStreams(
+              host: credentials.host,
+              username: credentials.username,
+              password: credentials.password,
+              budget: budget,
+            ),
+            () => XtreamClient.fetchSeriesCategories(
+              host: credentials.host,
+              username: credentials.username,
+              password: credentials.password,
+              budget: budget,
+            ),
+            () => XtreamClient.fetchSeries(
+              host: credentials.host,
+              username: credentials.username,
+              password: credentials.password,
+              budget: budget,
+            ),
+          ],
+          cancellation: cancellation,
+          concurrency: 2,
+        );
 
         await syncXtreamPlaylist(
           playlistId: playlistId,
@@ -238,8 +243,10 @@ class PlaylistSyncService {
     );
 
     try {
-      final List<ParsedChannel> parsedChannels =
-          await _runM3uParserIsolate(m3uContent, importBudget);
+      final List<ParsedChannel> parsedChannels = await _runM3uParserIsolate(
+        m3uContent,
+        importBudget,
+      );
       importBudget.acceptRecord(
         ImportRecordKind.channel,
         count: parsedChannels.length,
@@ -324,8 +331,10 @@ class PlaylistSyncService {
         password: password,
       );
 
-      final List<ParsedChannel> parsedChannels =
-          await _runXtreamParserIsolate(payload, importBudget);
+      final List<ParsedChannel> parsedChannels = await _runXtreamParserIsolate(
+        payload,
+        importBudget,
+      );
       importBudget.acceptRecord(
         ImportRecordKind.channel,
         count: parsedChannels.length,
@@ -387,10 +396,7 @@ class PlaylistSyncService {
 
     try {
       await Future.wait(
-        List.generate(
-          concurrency.clamp(1, tasks.length),
-          (_) => worker(),
-        ),
+        List.generate(concurrency.clamp(1, tasks.length), (_) => worker()),
         eagerError: true,
       );
       cancellation.throwIfCancelled();

@@ -52,6 +52,7 @@ class _ControllablePlayer extends Fake implements Player {
   final openedMedia = <Media>[];
   final seekCalls = <Duration>[];
   final volumeCalls = <double>[];
+  final openPlayValues = <bool>[];
   Completer<void>? openStarted;
   Completer<void>? openGate;
   Object? openFailure;
@@ -69,6 +70,7 @@ class _ControllablePlayer extends Fake implements Player {
   @override
   Future<void> open(Playable media, {bool play = true}) async {
     openedMedia.add(media as Media);
+    openPlayValues.add(play);
     openStarted?.complete();
     final failure = openFailure;
     if (failure != null) throw failure;
@@ -557,4 +559,128 @@ void main() {
     expect(player.stopCount, 1);
     expect(player.disposeCount, 1);
   });
+
+  test('uses tracks and defaults from the resolved media source', () async {
+    final transport = MockClient((request) async {
+      if (request.url.path.endsWith('/PlaybackInfo')) {
+        return http.Response(
+          jsonEncode({
+            'MediaSources': [
+              {
+                'Id': 'unusable',
+                'MediaStreams': [
+                  {'Index': 1, 'Type': 'Audio', 'IsDefault': true},
+                ],
+              },
+              {
+                'Id': 'selected',
+                'SupportsDirectPlay': true,
+                'DefaultAudioStreamIndex': 999,
+                'DefaultSubtitleStreamIndex': 888,
+                'MediaStreams': [
+                  {'Index': 5, 'Type': 'Audio'},
+                  {'Index': 7, 'Type': 'Subtitle'},
+                ],
+              },
+            ],
+          }),
+          200,
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    final instance = JellyfinPlayerController(
+      connection: jellyfinTestConnection,
+      apiClient: JellyfinApiClient(transport: transport),
+      player: player,
+    );
+    controller = instance;
+
+    await instance.play(_item);
+
+    expect(instance.state.value.mediaSourceId, 'selected');
+    expect(instance.state.value.audioTracks.map((track) => track.index), [5]);
+    expect(instance.state.value.subtitleTracks.map((track) => track.index), [
+      7,
+    ]);
+    expect(instance.state.value.selectedAudioStreamIndex, 5);
+    expect(instance.state.value.selectedSubtitleStreamIndex, -1);
+  });
+
+  test(
+    'falls back to response-level tracks when the selected source has none',
+    () async {
+      final transport = MockClient((request) async {
+        if (request.url.path.endsWith('/PlaybackInfo')) {
+          return http.Response(
+            jsonEncode({
+              'MediaSources': [
+                {'Id': 'selected', 'SupportsDirectPlay': true},
+              ],
+              'MediaStreams': [
+                {'Index': 4, 'Type': 'Audio', 'IsDefault': true},
+                {'Index': 6, 'Type': 'Subtitle'},
+              ],
+            }),
+            200,
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final instance = JellyfinPlayerController(
+        connection: jellyfinTestConnection,
+        apiClient: JellyfinApiClient(transport: transport),
+        player: player,
+      );
+      controller = instance;
+
+      await instance.play(_item);
+
+      expect(instance.state.value.audioTracks.map((track) => track.index), [4]);
+      expect(instance.state.value.subtitleTracks.map((track) => track.index), [
+        6,
+      ]);
+      expect(instance.state.value.selectedAudioStreamIndex, 4);
+      expect(instance.state.value.selectedSubtitleStreamIndex, -1);
+    },
+  );
+
+  test(
+    'rotates a timed-out paused player and ignores its late completion',
+    () async {
+      final first = player;
+      final second = _ControllablePlayer();
+      first.openGate = Completer<void>();
+      final instance = JellyfinPlayerController(
+        connection: jellyfinTestConnection,
+        apiClient: JellyfinApiClient(transport: jellyfinHappyTransport()),
+        player: first,
+        playerFactory: () => second,
+        playerOpenTimeout: const Duration(milliseconds: 20),
+      );
+      controller = instance;
+
+      await instance.play(_item);
+
+      expect(instance.state.value.error, isTrue);
+      expect(instance.state.value.playerGeneration, 1);
+      expect(first.openPlayValues, [false]);
+      expect(first.playCount, 0);
+      first._stream.playingController.add(true);
+      await Future<void>.delayed(Duration.zero);
+      expect(instance.state.value.playing, isFalse);
+      await instance.stop().timeout(const Duration(milliseconds: 100));
+
+      await instance.play(_secondItem);
+      expect(second.openPlayValues, [false]);
+      expect(second.playCount, 1);
+      expect(instance.state.value.title, 'Second Movie');
+
+      first.openGate!.complete();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(first.playCount, 0);
+      expect(first.stopCount, 1);
+      expect(first.disposeCount, 1);
+    },
+  );
 }

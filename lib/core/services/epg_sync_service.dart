@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:isolate';
+
 import 'package:m3uxtream_player/core/imports/import_budget.dart';
 import 'package:m3uxtream_player/core/imports/import_cancellation.dart';
 import 'package:m3uxtream_player/core/imports/import_limits.dart';
@@ -190,10 +191,7 @@ Future<EpgParseResult> _downloadAndParseInIsolate(
   void Function()? unregisterCancellation;
   var isGzipped = urlOrFilePath.toLowerCase().endsWith('.gz');
 
-  if (RegExp(
-    r'^https?://',
-    caseSensitive: false,
-  ).hasMatch(urlOrFilePath)) {
+  if (RegExp(r'^https?://', caseSensitive: false).hasMatch(urlOrFilePath)) {
     AppLogger.info(
       'EpgSyncService (Isolate): Direct streaming EPG from remote HTTP URL...',
     );

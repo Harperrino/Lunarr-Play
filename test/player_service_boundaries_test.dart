@@ -95,8 +95,7 @@ void main() {
         headerProfile: LiveStreamHeaderProfile.appMpv,
         deliveryType: 'continuous',
       ),
-      mpvError:
-          'Failed http://alice:secret@example.com/live/alice/secret/1?token=abc',
+      mpvError: 'Failed http://alice:secret@example.com/live/alice/secret/1?token=abc',
       diagnosisNote:
           'Retry http://alice:secret@example.com/live/alice/secret/1?token=abc',
     );

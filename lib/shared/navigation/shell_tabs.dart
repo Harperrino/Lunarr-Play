@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/shared/layout/live_composition_geometry.dart';
 
 const shellLiveTabIndex = 0;

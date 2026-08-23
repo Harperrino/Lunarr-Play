@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/app/shell/app_sidebar.dart';
 import 'package:m3uxtream_player/app/shell/non_live_tab_body.dart';

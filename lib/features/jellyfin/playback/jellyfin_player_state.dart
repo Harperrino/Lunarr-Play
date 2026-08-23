@@ -21,6 +21,7 @@ class JellyfinPlayerState {
     this.selectedAudioStreamIndex = -1,
     this.selectedSubtitleStreamIndex = -1,
     this.switchingTrack = false,
+    this.playerGeneration = 0,
   });
 
   /// True once a media source has been opened on the player.
@@ -43,6 +44,7 @@ class JellyfinPlayerState {
   final int selectedAudioStreamIndex;
   final int selectedSubtitleStreamIndex;
   final bool switchingTrack;
+  final int playerGeneration;
 
   JellyfinPlayerState copyWith({
     bool? initialized,
@@ -64,6 +66,7 @@ class JellyfinPlayerState {
     int? selectedAudioStreamIndex,
     int? selectedSubtitleStreamIndex,
     bool? switchingTrack,
+    int? playerGeneration,
   }) {
     return JellyfinPlayerState(
       initialized: initialized ?? this.initialized,
@@ -87,6 +90,7 @@ class JellyfinPlayerState {
       selectedSubtitleStreamIndex:
           selectedSubtitleStreamIndex ?? this.selectedSubtitleStreamIndex,
       switchingTrack: switchingTrack ?? this.switchingTrack,
+      playerGeneration: playerGeneration ?? this.playerGeneration,
     );
   }
 }

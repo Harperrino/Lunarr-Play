@@ -7,17 +7,14 @@ import 'package:m3uxtream_player/core/repository/app_state_repository.dart';
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
 
 void main() {
-  test(
-    'normalizePreferredAudioLanguage treats auto, empty, and null as no preference',
-    () {
-      expect(normalizePreferredAudioLanguage(null), isNull);
-      expect(normalizePreferredAudioLanguage(''), isNull);
-      expect(normalizePreferredAudioLanguage('  '), isNull);
-      expect(normalizePreferredAudioLanguage('auto'), isNull);
-      expect(normalizePreferredAudioLanguage(' AUTO '), isNull);
-      expect(normalizePreferredAudioLanguage('de'), 'de');
-    },
-  );
+  test('normalizePreferredAudioLanguage treats auto, empty, and null as no preference', () {
+    expect(normalizePreferredAudioLanguage(null), isNull);
+    expect(normalizePreferredAudioLanguage(''), isNull);
+    expect(normalizePreferredAudioLanguage('  '), isNull);
+    expect(normalizePreferredAudioLanguage('auto'), isNull);
+    expect(normalizePreferredAudioLanguage(' AUTO '), isNull);
+    expect(normalizePreferredAudioLanguage('de'), 'de');
+  });
 
   test('force stereo defaults to false', () async {
     final db = AppDatabase.executor(NativeDatabase.memory());
@@ -66,77 +63,65 @@ void main() {
     expect(await container.read(preferredAudioLanguageProvider.future), isNull);
   });
 
-  test(
-    'live startup buffer provider defaults to 10 seconds and normalizes legacy 15 seconds',
-    () async {
-      final db = AppDatabase.executor(NativeDatabase.memory());
-      final repository = AppStateRepository(db);
-      var freshContainerDisposed = false;
-      final freshContainer = ProviderContainer(
-        overrides: [databaseProvider.overrideWithValue(db)],
-      );
-      addTearDown(() async {
-        await db.close();
-      });
-      addTearDown(() {
-        if (!freshContainerDisposed) {
-          freshContainer.dispose();
-        }
-      });
+  test('live startup buffer provider defaults to 10 seconds and normalizes legacy 15 seconds', () async {
+    final db = AppDatabase.executor(NativeDatabase.memory());
+    final repository = AppStateRepository(db);
+    var freshContainerDisposed = false;
+    final freshContainer = ProviderContainer(
+      overrides: [databaseProvider.overrideWithValue(db)],
+    );
+    addTearDown(() async {
+      await db.close();
+    });
+    addTearDown(() {
+      if (!freshContainerDisposed) {
+        freshContainer.dispose();
+      }
+    });
 
-      expect(await freshContainer.read(playerBufferSecondsProvider.future), 10);
+    expect(await freshContainer.read(playerBufferSecondsProvider.future), 10);
 
-      await repository.setPlayerBufferSeconds(15);
-      freshContainer.dispose();
-      freshContainerDisposed = true;
+    await repository.setPlayerBufferSeconds(15);
+    freshContainer.dispose();
+    freshContainerDisposed = true;
 
-      final migratedContainer = ProviderContainer(
-        overrides: [databaseProvider.overrideWithValue(db)],
-      );
-      addTearDown(migratedContainer.dispose);
+    final migratedContainer = ProviderContainer(
+      overrides: [databaseProvider.overrideWithValue(db)],
+    );
+    addTearDown(migratedContainer.dispose);
 
-      expect(
-        await migratedContainer.read(playerBufferSecondsProvider.future),
-        10,
-      );
-    },
-  );
+    expect(
+      await migratedContainer.read(playerBufferSecondsProvider.future),
+      10,
+    );
+  });
 
-  test(
-    'preferred audio language provider normalizes auto and persists null-compatible values',
-    () async {
-      final db = AppDatabase.executor(NativeDatabase.memory());
-      final container = ProviderContainer(
-        overrides: [databaseProvider.overrideWithValue(db)],
-      );
-      addTearDown(() async {
-        container.dispose();
-        await db.close();
-      });
+  test('preferred audio language provider normalizes auto and persists null-compatible values', () async {
+    final db = AppDatabase.executor(NativeDatabase.memory());
+    final container = ProviderContainer(
+      overrides: [databaseProvider.overrideWithValue(db)],
+    );
+    addTearDown(() async {
+      container.dispose();
+      await db.close();
+    });
 
-      await container
-          .read(preferredAudioLanguageProvider.notifier)
-          .setLanguage('de');
-      expect(container.read(preferredAudioLanguageProvider).valueOrNull, 'de');
-      expect(await AppStateRepository(db).getPreferredAudioLanguage(), 'de');
+    await container
+        .read(preferredAudioLanguageProvider.notifier)
+        .setLanguage('de');
+    expect(container.read(preferredAudioLanguageProvider).valueOrNull, 'de');
+    expect(await AppStateRepository(db).getPreferredAudioLanguage(), 'de');
 
-      await container
-          .read(preferredAudioLanguageProvider.notifier)
-          .setLanguage('auto');
-      expect(
-        container.read(preferredAudioLanguageProvider).valueOrNull,
-        isNull,
-      );
-      expect(await AppStateRepository(db).getPreferredAudioLanguage(), isNull);
+    await container
+        .read(preferredAudioLanguageProvider.notifier)
+        .setLanguage('auto');
+    expect(container.read(preferredAudioLanguageProvider).valueOrNull, isNull);
+    expect(await AppStateRepository(db).getPreferredAudioLanguage(), isNull);
 
-      await container
-          .read(preferredAudioLanguageProvider.notifier)
-          .setLanguage('');
-      expect(
-        container.read(preferredAudioLanguageProvider).valueOrNull,
-        isNull,
-      );
-      expect(await AppStateRepository(db).getPreferredAudioLanguage(), isNull);
-    },
-  );
+    await container
+        .read(preferredAudioLanguageProvider.notifier)
+        .setLanguage('');
+    expect(container.read(preferredAudioLanguageProvider).valueOrNull, isNull);
+    expect(await AppStateRepository(db).getPreferredAudioLanguage(), isNull);
+  });
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Compact, provider-free status badge for settings, diagnostics and lists.
 class M3StatusPill extends StatelessWidget {
@@ -33,10 +33,8 @@ class M3StatusPill extends StatelessWidget {
             padding: padding,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: textColor,
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: textColor, fontWeight: FontWeight.w700),
             ),
           ),
         ),

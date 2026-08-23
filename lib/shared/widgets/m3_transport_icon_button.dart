@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Canonical circular Material 3 transport action used by every player.
 class M3TransportIconButton extends StatelessWidget {

@@ -1,6 +1,6 @@
 import 'dart:ui' show SemanticsAction;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/app/composition/epg/widgets/epg_compact_agenda.dart';
@@ -25,9 +25,15 @@ void main() {
       for (final action in actions) {
         expect(find.byKey(EpgToolbar.actionKey(action)), findsOneWidget);
       }
-      for (final label in _semanticLabels) {
-        expect(find.bySemanticsLabel(label), findsOneWidget);
-        expect(find.byTooltip(label), findsOneWidget);
+      for (var index = 0; index < _semanticLabels.length; index++) {
+        final label = _semanticLabels[index];
+        expect(find.semantics.byLabel(label), findsOneWidget);
+        final tooltip = find.ancestor(
+          of: find.byKey(EpgToolbar.actionKey(actions[index])),
+          matching: find.byType(Tooltip),
+        );
+        expect(tooltip, findsOneWidget);
+        expect(tester.widget<Tooltip>(tooltip).message, label);
       }
       expect(tester.takeException(), isNull);
       semantics.dispose();
@@ -291,9 +297,8 @@ Widget _host({
   return MaterialApp(
     theme: AppTheme.darkTheme,
     builder: (context, appChild) => MediaQuery(
-      data: MediaQuery.of(
-        context,
-      ).copyWith(textScaler: TextScaler.linear(textScaleFactor)),
+      data: MediaQuery.of(context)
+          .copyWith(textScaler: TextScaler.linear(textScaleFactor)),
       child: appChild!,
     ),
     home: Scaffold(

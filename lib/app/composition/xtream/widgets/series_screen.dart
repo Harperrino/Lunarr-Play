@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
@@ -18,9 +18,9 @@ import 'package:m3uxtream_player/app/composition/xtream/widgets/series_grid.dart
 import 'package:m3uxtream_player/features/xtream/widgets/vod_card.dart';
 import 'package:m3uxtream_player/shared/theme/catalogue_surface_roles.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
+import 'package:m3uxtream_player/shared/widgets/app_shimmer.dart';
 import 'package:m3uxtream_player/shared/widgets/category_sidebar.dart';
 import 'package:m3uxtream_player/shared/widgets/tonal_toolbar_button.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// Series catalogue screen — sidebar index 4.
@@ -373,10 +373,9 @@ class _SeriesGridShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     final roles = CatalogueSurfaceRoles.of(context);
 
-    return Shimmer.fromColors(
+    return AppShimmer(
       baseColor: roles.shimmerBase,
       highlightColor: roles.shimmerHighlight,
-      enabled: !MediaQuery.disableAnimationsOf(context),
       child: GridView.builder(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 4,

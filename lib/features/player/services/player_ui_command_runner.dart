@@ -16,8 +16,11 @@ typedef PlayerUiCommand = Future<void> Function();
 typedef PlayerVolumeCommand = Future<void> Function(double value);
 typedef PlayerUiCommandStateReader = PlayerUiCommandSnapshot Function();
 typedef PlayerUiLogWriter = void Function(String message);
-typedef PlayerUiCommandErrorReporter =
-    void Function(String command, Object error, StackTrace stackTrace);
+typedef PlayerUiCommandErrorReporter = void Function(
+  String command,
+  Object error,
+  StackTrace stackTrace,
+);
 
 /// Serializes player commands initiated by the UI and reports settled state.
 ///

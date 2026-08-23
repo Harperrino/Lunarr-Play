@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/parsers/xtream_parser.dart';
@@ -8,8 +8,8 @@ import 'package:m3uxtream_player/app/composition/xtream/providers/series_provide
 import 'package:m3uxtream_player/features/xtream/widgets/episode_card.dart';
 import 'package:m3uxtream_player/shared/theme/catalogue_surface_roles.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
+import 'package:m3uxtream_player/shared/widgets/app_shimmer.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_tab_shelf.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// Episode catalogue with season tabs and resume banner.
@@ -108,9 +108,9 @@ class SeriesDetailScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(999),
               ),
               labelColor: Theme.of(context).colorScheme.onSecondaryContainer,
-              unselectedLabelColor: Theme.of(
-                context,
-              ).colorScheme.onSurfaceVariant,
+              unselectedLabelColor: Theme.of(context)
+                  .colorScheme
+                  .onSurfaceVariant,
               labelStyle: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -367,10 +367,9 @@ class _EpisodeListShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     final roles = CatalogueSurfaceRoles.of(context);
 
-    return Shimmer.fromColors(
+    return AppShimmer(
       baseColor: roles.shimmerBase,
       highlightColor: roles.shimmerHighlight,
-      enabled: !MediaQuery.disableAnimationsOf(context),
       child: ListView.builder(
         itemCount: 8,
         itemBuilder: (_, _) => Padding(

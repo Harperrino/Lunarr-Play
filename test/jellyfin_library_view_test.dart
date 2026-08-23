@@ -1,5 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -17,30 +17,31 @@ const _library = JellyfinLibrary(
 );
 
 void main() {
-  testWidgets('poster decoding preserves source aspect ratio before cover crop', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      jellyfinTestHost(
-        const SizedBox(
-          width: 150,
-          child: JellyfinMediaCard(
-            imageUrl: 'https://example.test/poster.jpg',
-            title: 'Poster',
-            semanticLabel: 'Poster',
+  testWidgets(
+    'poster decoding preserves source aspect ratio before cover crop',
+    (tester) async {
+      await tester.pumpWidget(
+        jellyfinTestHost(
+          const SizedBox(
+            width: 150,
+            child: JellyfinMediaCard(
+              imageUrl: 'https://example.test/poster.jpg',
+              title: 'Poster',
+              semanticLabel: 'Poster',
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pump();
+      );
+      await tester.pump();
 
-    final image = tester.widget<CachedNetworkImage>(
-      find.byType(CachedNetworkImage),
-    );
-    expect(image.fit, BoxFit.cover);
-    expect(image.memCacheWidth, isNotNull);
-    expect(image.memCacheHeight, isNull);
-  });
+      final image = tester.widget<CachedNetworkImage>(
+        find.byType(CachedNetworkImage),
+      );
+      expect(image.fit, BoxFit.cover);
+      expect(image.memCacheWidth, isNotNull);
+      expect(image.memCacheHeight, isNull);
+    },
+  );
 
   testWidgets('library grid renders its items with counts', (tester) async {
     await tester.pumpWidget(
@@ -105,7 +106,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Could not load from the Jellyfin server.'), findsOneWidget);
+    expect(
+      find.text('Could not load from the Jellyfin server.'),
+      findsOneWidget,
+    );
     expect(find.text('Retry'), findsOneWidget);
   });
 

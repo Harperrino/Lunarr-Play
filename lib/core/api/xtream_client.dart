@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:m3uxtream_player/core/imports/import_budget.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 
@@ -46,9 +47,9 @@ class XtreamClient {
       ...extraParams,
     };
 
-    final fullUrl = Uri.parse(
-      '$baseUrl/player_api.php',
-    ).replace(queryParameters: query).toString();
+    final fullUrl = Uri.parse('$baseUrl/player_api.php')
+        .replace(queryParameters: query)
+        .toString();
     AppLogger.info(
       'XtreamClient: GET request initiated (Action: ${action ?? "auth"}).',
     );
@@ -78,10 +79,7 @@ class XtreamClient {
           phase: 'xtream_transport',
           endpoint: endpoint,
         );
-        budget?.consumeDecodedBytes(
-          chunk.length,
-          phase: 'xtream_decode',
-        );
+        budget?.consumeDecodedBytes(chunk.length, phase: 'xtream_decode');
         bytes.add(chunk);
       }
       budget?.checkpoint('xtream_decode');

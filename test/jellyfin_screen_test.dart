@@ -1,14 +1,17 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_client.dart';
+import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_credentials_store.dart';
+import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_connection_providers.dart';
+import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_library_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_screen.dart';
 
 import 'jellyfin_test_helpers.dart';
@@ -41,14 +44,17 @@ MockClient _happyTransport() {
   });
 }
 
-Widget _host(MockClient transport) {
+Widget _host(
+  MockClient transport, {
+  JellyfinCredentialsStore? credentialsStore,
+}) {
   return ProviderScope(
     overrides: [
       jellyfinApiClientProvider.overrideWithValue(
         JellyfinApiClient(transport: transport),
       ),
       jellyfinCredentialsStoreProvider.overrideWithValue(
-        InMemoryJellyfinCredentialsStore(),
+        credentialsStore ?? InMemoryJellyfinCredentialsStore(),
       ),
     ],
     child: MaterialApp(
@@ -296,5 +302,44 @@ void main() {
 
     expect(find.text('Unencrypted Jellyfin connection'), findsNothing);
     expect(find.text('Continue watching'), findsOneWidget);
+  });
+
+  testWidgets('switching accounts resets an existing details route', (
+    tester,
+  ) async {
+    const second = JellyfinConnection(
+      baseUrl: 'http://server:8096',
+      serverId: 'server-id-2',
+      serverVersion: '10.10.3',
+      userId: 'user-id-2',
+      username: 'bob',
+      accessToken: 'token-bob',
+      deviceId: 'device-bob',
+    );
+    final store = InMemoryJellyfinCredentialsStore();
+    await store.write(jellyfinTestConnection);
+    await store.write(second);
+    await store.select(jellyfinTestConnection.credentialId);
+    await tester.pumpWidget(_host(_happyTransport(), credentialsStore: store));
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(JellyfinScreen)),
+    );
+    container.read(jellyfinViewStackProvider.notifier).state = const [
+      JellyfinHomeRoute(),
+      JellyfinDetailsRoute(
+        item: JellyfinItem(id: 'old-item', name: 'Old', type: 'Movie'),
+      ),
+    ];
+    await tester.pump();
+
+    await container
+        .read(jellyfinSessionControllerProvider.notifier)
+        .selectConnection(second);
+    await tester.pump();
+
+    final stack = container.read(jellyfinViewStackProvider);
+    expect(stack, hasLength(1));
+    expect(stack.single, isA<JellyfinHomeRoute>());
   });
 }

@@ -1,7 +1,7 @@
 @Tags(['native'])
 library;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState, Playlist;
@@ -138,9 +138,8 @@ void main() {
         container: container,
         child: MaterialApp(
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: TextScaler.linear(textScaleFactor)),
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(textScaleFactor)),
             child: child!,
           ),
           home: Scaffold(

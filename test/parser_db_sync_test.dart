@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' hide isNotNull;
@@ -37,13 +38,11 @@ void main() {
       await db.close();
     });
 
-    test(
-      'Parses M3U streams, skips corruption, classifies types, and batch syncs to memory db',
-      () async {
-        // 1. ARRANGE: Create a M3U string with 4 fully valid channels and 1 corrupt-layout chunk.
-        // Note: The corrupt line "// This entry is..." does not start with '#' and is therefore
-        // successfully parsed as a stream URL associated with the prior metadata header, resulting in 5 channels.
-        const String mockM3u = '''
+    test('Parses M3U streams, skips corruption, classifies types, and batch syncs to memory db', () async {
+      // 1. ARRANGE: Create a M3U string with 4 fully valid channels and 1 corrupt-layout chunk.
+      // Note: The corrupt line "// This entry is..." does not start with '#' and is therefore
+      // successfully parsed as a stream URL associated with the prior metadata header, resulting in 5 channels.
+      const String mockM3u = '''
 #EXTM3U
 #EXTINF:-1 tvg-id="de.rtl" tvg-name="RTL HD" tvg-logo="http://logos.com/rtl.png" group-title="German TV",RTL HD
 http://stream.provider.com/rtl.m3u8
@@ -57,225 +56,221 @@ http://stream.provider.com/avatar2.mp4
 http://stream.provider.com/hbo.m3u8
 ''';
 
-        // 2. ACT: Insert a mock playlist profile into SQLite
-        final playlistId = await repository.insertPlaylist(
-          const PlaylistsCompanion(
-            name: Value('Isolated Testing M3U Playlist'),
-            type: Value('m3u'),
-            urlOrHost: Value('local_test_file'),
-          ),
-        );
+      // 2. ACT: Insert a mock playlist profile into SQLite
+      final playlistId = await repository.insertPlaylist(
+        const PlaylistsCompanion(
+          name: Value('Isolated Testing M3U Playlist'),
+          type: Value('m3u'),
+          urlOrHost: Value('local_test_file'),
+        ),
+      );
 
-        expect(playlistId, isNotNull);
-        expect(playlistId, greaterThan(0));
+      expect(playlistId, isNotNull);
+      expect(playlistId, greaterThan(0));
 
-        // 3. ACT: Trigger full background parsing Isolate and batch insertion cycle
-        await syncService.syncM3uPlaylist(
-          playlistId: playlistId,
-          m3uContent: mockM3u,
-        );
+      // 3. ACT: Trigger full background parsing Isolate and batch insertion cycle
+      await syncService.syncM3uPlaylist(
+        playlistId: playlistId,
+        m3uContent: mockM3u,
+      );
 
-        // 4. ASSERT: Fetch records from Drift to verify correct synchronization
-        final channels = await db.select(db.channels).get();
+      // 4. ASSERT: Fetch records from Drift to verify correct synchronization
+      final channels = await db.select(db.channels).get();
 
-        // Expected total: 5 channels successfully parsed (including the '//' URL fallback line)
-        expect(channels.length, equals(5));
+      // Expected total: 5 channels successfully parsed (including the '//' URL fallback line)
+      expect(channels.length, equals(5));
 
-        // Verify Channel 1: RTL HD
-        final rtl = channels.firstWhere((c) => c.name == 'RTL HD');
-        expect(rtl.tvgId, equals('de.rtl'));
-        expect(rtl.logo, equals('http://logos.com/rtl.png'));
-        expect(rtl.groupName, equals('German TV'));
-        expect(
-          rtl.channelType,
-          equals('live'),
-        ); // Standard live M3U8 classification
-        expect(rtl.streamUrl, equals('http://stream.provider.com/rtl.m3u8'));
+      // Verify Channel 1: RTL HD
+      final rtl = channels.firstWhere((c) => c.name == 'RTL HD');
+      expect(rtl.tvgId, equals('de.rtl'));
+      expect(rtl.logo, equals('http://logos.com/rtl.png'));
+      expect(rtl.groupName, equals('German TV'));
+      expect(
+        rtl.channelType,
+        equals('live'),
+      ); // Standard live M3U8 classification
+      expect(rtl.streamUrl, equals('http://stream.provider.com/rtl.m3u8'));
 
-        // Verify Channel 3: Avatar 2 (2022) Movie
-        final avatar = channels.firstWhere((c) => c.name == 'Avatar 2 (2022)');
-        expect(avatar.tvgId, equals('movie.avatar'));
-        expect(avatar.logo, equals('http://logos.com/avatar.jpg'));
-        expect(avatar.groupName, equals('VOD Movies'));
-        expect(
-          avatar.channelType,
-          equals('vod'),
-        ); // Auto-classified as VOD due to .mp4 extension and/or VOD keyword
+      // Verify Channel 3: Avatar 2 (2022) Movie
+      final avatar = channels.firstWhere((c) => c.name == 'Avatar 2 (2022)');
+      expect(avatar.tvgId, equals('movie.avatar'));
+      expect(avatar.logo, equals('http://logos.com/avatar.jpg'));
+      expect(avatar.groupName, equals('VOD Movies'));
+      expect(
+        avatar.channelType,
+        equals('vod'),
+      ); // Auto-classified as VOD due to .mp4 extension and/or VOD keyword
 
-        // 5. ASSERT: Test referential cascade deletion on SQLite level
-        // Deleting the playlist should wipe all channels instantly
-        await repository.deletePlaylist(playlistId);
-        final remainingChannels = await db.select(db.channels).get();
-        expect(remainingChannels.isEmpty, isTrue);
-      },
-    );
+      // 5. ASSERT: Test referential cascade deletion on SQLite level
+      // Deleting the playlist should wipe all channels instantly
+      await repository.deletePlaylist(playlistId);
+      final remainingChannels = await db.select(db.channels).get();
+      expect(remainingChannels.isEmpty, isTrue);
+    });
 
-    test(
-      'Queries Xtream Codes API server, processes JSON in Isolate and batch synchronizes to Drift',
-      () async {
-        await HttpOverrides.runWithHttpOverrides(() async {
-          // 1. ARRANGE: Set up a local in-memory HttpServer to mock Xtream player_api.php responses.
-          final server = await HttpServer.bind(
-            InternetAddress.loopbackIPv4,
-            0,
-          ); // 0 binds to a random available port
-          final localPort = server.port;
-          final localHost = 'localhost:$localPort';
+    test('Queries Xtream Codes API server, processes JSON in Isolate and batch synchronizes to Drift', () async {
+      await HttpOverrides.runWithHttpOverrides(() async {
+        // 1. ARRANGE: Set up a local in-memory HttpServer to mock Xtream player_api.php responses.
+        final server = await HttpServer.bind(
+          InternetAddress.loopbackIPv4,
+          0,
+        ); // 0 binds to a random available port
+        final localPort = server.port;
+        final localHost = 'localhost:$localPort';
 
-          // Start listening to incoming native HttpClient calls in the background
-          server.listen((HttpRequest request) {
-            final queryParams = request.uri.queryParameters;
-            final action = queryParams['action'];
+        // Start listening to incoming native HttpClient calls in the background
+        server.listen((HttpRequest request) {
+          final queryParams = request.uri.queryParameters;
+          final action = queryParams['action'];
 
-            // Verify that authentication parameters are transmitted securely
-            expect(queryParams['username'], equals('demouser'));
-            expect(queryParams['password'], equals('demopass'));
+          // Verify that authentication parameters are transmitted securely
+          expect(queryParams['username'], equals('demouser'));
+          expect(queryParams['password'], equals('demopass'));
 
-            if (action == 'get_live_categories') {
-              // Serve categories list
-              request.response
-                ..headers.contentType = ContentType.json
-                ..write(
-                  jsonEncode([
-                    {"category_id": "100", "category_name": "Premium Sports"},
-                    {"category_id": "200", "category_name": "Entertainment UK"},
-                  ]),
-                )
-                ..close();
-            } else if (action == 'get_live_streams') {
-              // Serve streams list
-              request.response
-                ..headers.contentType = ContentType.json
-                ..write(
-                  jsonEncode([
-                    {
-                      "num": 1,
-                      "name": "Sky Sports Main Event",
-                      "stream_id": "9901",
-                      "stream_icon": "http://logo.com/skysports.png",
-                      "epg_channel_id": "uk.skysports",
-                      "category_id": "100",
-                    },
-                    {
-                      "num": 2,
-                      "name": "BBC One HD",
-                      "stream_id": "9902",
-                      "stream_icon": "http://logo.com/bbcone.png",
-                      "epg_channel_id": "uk.bbcone",
-                      "category_id": "200",
-                    },
-                  ]),
-                )
-                ..close();
-            } else if (action == 'get_vod_categories' ||
-                action == 'get_series_categories') {
-              request.response
-                ..headers.contentType = ContentType.json
-                ..write('[]')
-                ..close();
-            } else if (action == 'get_vod_streams' || action == 'get_series') {
-              request.response
-                ..headers.contentType = ContentType.json
-                ..write('[]')
-                ..close();
-            } else {
-              // Default: Serve credentials authorization user info
-              request.response
-                ..headers.contentType = ContentType.json
-                ..write(
-                  jsonEncode({
-                    "user_info": {
-                      "username": "demouser",
-                      "status": "Active",
-                      "expiry_date": "1782012000",
-                    },
-                    "server_info": {
-                      "url": "localhost",
-                      "port": localPort.toString(),
-                    },
-                  }),
-                )
-                ..close();
-            }
-          });
-
-          try {
-            // 2. ACT: Verify authenticate endpoint works
-            final authData = await XtreamClient.authenticate(
-              host: localHost,
-              username: 'demouser',
-              password: 'demopass',
-            );
-            expect(authData['user_info']['status'], equals('Active'));
-            expect(authData['user_info']['username'], equals('demouser'));
-
-            // 3. ACT: Insert playlist profile in database
-            final playlistId = await repository.insertPlaylist(
-              const PlaylistsCompanion(
-                name: Value('Isolated Testing Xtream Playlist'),
-                type: Value('xtream'),
-                urlOrHost: Value('http://localhost'),
-                username: Value('demouser'),
-                password: Value('demopass'),
-              ),
-            );
-
-            // 4. ACT: Fetch raw API strings and synchronise channels using the Isolate sync service
-            final categoriesJson = await XtreamClient.fetchLiveCategories(
-              host: localHost,
-              username: 'demouser',
-              password: 'demopass',
-            );
-            final streamsJson = await XtreamClient.fetchLiveStreams(
-              host: localHost,
-              username: 'demouser',
-              password: 'demopass',
-            );
-
-            await syncService.syncXtreamPlaylist(
-              playlistId: playlistId,
-              liveStreamsJson: streamsJson,
-              liveCategoriesJson: categoriesJson,
-              host: localHost,
-              username: 'demouser',
-              password: 'demopass',
-            );
-
-            // 5. ASSERT: Fetch records from SQLite to verify mapping and inserts
-            final channels = await db.select(db.channels).get();
-            expect(channels.length, equals(2));
-
-            // Verify mapped category name and stream URL construction for Channel 1
-            final skySports = channels.firstWhere((c) => c.streamId == '9901');
-            expect(skySports.name, equals('Sky Sports Main Event'));
-            expect(skySports.logo, equals('http://logo.com/skysports.png'));
-            expect(
-              skySports.groupName,
-              equals('Premium Sports'),
-            ); // Cleanly resolved from category lookup map
-            expect(skySports.tvgId, equals('uk.skysports'));
-            expect(skySports.channelType, equals('live'));
-            expect(
-              skySports.streamUrl,
-              equals('http://localhost:$localPort/live/demouser/demopass/9901'),
-            );
-
-            // Verify mapped details for Channel 2
-            final bbcOne = channels.firstWhere((c) => c.streamId == '9902');
-            expect(bbcOne.name, equals('BBC One HD'));
-            expect(bbcOne.logo, equals('http://logo.com/bbcone.png'));
-            expect(bbcOne.groupName, equals('Entertainment UK'));
-            expect(
-              bbcOne.streamUrl,
-              equals('http://localhost:$localPort/live/demouser/demopass/9902'),
-            );
-          } finally {
-            // Shut down the background mock server safely
-            await server.close(force: true);
+          if (action == 'get_live_categories') {
+            // Serve categories list
+            request.response
+              ..headers.contentType = ContentType.json
+              ..write(
+                jsonEncode([
+                  {"category_id": "100", "category_name": "Premium Sports"},
+                  {"category_id": "200", "category_name": "Entertainment UK"},
+                ]),
+              )
+              ..close();
+          } else if (action == 'get_live_streams') {
+            // Serve streams list
+            request.response
+              ..headers.contentType = ContentType.json
+              ..write(
+                jsonEncode([
+                  {
+                    "num": 1,
+                    "name": "Sky Sports Main Event",
+                    "stream_id": "9901",
+                    "stream_icon": "http://logo.com/skysports.png",
+                    "epg_channel_id": "uk.skysports",
+                    "category_id": "100",
+                  },
+                  {
+                    "num": 2,
+                    "name": "BBC One HD",
+                    "stream_id": "9902",
+                    "stream_icon": "http://logo.com/bbcone.png",
+                    "epg_channel_id": "uk.bbcone",
+                    "category_id": "200",
+                  },
+                ]),
+              )
+              ..close();
+          } else if (action == 'get_vod_categories' ||
+              action == 'get_series_categories') {
+            request.response
+              ..headers.contentType = ContentType.json
+              ..write('[]')
+              ..close();
+          } else if (action == 'get_vod_streams' || action == 'get_series') {
+            request.response
+              ..headers.contentType = ContentType.json
+              ..write('[]')
+              ..close();
+          } else {
+            // Default: Serve credentials authorization user info
+            request.response
+              ..headers.contentType = ContentType.json
+              ..write(
+                jsonEncode({
+                  "user_info": {
+                    "username": "demouser",
+                    "status": "Active",
+                    "expiry_date": "1782012000",
+                  },
+                  "server_info": {
+                    "url": "localhost",
+                    "port": localPort.toString(),
+                  },
+                }),
+              )
+              ..close();
           }
-        }, RealHttpOverrides());
-      },
-    );
+        });
+
+        try {
+          // 2. ACT: Verify authenticate endpoint works
+          final authData = await XtreamClient.authenticate(
+            host: localHost,
+            username: 'demouser',
+            password: 'demopass',
+          );
+          expect(authData['user_info']['status'], equals('Active'));
+          expect(authData['user_info']['username'], equals('demouser'));
+
+          // 3. ACT: Insert playlist profile in database
+          final playlistId = await repository.insertPlaylist(
+            const PlaylistsCompanion(
+              name: Value('Isolated Testing Xtream Playlist'),
+              type: Value('xtream'),
+              urlOrHost: Value('http://localhost'),
+              username: Value('demouser'),
+              password: Value('demopass'),
+            ),
+          );
+
+          // 4. ACT: Fetch raw API strings and synchronise channels using the Isolate sync service
+          final categoriesJson = await XtreamClient.fetchLiveCategories(
+            host: localHost,
+            username: 'demouser',
+            password: 'demopass',
+          );
+          final streamsJson = await XtreamClient.fetchLiveStreams(
+            host: localHost,
+            username: 'demouser',
+            password: 'demopass',
+          );
+
+          await syncService.syncXtreamPlaylist(
+            playlistId: playlistId,
+            liveStreamsJson: streamsJson,
+            liveCategoriesJson: categoriesJson,
+            host: localHost,
+            username: 'demouser',
+            password: 'demopass',
+          );
+
+          // 5. ASSERT: Fetch records from SQLite to verify mapping and inserts
+          final channels = await db.select(db.channels).get();
+          expect(channels.length, equals(2));
+
+          // Verify mapped category name and stream URL construction for Channel 1
+          final skySports = channels.firstWhere((c) => c.streamId == '9901');
+          expect(skySports.name, equals('Sky Sports Main Event'));
+          expect(skySports.logo, equals('http://logo.com/skysports.png'));
+          expect(
+            skySports.groupName,
+            equals('Premium Sports'),
+          ); // Cleanly resolved from category lookup map
+          expect(skySports.tvgId, equals('uk.skysports'));
+          expect(skySports.channelType, equals('live'));
+          expect(
+            skySports.streamUrl,
+            equals('http://localhost:$localPort/live/demouser/demopass/9901'),
+          );
+
+          // Verify mapped details for Channel 2
+          final bbcOne = channels.firstWhere((c) => c.streamId == '9902');
+          expect(bbcOne.name, equals('BBC One HD'));
+          expect(bbcOne.logo, equals('http://logo.com/bbcone.png'));
+          expect(bbcOne.groupName, equals('Entertainment UK'));
+          expect(
+            bbcOne.streamUrl,
+            equals('http://localhost:$localPort/live/demouser/demopass/9902'),
+          );
+        } finally {
+          // Shut down the background mock server safely
+          await server.close(force: true);
+        }
+      }, RealHttpOverrides());
+    });
 
     test(
       'Xtream sync stores live, vod, and series with type-scoped watch query',
@@ -408,12 +403,10 @@ http://stream.provider.com/hbo.m3u8
       },
     );
 
-    test(
-      'Parses XMLTV EPG data (gzipped), purges stale entries, and syncs program guides into Drift SQLite',
-      () async {
-        // 1. ARRANGE: Define a valid XMLTV guide layout containing 3 programs
-        // (1 program in the past to test purging, and 2 valid future programs)
-        const String mockXmltv = '''<?xml version="1.0" encoding="UTF-8"?>
+    test('Parses XMLTV EPG data (gzipped), purges stale entries, and syncs program guides into Drift SQLite', () async {
+      // 1. ARRANGE: Define a valid XMLTV guide layout containing 3 programs
+      // (1 program in the past to test purging, and 2 valid future programs)
+      const String mockXmltv = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE tv SYSTEM "xmltv.dtd">
 <tv>
   <channel id="de.rtl">
@@ -445,121 +438,120 @@ http://stream.provider.com/hbo.m3u8
   </programme>
 </tv>''';
 
-        // 2. ARRANGE: Create a GZIP-compressed byte list in memory to simulate a .xml.gz EPG file
-        final List<int> rawBytes = utf8.encode(mockXmltv);
-        final List<int> gzippedBytes = gzip.encode(rawBytes);
+      // 2. ARRANGE: Create a GZIP-compressed byte list in memory to simulate a .xml.gz EPG file
+      final List<int> rawBytes = utf8.encode(mockXmltv);
+      final List<int> gzippedBytes = gzip.encode(rawBytes);
 
-        // Create a temporary file in the local workspace directory
-        final tempDir = await Directory.systemTemp.createTemp('epg_test');
-        final tempFile = File('${tempDir.path}/epg_guide.xml.gz');
-        await tempFile.writeAsBytes(gzippedBytes);
+      // Create a temporary file in the local workspace directory
+      final tempDir = await Directory.systemTemp.createTemp('epg_test');
+      final tempFile = File('${tempDir.path}/epg_guide.xml.gz');
+      await tempFile.writeAsBytes(gzippedBytes);
 
-        try {
-          final playlistId = await repository.insertPlaylist(
-            const PlaylistsCompanion(
-              name: Value('XMLTV test playlist'),
-              type: Value('m3u'),
-              urlOrHost: Value('fixture.m3u'),
-            ),
-          );
+      try {
+        final playlistId = await repository.insertPlaylist(
+          const PlaylistsCompanion(
+            name: Value('XMLTV test playlist'),
+            type: Value('m3u'),
+            urlOrHost: Value('fixture.m3u'),
+          ),
+        );
 
-          // 3. ACT: Pre-populate the SQLite database with 1 expired EpgEntry directly
-          // to verify that EpgSyncService's purging logic executes successfully.
-          await db
-              .into(db.epgEntries)
-              .insert(
-                EpgEntriesCompanion.insert(
-                  playlistId: playlistId,
-                  channelId: 'de.rtl',
-                  title: 'Stale Pre-existing Entry',
-                  description: const Value('Should be purged'),
-                  startTime: DateTime.now().subtract(const Duration(hours: 5)),
-                  endTime: DateTime.now().subtract(const Duration(hours: 4)),
-                ),
-              );
+        // 3. ACT: Pre-populate the SQLite database with 1 expired EpgEntry directly
+        // to verify that EpgSyncService's purging logic executes successfully.
+        await db
+            .into(db.epgEntries)
+            .insert(
+              EpgEntriesCompanion.insert(
+                playlistId: playlistId,
+                channelId: 'de.rtl',
+                title: 'Stale Pre-existing Entry',
+                description: const Value('Should be purged'),
+                startTime: DateTime.now().subtract(const Duration(hours: 5)),
+                endTime: DateTime.now().subtract(const Duration(hours: 4)),
+              ),
+            );
 
-          // Verify pre-existing item exists
-          final prePurgeEntries = await db.select(db.epgEntries).get();
-          expect(prePurgeEntries.length, equals(1));
+        // Verify pre-existing item exists
+        final prePurgeEntries = await db.select(db.epgEntries).get();
+        expect(prePurgeEntries.length, equals(1));
 
-          // 4. ACT: Trigger background Isolate EPG download, GZIP decompression, and batch insertion
-          await epgSyncService.syncEpg(
-            playlistId: playlistId,
-            urlOrFilePath: tempFile.path,
-          );
+        // 4. ACT: Trigger background Isolate EPG download, GZIP decompression, and batch insertion
+        await epgSyncService.syncEpg(
+          playlistId: playlistId,
+          urlOrFilePath: tempFile.path,
+        );
 
-          // 5. ASSERT: Fetch records from Drift to verify correct purging and synchronization
-          final currentEntries = await db.select(db.epgEntries).get();
+        // 5. ASSERT: Fetch records from Drift to verify correct purging and synchronization
+        final currentEntries = await db.select(db.epgEntries).get();
 
-          // The pre-existing stale entry is successfully purged before the sync process.
-          // During the sync process, all 3 new entries from the XMLTV file are inserted.
-          expect(currentEntries.length, equals(3));
+        // The pre-existing stale entry is successfully purged before the sync process.
+        // During the sync process, all 3 new entries from the XMLTV file are inserted.
+        expect(currentEntries.length, equals(3));
 
-          // Validate RTL programs (both 'RTL Aktuell Live' and the expired 'Expired Show')
-          final rtlNewsProgram = currentEntries.firstWhere(
-            (p) => p.channelId == 'de.rtl' && p.title == 'RTL Aktuell Live',
-          );
-          expect(
-            rtlNewsProgram.description,
-            equals('Abendnachrichten und Sportberichte aus aller Welt.'),
-          );
-          // 2030-05-21 14:00:00 +0200 corresponds to 2030-05-21 12:00:00 UTC
-          expect(
-            rtlNewsProgram.startTime.toUtc(),
-            equals(DateTime.utc(2030, 05, 21, 12, 0, 0)),
-          );
-          expect(
-            rtlNewsProgram.endTime.toUtc(),
-            equals(DateTime.utc(2030, 05, 21, 13, 30, 0)),
-          );
+        // Validate RTL programs (both 'RTL Aktuell Live' and the expired 'Expired Show')
+        final rtlNewsProgram = currentEntries.firstWhere(
+          (p) => p.channelId == 'de.rtl' && p.title == 'RTL Aktuell Live',
+        );
+        expect(
+          rtlNewsProgram.description,
+          equals('Abendnachrichten und Sportberichte aus aller Welt.'),
+        );
+        // 2030-05-21 14:00:00 +0200 corresponds to 2030-05-21 12:00:00 UTC
+        expect(
+          rtlNewsProgram.startTime.toUtc(),
+          equals(DateTime.utc(2030, 05, 21, 12, 0, 0)),
+        );
+        expect(
+          rtlNewsProgram.endTime.toUtc(),
+          equals(DateTime.utc(2030, 05, 21, 13, 30, 0)),
+        );
 
-          final rtlExpiredProgram = currentEntries.firstWhere(
-            (p) => p.channelId == 'de.rtl' && p.title == 'Expired Show',
-          );
-          expect(
-            rtlExpiredProgram.description,
-            equals('This program should be auto-purged from the database'),
-          );
-          expect(
-            rtlExpiredProgram.startTime.toUtc(),
-            equals(DateTime.utc(2010, 01, 01, 12, 0, 0)),
-          );
-          expect(
-            rtlExpiredProgram.endTime.toUtc(),
-            equals(DateTime.utc(2010, 01, 01, 13, 0, 0)),
-          );
+        final rtlExpiredProgram = currentEntries.firstWhere(
+          (p) => p.channelId == 'de.rtl' && p.title == 'Expired Show',
+        );
+        expect(
+          rtlExpiredProgram.description,
+          equals('This program should be auto-purged from the database'),
+        );
+        expect(
+          rtlExpiredProgram.startTime.toUtc(),
+          equals(DateTime.utc(2010, 01, 01, 12, 0, 0)),
+        );
+        expect(
+          rtlExpiredProgram.endTime.toUtc(),
+          equals(DateTime.utc(2010, 01, 01, 13, 0, 0)),
+        );
 
-          // Validate CNN program
-          final cnnProgram = currentEntries.firstWhere(
-            (p) => p.channelId == 'us.cnn',
-          );
-          expect(cnnProgram.title, equals('CNN Newsroom'));
-          expect(
-            cnnProgram.description,
-            equals('Global news coverage and live report segments.'),
-          );
-          expect(
-            cnnProgram.startTime.toUtc(),
-            equals(DateTime.utc(2030, 05, 21, 13, 30, 0)),
-          );
-          expect(
-            cnnProgram.endTime.toUtc(),
-            equals(DateTime.utc(2030, 05, 21, 14, 30, 0)),
-          );
+        // Validate CNN program
+        final cnnProgram = currentEntries.firstWhere(
+          (p) => p.channelId == 'us.cnn',
+        );
+        expect(cnnProgram.title, equals('CNN Newsroom'));
+        expect(
+          cnnProgram.description,
+          equals('Global news coverage and live report segments.'),
+        );
+        expect(
+          cnnProgram.startTime.toUtc(),
+          equals(DateTime.utc(2030, 05, 21, 13, 30, 0)),
+        );
+        expect(
+          cnnProgram.endTime.toUtc(),
+          equals(DateTime.utc(2030, 05, 21, 14, 30, 0)),
+        );
 
-          final epgChannels = await db.select(db.epgChannels).get();
-          expect(epgChannels.length, equals(2));
-          expect(
-            epgChannels.map((c) => c.displayName).toSet(),
-            equals({'RTL HD', 'CNN International'}),
-          );
-        } finally {
-          // Clean up mock file from disk cleanly
-          if (await tempDir.exists()) {
-            await tempDir.delete(recursive: true);
-          }
+        final epgChannels = await db.select(db.epgChannels).get();
+        expect(epgChannels.length, equals(2));
+        expect(
+          epgChannels.map((c) => c.displayName).toSet(),
+          equals({'RTL HD', 'CNN International'}),
+        );
+      } finally {
+        // Clean up mock file from disk cleanly
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
         }
-      },
-    );
+      }
+    });
   });
 }

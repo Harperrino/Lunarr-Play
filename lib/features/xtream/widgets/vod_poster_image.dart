@@ -1,5 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/shared/theme/catalogue_surface_roles.dart';
 
 const double vodPosterAspectRatio = 2 / 3;

@@ -4,8 +4,8 @@ publish_to: 'none'
 version: 0.10.0-rc.1+3
 
 environment:
-  sdk: '>=3.13.0 <4.0.0'
-  flutter: '>=3.47.0'
+  sdk: '>=3.13.1 <4.0.0'
+  flutter: '>=3.47.1'
 
 dependencies:
   flutter:
@@ -26,7 +26,7 @@ dependencies:
 
   # Local SQLite Database & Path Utilities
   drift: 2.34.3
-  sqlite3: 3.5.1
+  sqlite3: 3.5.2
   path_provider: 2.1.6
   screen_retriever: 0.2.2
   path: 1.9.1
@@ -36,8 +36,9 @@ dependencies:
   flutter_single_instance: 1.7.0
 
   # UI & Material 3 Design System
+  material_ui: 1.0.1
   cached_network_image: 3.4.1
-  shimmer: 3.0.0
+  shimmer: 4.0.0
   google_fonts: 8.2.1
   intl: 0.20.3
   url_launcher: 6.3.2

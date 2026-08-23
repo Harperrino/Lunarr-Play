@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/native.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
@@ -37,13 +37,11 @@ void main() {
           inactivePlaylistIdsProvider.overrideWith(
             _EmptyInactivePlaylistIdsNotifier.new,
           ),
-          hiddenGroupsForPlaylistProvider(
-            1,
-          ).overrideWith((ref) async => const <String>{}),
+          hiddenGroupsForPlaylistProvider(1)
+              .overrideWith((ref) async => const <String>{}),
           liveChannelsStreamProvider.overrideWith((ref) => channels.stream),
-          channelSortModeProvider(
-            1,
-          ).overrideWith((ref) => ChannelSortModeNotifier.test(1)),
+          channelSortModeProvider(1)
+              .overrideWith((ref) => ChannelSortModeNotifier.test(1)),
           playlistSyncNotifierProvider.overrideWith(
             _ReadyPlaylistSyncNotifier.new,
           ),
@@ -126,21 +124,17 @@ void main() {
         inactivePlaylistIdsProvider.overrideWith(
           _EmptyInactivePlaylistIdsNotifier.new,
         ),
-        hiddenGroupsForPlaylistProvider(
-          1,
-        ).overrideWith((ref) async => const <String>{}),
-        hiddenGroupsForPlaylistProvider(
-          2,
-        ).overrideWith((ref) async => const <String>{}),
+        hiddenGroupsForPlaylistProvider(1)
+            .overrideWith((ref) async => const <String>{}),
+        hiddenGroupsForPlaylistProvider(2)
+            .overrideWith((ref) async => const <String>{}),
         liveChannelsStreamProvider.overrideWith(
           (ref) => Stream.value(ref.watch(_catalogRowsProvider)),
         ),
-        channelSortModeProvider(
-          1,
-        ).overrideWith((ref) => ChannelSortModeNotifier.test(1)),
-        channelSortModeProvider(
-          2,
-        ).overrideWith((ref) => ChannelSortModeNotifier.test(2)),
+        channelSortModeProvider(1)
+            .overrideWith((ref) => ChannelSortModeNotifier.test(1)),
+        channelSortModeProvider(2)
+            .overrideWith((ref) => ChannelSortModeNotifier.test(2)),
         playlistSyncNotifierProvider.overrideWith(
           _ReadyPlaylistSyncNotifier.new,
         ),

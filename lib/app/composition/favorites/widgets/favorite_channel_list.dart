@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/features/channels/widgets/channel_favorite_button.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_media_list_item.dart';

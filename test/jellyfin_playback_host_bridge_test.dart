@@ -21,36 +21,40 @@ ProviderContainer _container(PlayerState state) {
     overrides: [
       playerNotifierProvider.overrideWith(() => FixedPlayerNotifier(state)),
       jellyfinExistingPlaybackStopperProvider.overrideWith(
-        (ref) => () => JellyfinPlaybackHostBridge.stopExistingLunarrPlayback(ref),
+        (ref) =>
+            () => JellyfinPlaybackHostBridge.stopExistingLunarrPlayback(ref),
       ),
     ],
   );
 }
 
 void main() {
-  test('stops the existing Lunarr player only when a stream is active', () async {
-    final player = _StoppingPlayer();
-    final container = _container(
-      PlayerState(
-        player: player,
-        playbackUri: 'https://example.com/live.m3u8',
-        isPlaying: true,
-        volume: 0.5,
-        isBuffering: false,
-        isLiveStartupBuffering: false,
-      ),
-    );
-    addTearDown(container.dispose);
+  test(
+    'stops the existing Lunarr player only when a stream is active',
+    () async {
+      final player = _StoppingPlayer();
+      final container = _container(
+        PlayerState(
+          player: player,
+          playbackUri: 'https://example.com/live.m3u8',
+          isPlaying: true,
+          volume: 0.5,
+          isBuffering: false,
+          isLiveStartupBuffering: false,
+        ),
+      );
+      addTearDown(container.dispose);
 
-    final stopper = container.read(jellyfinExistingPlaybackStopperProvider);
-    expect(stopper, isNotNull);
-    // Warm the player notifier so the bridge sees AsyncData, not the first
-    // AsyncLoading of a cold read.
-    await container.read(playerNotifierProvider.future);
-    await stopper!();
+      final stopper = container.read(jellyfinExistingPlaybackStopperProvider);
+      expect(stopper, isNotNull);
+      // Warm the player notifier so the bridge sees AsyncData, not the first
+      // AsyncLoading of a cold read.
+      await container.read(playerNotifierProvider.future);
+      await stopper!();
 
-    expect(player.stopCount, 1);
-  });
+      expect(player.stopCount, 1);
+    },
+  );
 
   test('is a no-op when no Xtream stream is active', () async {
     final player = _StoppingPlayer();

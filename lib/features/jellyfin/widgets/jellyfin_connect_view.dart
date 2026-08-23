@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_server_info.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
@@ -107,7 +107,11 @@ class JellyfinLoginForm extends StatelessWidget {
               const SizedBox(height: 20),
               Row(
                 children: [
-                  Icon(Icons.check_circle_rounded, size: 16, color: colors.primary),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 16,
+                    color: colors.primary,
+                  ),
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
@@ -143,7 +147,8 @@ class JellyfinLoginForm extends StatelessWidget {
                 style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant),
               ),
               const SizedBox(height: 16),
-              if (Uri.tryParse(server.baseUrl)?.scheme.toLowerCase() == 'http') ...[
+              if (Uri.tryParse(server.baseUrl)?.scheme.toLowerCase() ==
+                  'http') ...[
                 _WarningBanner(message: context.l10n.jellyfinHttpWarning),
                 const SizedBox(height: 16),
               ],
@@ -210,15 +215,16 @@ class _ErrorBanner extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.error_outline_rounded, size: 16, color: colors.onErrorContainer),
+            Icon(
+              Icons.error_outline_rounded,
+              size: 16,
+              color: colors.onErrorContainer,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 message,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colors.onErrorContainer,
-                ),
+                style: TextStyle(fontSize: 12, color: colors.onErrorContainer),
               ),
             ),
           ],
@@ -321,7 +327,10 @@ class _ServerTextField extends StatelessWidget {
         hintStyle: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
         filled: true,
         fillColor: colors.surfaceContainerHigh,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: colors.outlineVariant),

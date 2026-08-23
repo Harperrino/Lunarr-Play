@@ -99,9 +99,7 @@ void main() {
           });
 
           final raw = sqlite3.open(fixture.file.path);
-          raw.execute(
-            'DROP INDEX IF EXISTS idx_channels_playlist_type_order',
-          );
+          raw.execute('DROP INDEX IF EXISTS idx_channels_playlist_type_order');
           raw.execute('ALTER TABLE channels DROP COLUMN $invalidColumn');
           if (invalidColumn == 'provider_order') {
             raw.execute('ALTER TABLE channels ADD COLUMN provider_order TEXT');
@@ -209,57 +207,63 @@ void main() {
     },
   );
 
-  test('schema v8 migrates legacy Xtream EPG URLs into the override column', () async {
-    final directory = await Directory.systemTemp.createTemp(
-      'm3uxtream-epg-override-',
-    );
-    final file = File('${directory.path}/epg.sqlite');
-    addTearDown(() async {
-      if (await directory.exists()) await directory.delete(recursive: true);
-    });
+  test(
+    'schema v8 migrates legacy Xtream EPG URLs into the override column',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'm3uxtream-epg-override-',
+      );
+      final file = File('${directory.path}/epg.sqlite');
+      addTearDown(() async {
+        if (await directory.exists()) await directory.delete(recursive: true);
+      });
 
-    final created = AppDatabase.executor(NativeDatabase(file));
-    final legacyXtreamId = await created
-        .into(created.playlists)
-        .insert(
-          PlaylistsCompanion.insert(
-            name: 'Legacy Xtream',
-            type: 'xtream',
-            urlOrHost: 'https://example.invalid',
-            epgUrl: const Value('https://example.invalid/legacy.xml'),
-          ),
-        );
-    final automaticM3uId = await created
-        .into(created.playlists)
-        .insert(
-          PlaylistsCompanion.insert(
-            name: 'Automatic M3U',
-            type: 'm3u',
-            urlOrHost: 'https://example.invalid/list.m3u',
-            epgUrl: const Value('https://example.invalid/automatic.xml'),
-          ),
-        );
-    await created.close();
+      final created = AppDatabase.executor(NativeDatabase(file));
+      final legacyXtreamId = await created
+          .into(created.playlists)
+          .insert(
+            PlaylistsCompanion.insert(
+              name: 'Legacy Xtream',
+              type: 'xtream',
+              urlOrHost: 'https://example.invalid',
+              epgUrl: const Value('https://example.invalid/legacy.xml'),
+            ),
+          );
+      final automaticM3uId = await created
+          .into(created.playlists)
+          .insert(
+            PlaylistsCompanion.insert(
+              name: 'Automatic M3U',
+              type: 'm3u',
+              urlOrHost: 'https://example.invalid/list.m3u',
+              epgUrl: const Value('https://example.invalid/automatic.xml'),
+            ),
+          );
+      await created.close();
 
-    final raw = sqlite3.open(file.path);
-    raw.execute('ALTER TABLE playlists DROP COLUMN epg_url_override');
-    raw.execute('PRAGMA user_version = 7');
-    raw.close();
+      final raw = sqlite3.open(file.path);
+      raw.execute('ALTER TABLE playlists DROP COLUMN epg_url_override');
+      raw.execute('PRAGMA user_version = 7');
+      raw.close();
 
-    final migrated = AppDatabase.executor(NativeDatabase(file));
-    final legacy = await (migrated.select(migrated.playlists)
-          ..where((table) => table.id.equals(legacyXtreamId)))
-        .getSingle();
-    final automatic = await (migrated.select(migrated.playlists)
-          ..where((table) => table.id.equals(automaticM3uId)))
-        .getSingle();
+      final migrated = AppDatabase.executor(NativeDatabase(file));
+      final legacy = await (migrated.select(
+        migrated.playlists,
+      )..where((table) => table.id.equals(legacyXtreamId))).getSingle();
+      final automatic = await (migrated.select(
+        migrated.playlists,
+      )..where((table) => table.id.equals(automaticM3uId))).getSingle();
 
-    expect(legacy.epgUrlOverride, 'https://example.invalid/legacy.xml');
-    expect(legacy.effectiveEpgUrl, 'https://example.invalid/legacy.xml');
-    expect(automatic.epgUrlOverride, isNull);
-    expect(automatic.effectiveEpgUrl, 'https://example.invalid/automatic.xml');
-    await migrated.close();
-  });
+      expect(legacy.epgUrlOverride, 'https://example.invalid/legacy.xml');
+      expect(legacy.effectiveEpgUrl, 'https://example.invalid/legacy.xml');
+      expect(automatic.epgUrlOverride, isNull);
+      expect(
+        automatic.effectiveEpgUrl,
+        'https://example.invalid/automatic.xml',
+      );
+      await migrated.close();
+    },
+  );
 
   test(
     'schema v10 discards unowned EPG cache and resets sync timestamps',

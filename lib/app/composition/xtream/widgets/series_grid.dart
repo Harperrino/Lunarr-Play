@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/features/xtream/widgets/series_card.dart';
 import 'package:m3uxtream_player/features/xtream/widgets/vod_poster_image.dart'

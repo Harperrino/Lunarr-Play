@@ -7,8 +7,10 @@ import 'package:m3uxtream_player/core/models/epg_refresh_interval.dart';
 import 'package:m3uxtream_player/core/models/epg_sync_job.dart';
 import 'package:m3uxtream_player/core/services/epg_sync_controller.dart';
 
-typedef EpgTimerFactory =
-    Timer Function(Duration duration, void Function() callback);
+typedef EpgTimerFactory = Timer Function(
+  Duration duration,
+  void Function() callback,
+);
 
 /// Coordinates due automatic EPG refreshes without coupling scheduling to UI.
 class EpgAutoRefreshCoordinator {

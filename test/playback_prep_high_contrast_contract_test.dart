@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
@@ -115,7 +115,9 @@ void _expectPanelRoles(WidgetTester tester, ColorScheme colors) {
   expect(headerSubtitle.style?.color, colors.onSurfaceVariant);
 
   final detailSubtitles = tester.widgetList<Text>(
-    find.text('Buffer before playback for smoother forward and backward seeking.'),
+    find.text(
+      'Buffer before playback for smoother forward and backward seeking.',
+    ),
   );
   expect(detailSubtitles, isNotEmpty);
   expect(

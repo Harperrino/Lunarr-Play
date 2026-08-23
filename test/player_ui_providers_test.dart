@@ -131,27 +131,24 @@ void main() {
     },
   );
 
-  test(
-    'preparation overlay is hidden on fast path once live prep flags are cleared',
-    () {
-      final viewModel = buildPlayerPreparationOverlayViewModel(
-        playbackUri: 'https://example.com/live.m3u8',
-        isPlaying: false,
-        isBuffering: false,
-        isLiveStartupBuffering: false,
-        isLiveAudioStabilizing: false,
-        isLiveAudioAwaiting: false,
-        audioTracks: const [
-          AudioTrack('1', 'Main', 'deu', codec: 'ac3', channelscount: 2),
-        ],
-        bufferDuration: Duration.zero,
-        bufferTargetSeconds: 15,
-        isSeekable: false,
-      );
+  test('preparation overlay is hidden on fast path once live prep flags are cleared', () {
+    final viewModel = buildPlayerPreparationOverlayViewModel(
+      playbackUri: 'https://example.com/live.m3u8',
+      isPlaying: false,
+      isBuffering: false,
+      isLiveStartupBuffering: false,
+      isLiveAudioStabilizing: false,
+      isLiveAudioAwaiting: false,
+      audioTracks: const [
+        AudioTrack('1', 'Main', 'deu', codec: 'ac3', channelscount: 2),
+      ],
+      bufferDuration: Duration.zero,
+      bufferTargetSeconds: 15,
+      isSeekable: false,
+    );
 
-      expect(viewModel.showOverlay, isFalse);
-    },
-  );
+    expect(viewModel.showOverlay, isFalse);
+  });
 
   test(
     'preparation overlay shows connecting state while live stream prepares',
@@ -214,27 +211,24 @@ void main() {
     expect(viewModel.title, 'Synchronizing audio');
   });
 
-  test(
-    'preparation overlay shows audio awaiting state while late audio is detected',
-    () {
-      final viewModel = buildPlayerPreparationOverlayViewModel(
-        playbackUri: 'https://example.com/live.m3u8',
-        isPlaying: false,
-        isBuffering: true,
-        isLiveStartupBuffering: false,
-        isLiveAudioStabilizing: false,
-        isLiveAudioAwaiting: true,
-        audioTracks: const [],
-        bufferDuration: Duration.zero,
-        bufferTargetSeconds: 15,
-        isSeekable: false,
-      );
+  test('preparation overlay shows audio awaiting state while late audio is detected', () {
+    final viewModel = buildPlayerPreparationOverlayViewModel(
+      playbackUri: 'https://example.com/live.m3u8',
+      isPlaying: false,
+      isBuffering: true,
+      isLiveStartupBuffering: false,
+      isLiveAudioStabilizing: false,
+      isLiveAudioAwaiting: true,
+      audioTracks: const [],
+      bufferDuration: Duration.zero,
+      bufferTargetSeconds: 15,
+      isSeekable: false,
+    );
 
-      expect(viewModel.showOverlay, isTrue);
-      expect(viewModel.title, 'Detecting audio');
-      expect(viewModel.subtitle, 'Detecting audio track…');
-    },
-  );
+    expect(viewModel.showOverlay, isTrue);
+    expect(viewModel.title, 'Detecting audio');
+    expect(viewModel.subtitle, 'Detecting audio track…');
+  });
 
   test('preparation overlay shows startup buffer progress', () {
     final viewModel = buildPlayerPreparationOverlayViewModel(
@@ -255,51 +249,45 @@ void main() {
     expect(viewModel.progressValue, closeTo(7 / 15, 0.001));
   });
 
-  test(
-    'preparation overlay shows audio detecting state when tracks exist but not yet stable',
-    () {
-      final viewModel = buildPlayerPreparationOverlayViewModel(
-        playbackUri: 'https://example.com/live.m3u8',
-        isPlaying: false,
-        isBuffering: true,
-        isLiveStartupBuffering: false,
-        isLiveAudioStabilizing: false,
-        isLiveAudioAwaiting: false,
-        audioTracks: const [
-          AudioTrack('1', 'Main', 'deu', codec: 'ac3', channelscount: 6),
-        ],
-        bufferDuration: Duration.zero,
-        bufferTargetSeconds: 15,
-        isSeekable: false,
-      );
+  test('preparation overlay shows audio detecting state when tracks exist but not yet stable', () {
+    final viewModel = buildPlayerPreparationOverlayViewModel(
+      playbackUri: 'https://example.com/live.m3u8',
+      isPlaying: false,
+      isBuffering: true,
+      isLiveStartupBuffering: false,
+      isLiveAudioStabilizing: false,
+      isLiveAudioAwaiting: false,
+      audioTracks: const [
+        AudioTrack('1', 'Main', 'deu', codec: 'ac3', channelscount: 6),
+      ],
+      bufferDuration: Duration.zero,
+      bufferTargetSeconds: 15,
+      isSeekable: false,
+    );
 
-      expect(viewModel.showOverlay, isTrue);
-      expect(viewModel.title, 'Preparing stream');
-      expect(viewModel.subtitle, 'Detecting audio…');
-    },
-  );
+    expect(viewModel.showOverlay, isTrue);
+    expect(viewModel.title, 'Preparing stream');
+    expect(viewModel.subtitle, 'Detecting audio…');
+  });
 
-  test(
-    'preparation overlay shows connecting state while live opens before playbackUri is set',
-    () {
-      final viewModel = buildPlayerPreparationOverlayViewModel(
-        playbackUri: null,
-        isPlaying: false,
-        isBuffering: true,
-        isLiveStartupBuffering: false,
-        isLiveAudioStabilizing: false,
-        isLiveAudioAwaiting: false,
-        audioTracks: const [],
-        bufferDuration: Duration.zero,
-        bufferTargetSeconds: 15,
-        isSeekable: false,
-      );
+  test('preparation overlay shows connecting state while live opens before playbackUri is set', () {
+    final viewModel = buildPlayerPreparationOverlayViewModel(
+      playbackUri: null,
+      isPlaying: false,
+      isBuffering: true,
+      isLiveStartupBuffering: false,
+      isLiveAudioStabilizing: false,
+      isLiveAudioAwaiting: false,
+      audioTracks: const [],
+      bufferDuration: Duration.zero,
+      bufferTargetSeconds: 15,
+      isSeekable: false,
+    );
 
-      expect(viewModel.showOverlay, isTrue);
-      expect(viewModel.title, 'Preparing stream');
-      expect(viewModel.subtitle, 'Establishing connection…');
-    },
-  );
+    expect(viewModel.showOverlay, isTrue);
+    expect(viewModel.title, 'Preparing stream');
+    expect(viewModel.subtitle, 'Establishing connection…');
+  });
 
   test(
     'preparation overlay is hidden when live is idle with all prep flags false',

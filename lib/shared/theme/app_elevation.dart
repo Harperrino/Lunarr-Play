@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Describes whether a surface owns a fixed elevation or follows the
 /// Material 3 Elevated Card state ladder.

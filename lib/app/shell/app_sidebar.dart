@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/app/shell/shell_sidebar.dart';
 import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 

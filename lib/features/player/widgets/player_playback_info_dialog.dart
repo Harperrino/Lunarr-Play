@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/services/live_audio_track_service.dart';
@@ -106,9 +106,8 @@ class _PlayerPlaybackInfoDialog extends StatelessWidget {
                       Expanded(
                         child: Text(
                           context.l10n.playbackInfoTitle,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleMedium?.copyWith(fontSize: 15),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontSize: 15),
                         ),
                       ),
                       IconButton(

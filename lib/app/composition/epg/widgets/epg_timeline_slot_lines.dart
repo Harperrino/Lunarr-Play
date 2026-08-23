@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
 
 /// Vertical grid lines aligned with 30-minute timeline slots.

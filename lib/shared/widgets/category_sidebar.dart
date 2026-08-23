@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/core/constants/filter_constants.dart';
 import 'package:m3uxtream_player/shared/layout/live_layout_geometry.dart';
 import 'package:m3uxtream_player/core/models/playlist_catalog_scope.dart';

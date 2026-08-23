@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:m3uxtream_player/core/models/playback_preferences.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
+import 'package:m3uxtream_player/core/providers/playback_preferences_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_client.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_credentials_store.dart';
@@ -287,6 +290,11 @@ class _AuthedSessionController extends JellyfinSessionController {
       JellyfinAuthenticated(connection: _connection);
 }
 
+class _TestPlaybackPreferencesNotifier extends PlaybackPreferencesNotifier {
+  @override
+  Future<PlaybackPreferences> build() async => const PlaybackPreferences();
+}
+
 /// Hosts a Jellyfin widget with an authenticated session and a mock transport.
 ///
 /// [playbackControllerOverride] replaces the real autoDispose player provider
@@ -318,6 +326,12 @@ Widget jellyfinTestHost(
     key: UniqueKey(),
     child: MaterialApp(
       theme: ThemeData.dark(useMaterial3: true),
+      // Mirrors the production compatibility boundary for legacy packages.
+      // ignore: deprecated_member_use
+      builder: (context, child) => MaterialUiCompatibilityBridge(
+        key: const ValueKey('material-ui-compatibility-bridge'),
+        child: child ?? const SizedBox.shrink(),
+      ),
       home: Scaffold(body: child),
     ),
   );
@@ -330,6 +344,14 @@ List<Override> jellyfinTestOverrides({
   bool fullscreen = false,
 }) {
   return [
+    databaseProvider.overrideWith(
+      (ref) => throw StateError(
+        'Jellyfin widget tests must not open the production database',
+      ),
+    ),
+    playbackPreferencesProvider.overrideWith(
+      _TestPlaybackPreferencesNotifier.new,
+    ),
     isDesktopPlatformProvider.overrideWithValue(false),
     isFullscreenProvider.overrideWith((ref) => fullscreen),
     jellyfinApiClientProvider.overrideWithValue(

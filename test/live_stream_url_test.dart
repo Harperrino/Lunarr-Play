@@ -3,42 +3,36 @@ import 'package:m3uxtream_player/core/models/streaming_diagnostics.dart';
 import 'package:m3uxtream_player/core/services/live_stream_url.dart';
 
 void main() {
-  test(
-    'playbackAttempts keeps app/mpv candidates first and adds fallback headers later',
-    () {
-      final attempts = LiveStreamUrl.playbackAttempts(
-        'http://iptv.example.com/live/u/p/123',
-      );
+  test('playbackAttempts keeps app/mpv candidates first and adds fallback headers later', () {
+    final attempts = LiveStreamUrl.playbackAttempts(
+      'http://iptv.example.com/live/u/p/123',
+    );
 
-      expect(attempts.first.headerProfile, LiveStreamHeaderProfile.appMpv);
-      expect(
-        attempts.first.playbackUrl,
-        'http://iptv.example.com/live/u/p/123',
-      );
-      expect(
-        attempts
-            .takeWhile(
-              (attempt) =>
-                  attempt.headerProfile == LiveStreamHeaderProfile.appMpv,
-            )
-            .length,
-        3,
-      );
-      expect(
-        attempts.any(
-          (attempt) => attempt.headerProfile == LiveStreamHeaderProfile.vlcLike,
-        ),
-        isTrue,
-      );
-      expect(
-        attempts.any(
-          (attempt) =>
-              attempt.headerProfile == LiveStreamHeaderProfile.browserLike,
-        ),
-        isTrue,
-      );
-    },
-  );
+    expect(attempts.first.headerProfile, LiveStreamHeaderProfile.appMpv);
+    expect(attempts.first.playbackUrl, 'http://iptv.example.com/live/u/p/123');
+    expect(
+      attempts
+          .takeWhile(
+            (attempt) =>
+                attempt.headerProfile == LiveStreamHeaderProfile.appMpv,
+          )
+          .length,
+      3,
+    );
+    expect(
+      attempts.any(
+        (attempt) => attempt.headerProfile == LiveStreamHeaderProfile.vlcLike,
+      ),
+      isTrue,
+    );
+    expect(
+      attempts.any(
+        (attempt) =>
+            attempt.headerProfile == LiveStreamHeaderProfile.browserLike,
+      ),
+      isTrue,
+    );
+  });
 
   test('playbackAttempts keeps delivery labels aligned with URL shape', () {
     final attempts = LiveStreamUrl.playbackAttempts(

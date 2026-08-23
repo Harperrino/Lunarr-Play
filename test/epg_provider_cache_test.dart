@@ -1,11 +1,13 @@
+import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
 import 'package:m3uxtream_player/app/composition/epg/providers/epg_providers.dart';
+import 'package:m3uxtream_player/core/database/app_database.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
+import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/features/search/providers/search_providers.dart';
-import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
 
 Channel _channel({int id = 1, String name = 'RTL HD', String? tvgId}) {
   return Channel(
@@ -31,8 +33,10 @@ void main() {
   test(
     'epg providers stay warm briefly and dispose after the warm-cache window',
     () async {
+      final database = AppDatabase.executor(NativeDatabase.memory());
       final container = ProviderContainer(
         overrides: [
+          databaseProvider.overrideWithValue(database),
           epgWarmCacheDurationProvider.overrideWith((ref) {
             return const Duration(milliseconds: 40);
           }),
@@ -57,7 +61,10 @@ void main() {
           }),
         ],
       );
-      addTearDown(container.dispose);
+      addTearDown(() async {
+        container.dispose();
+        await database.close();
+      });
 
       await container.read(knownEpgChannelIdsProvider.future);
       await container.read(epgChannelDisplayNamesProvider.future);
@@ -128,8 +135,10 @@ void main() {
   test(
     'search filtering does not invalidate the EPG matching catalogue',
     () async {
+      final database = AppDatabase.executor(NativeDatabase.memory());
       final container = ProviderContainer(
         overrides: [
+          databaseProvider.overrideWithValue(database),
           knownEpgChannelIdsProvider.overrideWith(
             (ref) => Stream.value(const {
               1: {'de.rtl'},
@@ -150,7 +159,10 @@ void main() {
           ),
         ],
       );
-      addTearDown(container.dispose);
+      addTearDown(() async {
+        container.dispose();
+        await database.close();
+      });
 
       final matchesSub = container.listen<Map<int, EpgChannelMatchResult>>(
         epgChannelMatchesProvider,

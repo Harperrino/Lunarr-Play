@@ -307,52 +307,50 @@ END;
     },
   );
 
-  test(
-    'bootstrap isolates a failed playlist and retries non-ready state',
-    () async {
-      final database = AppDatabase.executor(NativeDatabase.memory());
-      addTearDown(database.close);
-      final brokenId = await database
-          .into(database.playlists)
-          .insert(
-            PlaylistsCompanion.insert(
-              name: 'Broken',
-              type: 'm3u',
-              urlOrHost: 'https://example.invalid/broken',
-            ),
-          );
-      final readyId = await database
-          .into(database.playlists)
-          .insert(
-            PlaylistsCompanion.insert(
-              name: 'Ready',
-              type: 'm3u',
-              urlOrHost: 'https://example.invalid/ready',
-            ),
-          );
-      await database.batch((batch) {
-        batch.insert(
-          database.channels,
-          ChannelsCompanion.insert(
-            playlistId: brokenId,
-            name: 'Broken News',
-            streamUrl: 'https://example.invalid/broken-news',
-            groupName: const Value('News'),
-            channelType: 'live',
+  test('bootstrap isolates a failed playlist and retries non-ready state', () async {
+    final database = AppDatabase.executor(NativeDatabase.memory());
+    addTearDown(database.close);
+    final brokenId = await database
+        .into(database.playlists)
+        .insert(
+          PlaylistsCompanion.insert(
+            name: 'Broken',
+            type: 'm3u',
+            urlOrHost: 'https://example.invalid/broken',
           ),
         );
-        batch.insert(
-          database.channels,
-          ChannelsCompanion.insert(
-            playlistId: readyId,
-            name: 'Ready News',
-            streamUrl: 'https://example.invalid/ready-news',
-            groupName: const Value('News'),
-            channelType: 'live',
+    final readyId = await database
+        .into(database.playlists)
+        .insert(
+          PlaylistsCompanion.insert(
+            name: 'Ready',
+            type: 'm3u',
+            urlOrHost: 'https://example.invalid/ready',
           ),
         );
-      });
-      await database.customStatement('''
+    await database.batch((batch) {
+      batch.insert(
+        database.channels,
+        ChannelsCompanion.insert(
+          playlistId: brokenId,
+          name: 'Broken News',
+          streamUrl: 'https://example.invalid/broken-news',
+          groupName: const Value('News'),
+          channelType: 'live',
+        ),
+      );
+      batch.insert(
+        database.channels,
+        ChannelsCompanion.insert(
+          playlistId: readyId,
+          name: 'Ready News',
+          streamUrl: 'https://example.invalid/ready-news',
+          groupName: const Value('News'),
+          channelType: 'live',
+        ),
+      );
+    });
+    await database.customStatement('''
 CREATE TRIGGER fail_one_playlist
 BEFORE INSERT ON search_documents
 WHEN new.playlist_id = $brokenId
@@ -361,53 +359,52 @@ BEGIN
 END;
 ''');
 
-      final search = SearchIndexRepository(database);
-      await search.ensureExistingIndexes();
-      await database.customStatement('DROP TRIGGER fail_one_playlist');
+    final search = SearchIndexRepository(database);
+    await search.ensureExistingIndexes();
+    await database.customStatement('DROP TRIGGER fail_one_playlist');
 
-      final states = await database
-          .customSelect(
-            'SELECT playlist_id, status FROM search_index_state '
-            'ORDER BY playlist_id',
-          )
-          .get();
-      expect(states.map((row) => row.read<String>('status')), [
-        'failed',
-        'ready',
-      ]);
-      expect(
-        (await search.search(
-          SearchRequest(
-            query: 'ready',
-            tab: SearchResultTab.channels,
-            activePlaylistIds: {readyId},
-          ),
-        )).single.title,
-        'Ready News',
-      );
+    final states = await database
+        .customSelect(
+          'SELECT playlist_id, status FROM search_index_state '
+          'ORDER BY playlist_id',
+        )
+        .get();
+    expect(states.map((row) => row.read<String>('status')), [
+      'failed',
+      'ready',
+    ]);
+    expect(
+      (await search.search(
+        SearchRequest(
+          query: 'ready',
+          tab: SearchResultTab.channels,
+          activePlaylistIds: {readyId},
+        ),
+      )).single.title,
+      'Ready News',
+    );
 
-      // The cached future models one bootstrap run. A fresh repository models
-      // the next startup and retries the failed playlist once its cause is gone.
-      await search.ensureExistingIndexes();
-      final cachedRetry = await database
-          .customSelect(
-            'SELECT status FROM search_index_state WHERE playlist_id = ?',
-            variables: [Variable<int>(brokenId)],
-          )
-          .getSingle();
-      expect(cachedRetry.read<String>('status'), 'failed');
+    // The cached future models one bootstrap run. A fresh repository models
+    // the next startup and retries the failed playlist once its cause is gone.
+    await search.ensureExistingIndexes();
+    final cachedRetry = await database
+        .customSelect(
+          'SELECT status FROM search_index_state WHERE playlist_id = ?',
+          variables: [Variable<int>(brokenId)],
+        )
+        .getSingle();
+    expect(cachedRetry.read<String>('status'), 'failed');
 
-      final restartedSearch = SearchIndexRepository(database);
-      await restartedSearch.ensureExistingIndexes();
-      final resumed = await database
-          .customSelect(
-            'SELECT status FROM search_index_state WHERE playlist_id = ?',
-            variables: [Variable<int>(brokenId)],
-          )
-          .getSingle();
-      expect(resumed.read<String>('status'), 'ready');
-    },
-  );
+    final restartedSearch = SearchIndexRepository(database);
+    await restartedSearch.ensureExistingIndexes();
+    final resumed = await database
+        .customSelect(
+          'SELECT status FROM search_index_state WHERE playlist_id = ?',
+          variables: [Variable<int>(brokenId)],
+        )
+        .getSingle();
+    expect(resumed.read<String>('status'), 'ready');
+  });
 
   test(
     'playlist deletion cascades search state, documents and FTS rows',

@@ -18,6 +18,8 @@ import 'package:m3uxtream_player/features/jellyfin/services/jellyfin_log_redacto
 /// Optional host hook called before a Jellyfin video starts (stops an
 /// existing Lunarr/Xtream stream). No-op by default.
 typedef JellyfinExistingPlaybackStopper = Future<void> Function();
+typedef JellyfinPlayerFactory = Player Function();
+typedef JellyfinVideoControllerFactory = VideoController Function(Player);
 
 /// Owns the Jellyfin media_kit instance — Player B.
 ///
@@ -26,8 +28,6 @@ typedef JellyfinExistingPlaybackStopper = Future<void> Function();
 /// Dispose is deterministic and idempotent; the autoDispose provider calls it
 /// when the playback screen (or the Jellyfin tab) goes away.
 class JellyfinPlayerController {
-  static const _playerOpenTimeout = Duration(seconds: 10);
-
   JellyfinPlayerController({
     required this._connection,
     required this._apiClient,
@@ -37,11 +37,14 @@ class JellyfinPlayerController {
     this._playbackReporter,
     this._onPlaybackStopped,
     Player? player,
-    VideoController Function(Player player)? videoControllerFactory,
+    JellyfinPlayerFactory? playerFactory,
+    JellyfinVideoControllerFactory? videoControllerFactory,
+    Duration playerOpenTimeout = const Duration(seconds: 10),
   }) {
-    _player = player ?? Player();
-    _videoController = (videoControllerFactory ?? VideoController.new)(_player);
-    _bindPlayerStreams();
+    _playerFactory = playerFactory ?? Player.new;
+    _videoControllerFactory = videoControllerFactory ?? VideoController.new;
+    _playerOpenTimeout = playerOpenTimeout;
+    _installPlayer(player ?? _playerFactory());
   }
 
   final JellyfinConnection _connection;
@@ -53,9 +56,13 @@ class JellyfinPlayerController {
   final VoidCallback? _onPlaybackStopped;
   final JellyfinLogRedactor _redactor = const JellyfinLogRedactor();
   final JellyfinPlaybackResolver _resolver = const JellyfinPlaybackResolver();
+  late final JellyfinPlayerFactory _playerFactory;
+  late final JellyfinVideoControllerFactory _videoControllerFactory;
+  late final Duration _playerOpenTimeout;
 
-  late final Player _player;
-  late final VideoController _videoController;
+  late Player _player;
+  late VideoController _videoController;
+  int _playerGeneration = -1;
 
   final ValueNotifier<JellyfinPlayerState> state =
       ValueNotifier<JellyfinPlayerState>(const JellyfinPlayerState());
@@ -73,9 +80,24 @@ class JellyfinPlayerController {
   Player get player => _player;
   VideoController get videoController => _videoController;
 
-  void _bindPlayerStreams() {
+  void _installPlayer(Player player) {
+    _player = player;
+    _videoController = _videoControllerFactory(player);
+    _playerGeneration++;
+    if (_playerGeneration > 0) {
+      _mutate((s) => s.copyWith(playerGeneration: _playerGeneration));
+    }
+    _bindPlayerStreams(player, _playerGeneration);
+  }
+
+  void _bindPlayerStreams(Player player, int generation) {
+    bool active() =>
+        !_disposed &&
+        generation == _playerGeneration &&
+        identical(player, _player);
     _subscriptions.add(
-      _player.stream.playing.listen((value) {
+      player.stream.playing.listen((value) {
+        if (!active()) return;
         final changed = state.value.playing != value;
         _mutate((s) => s.copyWith(playing: value));
         if (changed) {
@@ -84,29 +106,32 @@ class JellyfinPlayerController {
       }),
     );
     _subscriptions.add(
-      _player.stream.buffering.listen(
-        (value) => _mutate((s) => s.copyWith(buffering: value)),
-      ),
+      player.stream.buffering.listen((value) {
+        if (active()) _mutate((s) => s.copyWith(buffering: value));
+      }),
     );
     _subscriptions.add(
-      _player.stream.completed.listen((value) {
+      player.stream.completed.listen((value) {
+        if (!active()) return;
         _mutate((s) => s.copyWith(completed: value));
         if (value) _reportPlaybackStopped();
       }),
     );
     _subscriptions.add(
-      _player.stream.volume.listen((value) {
+      player.stream.volume.listen((value) {
+        if (!active()) return;
         final normalized = (value / 100.0).clamp(0.0, 1.0).toDouble();
         _mutate((s) => s.copyWith(volume: normalized, muted: normalized <= 0));
       }),
     );
     _subscriptions.add(
-      _player.stream.duration.listen(
-        (value) => _mutate((s) => s.copyWith(duration: value)),
-      ),
+      player.stream.duration.listen((value) {
+        if (active()) _mutate((s) => s.copyWith(duration: value));
+      }),
     );
     _subscriptions.add(
-      _player.stream.position.listen((value) {
+      player.stream.position.listen((value) {
+        if (!active()) return;
         // Position ticks flood; only republish whole-second changes.
         if ((value - state.value.position).inSeconds.abs() >= 1) {
           _mutate((s) => s.copyWith(position: value));
@@ -115,7 +140,8 @@ class JellyfinPlayerController {
       }),
     );
     _subscriptions.add(
-      _player.stream.error.listen((message) {
+      player.stream.error.listen((message) {
+        if (!active()) return;
         if (message.isEmpty) return;
         AppLogger.warning(
           _redactor.redact('JellyfinPlayerController: Player error: $message'),
@@ -284,20 +310,30 @@ class JellyfinPlayerController {
       }
       if (!_isCurrentAttempt(attempt)) return;
 
-      final audioTracks = playbackInfo.mediaStreams
+      final selectedStreams = resolved.mediaSource.mediaStreams.isNotEmpty
+          ? resolved.mediaSource.mediaStreams
+          : playbackInfo.mediaStreams;
+      final audioTracks = selectedStreams
           .where((stream) => stream.type == JellyfinMediaStreamType.audio)
           .toList(growable: false);
-      final subtitleTracks = playbackInfo.mediaStreams
+      final subtitleTracks = selectedStreams
           .where((stream) => stream.type == JellyfinMediaStreamType.subtitle)
           .toList(growable: false);
-      final selectedAudio =
-          audioStreamIndex ??
-          playbackInfo.defaultAudioStreamIndex ??
-          _defaultStreamIndex(audioTracks, selectFirst: true);
-      final selectedSubtitle =
-          subtitleStreamIndex ??
-          playbackInfo.defaultSubtitleStreamIndex ??
-          _defaultStreamIndex(subtitleTracks, selectFirst: false);
+      final selectedAudio = _validStreamIndex(
+        audioStreamIndex ??
+            resolved.mediaSource.defaultAudioStreamIndex ??
+            playbackInfo.defaultAudioStreamIndex,
+        audioTracks,
+        selectFirst: true,
+      );
+      final selectedSubtitle = _validStreamIndex(
+        subtitleStreamIndex ??
+            resolved.mediaSource.defaultSubtitleStreamIndex ??
+            playbackInfo.defaultSubtitleStreamIndex,
+        subtitleTracks,
+        selectFirst: false,
+        allowOff: true,
+      );
       _mutate(
         (s) => s.copyWith(
           audioTracks: audioTracks,
@@ -482,19 +518,68 @@ class JellyfinPlayerController {
   Future<void> _openForAttempt(int attempt, Media media) {
     return _enqueueLifecycleOperation(() async {
       if (!_isCurrentAttempt(attempt)) return;
+      final openingPlayer = _player;
+      final generation = _playerGeneration;
+      final openFuture = openingPlayer.open(media, play: false);
       try {
-        await _player.open(media).timeout(_playerOpenTimeout);
+        await openFuture.timeout(_playerOpenTimeout);
       } on TimeoutException {
         AppLogger.warning(
           'JellyfinPlayerController: Player open timed out after '
           '${_playerOpenTimeout.inSeconds}s.',
         );
+        await _retireTimedOutPlayer(openingPlayer, generation, openFuture);
         rethrow;
       }
-      if (!_isCurrentAttempt(attempt) && !_disposed && _queuedStops == 0) {
-        await _player.stop();
+      if (!_isCurrentAttempt(attempt) ||
+          generation != _playerGeneration ||
+          !identical(openingPlayer, _player)) {
+        if (!_disposed && _queuedStops == 0) await openingPlayer.stop();
+        return;
       }
+      await openingPlayer.play();
     });
+  }
+
+  Future<void> _retireTimedOutPlayer(
+    Player timedOutPlayer,
+    int generation,
+    Future<void> openFuture,
+  ) async {
+    if (generation != _playerGeneration ||
+        !identical(timedOutPlayer, _player)) {
+      return;
+    }
+    if (_disposed) {
+      unawaited(_disposeRetiredPlayer(timedOutPlayer, openFuture));
+      return;
+    }
+    final staleSubscriptions = List<StreamSubscription<Object?>>.of(
+      _subscriptions,
+    );
+    _subscriptions.clear();
+    for (final subscription in staleSubscriptions) {
+      await subscription.cancel();
+    }
+    _installPlayer(_playerFactory());
+    unawaited(_disposeRetiredPlayer(timedOutPlayer, openFuture));
+  }
+
+  Future<void> _disposeRetiredPlayer(
+    Player retiredPlayer,
+    Future<void> openFuture,
+  ) async {
+    try {
+      await openFuture;
+    } catch (_) {
+      // The open failure is already surfaced by the active playback attempt.
+    }
+    try {
+      await retiredPlayer.stop();
+    } catch (_) {}
+    try {
+      await retiredPlayer.dispose();
+    } catch (_) {}
   }
 
   Future<void> _enqueuePlayerStop() {
@@ -566,6 +651,20 @@ class JellyfinPlayerController {
       if (stream.isDefault) return stream.index;
     }
     return selectFirst && streams.isNotEmpty ? streams.first.index : -1;
+  }
+
+  int _validStreamIndex(
+    int? requested,
+    List<JellyfinMediaStream> streams, {
+    required bool selectFirst,
+    bool allowOff = false,
+  }) {
+    if (allowOff && requested != null && requested < 0) return -1;
+    if (requested != null &&
+        streams.any((stream) => stream.index == requested)) {
+      return requested;
+    }
+    return _defaultStreamIndex(streams, selectFirst: selectFirst);
   }
 
   String _playMethod(JellyfinPlaybackMethod method) => switch (method) {

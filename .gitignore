@@ -22,7 +22,6 @@ migrate_working_dir/
 .agents/
 .codebase-memory/
 /docs/
-/PUBSPEC_POLICY.md
 
 # Private project memory / handoff notes
 opencode.json

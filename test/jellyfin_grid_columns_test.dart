@@ -4,7 +4,10 @@ import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_library_view
 void main() {
   group('jellyfinGridColumnsFor', () {
     test('scales at 1080, 1440 and 4K window content widths', () {
-      expect(jellyfinGridColumnsFor(780), 4); // 1080px window minus sidebar/gutters
+      expect(
+        jellyfinGridColumnsFor(780),
+        4,
+      ); // 1080px window minus sidebar/gutters
       expect(jellyfinGridColumnsFor(1080), 5); // 1440px window
       expect(jellyfinGridColumnsFor(2560), 12); // 4K window, capped
     });

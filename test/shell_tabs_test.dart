@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/app/shell/shell_tab_labels.dart';
 import 'package:m3uxtream_player/l10n/generated/app_localizations_en.dart';

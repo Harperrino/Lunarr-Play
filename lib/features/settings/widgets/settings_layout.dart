@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/core/services/settings_layout_geometry.dart';
 import 'package:m3uxtream_player/features/settings/widgets/settings_section_navigation.dart';
 

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_navigation_item.dart';

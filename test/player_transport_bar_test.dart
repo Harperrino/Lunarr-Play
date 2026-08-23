@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
@@ -168,6 +168,8 @@ void main() {
       expect(playRect.center.dx, lessThan(audioRect.center.dx));
       expect(audioRect.center.dx, lessThan(fullscreenRect.center.dx));
       expect(playRect.center.dx, closeTo(transportRect.center.dx, 36));
+      expect(find.byTooltip('Skip back 15 seconds'), findsNothing);
+      expect(find.byTooltip('Skip forward 15 seconds'), findsNothing);
 
       final slider = tester.widget<M3ExpressiveSlider>(
         find.byType(M3ExpressiveSlider),
@@ -249,6 +251,7 @@ void main() {
     'renders VOD Expressive scrubber with buffer and seek callbacks',
     (tester) async {
       final seeks = <Duration>[];
+      final relativeSeeks = <Duration>[];
       final volumeChanges = <double>[];
       const vodChannel = Channel(
         providerOrder: 0,
@@ -289,6 +292,7 @@ void main() {
                   onVolumeChangeEnd: _noopVolume,
                   onToggleMute: _noop,
                   onSeek: seeks.add,
+                  onSeekRelative: relativeSeeks.add,
                 ),
               ),
             ),
@@ -317,6 +321,13 @@ void main() {
       );
       await tester.pump();
       expect(volumeChanges, isNotEmpty);
+
+      await tester.tap(find.byTooltip('Skip back 15 seconds'));
+      await tester.tap(find.byTooltip('Skip forward 15 seconds'));
+      expect(relativeSeeks, const [
+        Duration(seconds: -15),
+        Duration(seconds: 15),
+      ]);
     },
   );
 

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/services/player_buffer_service.dart';
 import 'package:m3uxtream_player/core/models/playback_preferences.dart';

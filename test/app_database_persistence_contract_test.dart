@@ -312,9 +312,7 @@ Future<void> _expectSchemaContract(AppDatabase database) async {
       .getSingle();
   expect(
     indexSql,
-    contains(
-      'epg_entries (playlist_id, channel_id, start_time, end_time)',
-    ),
+    contains('epg_entries (playlist_id, channel_id, start_time, end_time)'),
   );
 
   final channelForeignKeys = await database

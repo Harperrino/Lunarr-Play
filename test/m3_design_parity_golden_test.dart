@@ -4,7 +4,7 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -323,9 +323,9 @@ Widget _catalogScene() => _themedApp(
                               children: [
                                 Text(
                                   'Mediathek',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.headlineSmall,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall,
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -526,9 +526,9 @@ Widget _settingsScene() => _themedApp(
                                   children: [
                                     Text(
                                       'Playlist connection',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleMedium,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
                                     ),
                                     const SizedBox(height: 18),
                                     TextField(
@@ -590,9 +590,9 @@ Widget _settingsScene() => _themedApp(
                                   children: [
                                     Text(
                                       'Appearance',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleMedium,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
                                     ),
                                     const SizedBox(height: 12),
                                     const Text('Use expressive controls'),

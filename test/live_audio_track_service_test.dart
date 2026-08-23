@@ -252,25 +252,22 @@ void main() {
       );
     });
 
-    test(
-      'preferred language chooses the matching stereo track among stereo candidates',
-      () {
-        const candidates = [
-          AudioTrack('1', 'Main', 'eng', codec: 'aac', channelscount: 2),
-          AudioTrack('2', 'Main', 'deu', codec: 'mp2', channelscount: 2),
-          AudioTrack('3', 'Main', 'fra', codec: 'ac3', channelscount: 6),
-        ];
+    test('preferred language chooses the matching stereo track among stereo candidates', () {
+      const candidates = [
+        AudioTrack('1', 'Main', 'eng', codec: 'aac', channelscount: 2),
+        AudioTrack('2', 'Main', 'deu', codec: 'mp2', channelscount: 2),
+        AudioTrack('3', 'Main', 'fra', codec: 'ac3', channelscount: 6),
+      ];
 
-        expect(
-          LiveAudioTrackService.pickBestFrom(
-            candidates,
-            preferStereo: true,
-            preferredLanguage: 'de',
-          )?.id,
-          '2',
-        );
-      },
-    );
+      expect(
+        LiveAudioTrackService.pickBestFrom(
+          candidates,
+          preferStereo: true,
+          preferredLanguage: 'de',
+        )?.id,
+        '2',
+      );
+    });
 
     test('language aliases match canonical codes', () {
       const candidates = [
@@ -294,25 +291,22 @@ void main() {
       );
     });
 
-    test(
-      'preferred language does not override codec preference when languages differ',
-      () {
-        const candidates = [
-          AudioTrack('1', 'Main', 'eng', codec: 'mp2', channelscount: 2),
-          AudioTrack('2', 'Main', 'deu', codec: 'aac', channelscount: 2),
-        ];
+    test('preferred language does not override codec preference when languages differ', () {
+      const candidates = [
+        AudioTrack('1', 'Main', 'eng', codec: 'mp2', channelscount: 2),
+        AudioTrack('2', 'Main', 'deu', codec: 'aac', channelscount: 2),
+      ];
 
-        // Preferred English exists but AAC/Deutsch is a much better codec candidate.
-        // Language bonus (100) outweighs codec difference (8 vs 7), so English mp2 wins.
-        expect(
-          LiveAudioTrackService.pickBestFrom(
-            candidates,
-            preferredLanguage: 'en',
-          )?.id,
-          '1',
-        );
-      },
-    );
+      // Preferred English exists but AAC/Deutsch is a much better codec candidate.
+      // Language bonus (100) outweighs codec difference (8 vs 7), so English mp2 wins.
+      expect(
+        LiveAudioTrackService.pickBestFrom(
+          candidates,
+          preferredLanguage: 'en',
+        )?.id,
+        '1',
+      );
+    });
 
     test(
       'when no preferred language matches, falls back to codec/stereo logic',
@@ -332,24 +326,21 @@ void main() {
       },
     );
 
-    test(
-      'when no stereo track exists, preferStereo falls back to normal language and codec scoring',
-      () {
-        const candidates = [
-          AudioTrack('1', 'Main', 'eng', codec: 'aac', channelscount: 6),
-          AudioTrack('2', 'Main', 'deu', codec: 'mp2', channelscount: 6),
-        ];
+    test('when no stereo track exists, preferStereo falls back to normal language and codec scoring', () {
+      const candidates = [
+        AudioTrack('1', 'Main', 'eng', codec: 'aac', channelscount: 6),
+        AudioTrack('2', 'Main', 'deu', codec: 'mp2', channelscount: 6),
+      ];
 
-        expect(
-          LiveAudioTrackService.pickBestFrom(
-            candidates,
-            preferStereo: true,
-            preferredLanguage: 'de',
-          )?.id,
-          '2',
-        );
-      },
-    );
+      expect(
+        LiveAudioTrackService.pickBestFrom(
+          candidates,
+          preferStereo: true,
+          preferredLanguage: 'de',
+        )?.id,
+        '2',
+      );
+    });
 
     test('force stereo and preferred language combine predictably', () {
       const candidates = [

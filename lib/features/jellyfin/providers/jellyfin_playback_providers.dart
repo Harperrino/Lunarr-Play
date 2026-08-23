@@ -15,9 +15,8 @@ final jellyfinExistingPlaybackStopperProvider =
 /// Session reporting stays injectable so playback tests can remain fully
 /// deterministic without issuing network calls.
 final jellyfinPlaybackReporterProvider = Provider<JellyfinPlaybackReporter>(
-  (ref) => JellyfinPlaybackReporter(
-    apiClient: ref.watch(jellyfinApiClientProvider),
-  ),
+  (ref) =>
+      JellyfinPlaybackReporter(apiClient: ref.watch(jellyfinApiClientProvider)),
 );
 
 /// Feature/screen-scoped Jellyfin player instance.

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_library.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_library_sidebar.dart';
@@ -45,13 +45,9 @@ void main() {
       isTrue,
     );
 
-    await tester.tap(
-      find.byKey(const ValueKey('jellyfin-library-shows')),
-    );
+    await tester.tap(find.byKey(const ValueKey('jellyfin-library-shows')));
     expect(selectedLibrary, _libraries[1]);
-    await tester.tap(
-      find.byKey(const ValueKey('jellyfin-library-overview')),
-    );
+    await tester.tap(find.byKey(const ValueKey('jellyfin-library-overview')));
     expect(overviewSelected, isTrue);
     expect(tester.takeException(), isNull);
   });
@@ -80,9 +76,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(
-      find.byKey(const ValueKey('jellyfin-library-menu-shows')),
-    );
+    await tester.tap(find.byKey(const ValueKey('jellyfin-library-menu-shows')));
     await tester.pump();
     expect(selectedLibrary, _libraries[1]);
     expect(tester.takeException(), isNull);

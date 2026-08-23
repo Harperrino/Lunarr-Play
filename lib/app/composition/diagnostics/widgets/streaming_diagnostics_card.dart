@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/models/streaming_diagnostics.dart';
@@ -76,9 +76,8 @@ class StreamingDiagnosticsCard extends ConsumerWidget {
                       children: [
                         Text(
                           context.l10n.diagnosticsStreamingTitle,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleLarge?.copyWith(fontSize: 14),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontSize: 14),
                         ),
                         const SizedBox(height: 3),
                         Text(

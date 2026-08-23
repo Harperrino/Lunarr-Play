@@ -168,16 +168,19 @@ Future<void> _expectDrainWaitsForHeldJob(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('drain waits for an active favorite transaction before DB close', () async {
-    final rig = await _seededRig();
-    addTearDown(rig.db.close);
+  test(
+    'drain waits for an active favorite transaction before DB close',
+    () async {
+      final rig = await _seededRig();
+      addTearDown(rig.db.close);
 
-    rig.interceptor.arm('runUpdate');
-    final toggle = rig.repository.toggleChannelFavorite(rig.channelId);
+      rig.interceptor.arm('runUpdate');
+      final toggle = rig.repository.toggleChannelFavorite(rig.channelId);
 
-    await _expectDrainWaitsForHeldJob(rig, () => toggle);
-    expect(await rig.db.select(rig.db.channels).get(), isNotEmpty);
-  });
+      await _expectDrainWaitsForHeldJob(rig, () => toggle);
+      expect(await rig.db.select(rig.db.channels).get(), isNotEmpty);
+    },
+  );
 
   test('drain waits for an active search before DB close', () async {
     final rig = await _seededRig();
@@ -232,7 +235,10 @@ void main() {
       ),
       throwsStateError,
     );
-    expect(() => rig.repository.deletePlaylist(rig.playlistId), throwsStateError);
+    expect(
+      () => rig.repository.deletePlaylist(rig.playlistId),
+      throwsStateError,
+    );
     expect(
       () => rig.searchIndex.search(
         SearchRequest(
@@ -243,22 +249,28 @@ void main() {
       ),
       throwsStateError,
     );
-    expect(() => rig.searchIndex.rebuildPlaylist(rig.playlistId), throwsStateError);
+    expect(
+      () => rig.searchIndex.rebuildPlaylist(rig.playlistId),
+      throwsStateError,
+    );
     expect(() => rig.searchIndex.ensureExistingIndexes(), throwsStateError);
     expect(() => rig.searchIndex.retryIncompleteIndexes(), throwsStateError);
   });
 
-  test('a failing job neither blocks the drain nor escapes unhandled', () async {
-    final rig = await _seededRig();
-    addTearDown(rig.db.close);
+  test(
+    'a failing job neither blocks the drain nor escapes unhandled',
+    () async {
+      final rig = await _seededRig();
+      addTearDown(rig.db.close);
 
-    final failing = rig.repository.toggleChannelFavorite(9999);
-    await expectLater(failing, throwsStateError);
+      final failing = rig.repository.toggleChannelFavorite(9999);
+      await expectLater(failing, throwsStateError);
 
-    rig.gate.beginShutdown();
-    await rig.gate.drain();
-    await rig.db.close();
-  });
+      rig.gate.beginShutdown();
+      await rig.gate.drain();
+      await rig.db.close();
+    },
+  );
 
   group('shutdown order', () {
     final calls = <String>[];
@@ -285,20 +297,23 @@ void main() {
       await container.read(actionsProvider).prepareForShutdown();
     }
 
-    test('prepareForShutdown closes gate first and disposes services last', () async {
-      await runPrepareForShutdown();
+    test(
+      'prepareForShutdown closes gate first and disposes services last',
+      () async {
+        await runPrepareForShutdown();
 
-      expect(calls, [
-        'gate.beginShutdown',
-        'coordinator.dispose',
-        'epg.drain',
-        'search.beginShutdown',
-        'search.drain',
-        'gate.drain',
-        'search.dispose',
-        'epg.dispose',
-      ]);
-    });
+        expect(calls, [
+          'gate.beginShutdown',
+          'coordinator.dispose',
+          'epg.drain',
+          'search.beginShutdown',
+          'search.drain',
+          'gate.drain',
+          'search.dispose',
+          'epg.dispose',
+        ]);
+      },
+    );
   });
 }
 
@@ -358,10 +373,7 @@ class _RecordingCoordinator extends EpgAutoRefreshCoordinator {
 
 class _RecordingSearchIndex extends SearchIndexRepository {
   _RecordingSearchIndex(this.calls)
-    : super(
-        AppDatabase.executor(NativeDatabase.memory()),
-        lifecycleGate: null,
-      );
+    : super(AppDatabase.executor(NativeDatabase.memory()), lifecycleGate: null);
 
   final List<String> calls;
 

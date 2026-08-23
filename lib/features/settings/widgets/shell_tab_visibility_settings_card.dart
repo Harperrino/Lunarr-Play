@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/features/settings/providers/debug_mode_providers.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
@@ -19,9 +19,9 @@ class ShellTabVisibilitySettingsCard extends ConsumerWidget {
     final hiddenAsync = ref.watch(hiddenShellTabKindsProvider);
     final hidden = hiddenAsync.valueOrNull ?? const <ShellTabKind>{};
     final debugEnabled = ref.watch(debugModeProvider).valueOrNull ?? false;
-    final tabs = shellVisibleTabs(
-      debugModeEnabled: debugEnabled,
-    ).where((tab) => tab.kind != ShellTabKind.settings).toList(growable: false);
+    final tabs = shellVisibleTabs(debugModeEnabled: debugEnabled)
+        .where((tab) => tab.kind != ShellTabKind.settings)
+        .toList(growable: false);
     final controller = ref.read(hiddenShellTabKindsProvider.notifier);
     final colors = Theme.of(context).colorScheme;
 
@@ -62,9 +62,8 @@ class ShellTabVisibilitySettingsCard extends ConsumerWidget {
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               context.l10n.shellTabVisibilitySettingsAlwaysVisible,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: colors.onSurfaceVariant),
             ),
           ),
         ],

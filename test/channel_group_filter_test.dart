@@ -46,26 +46,23 @@ void main() {
     },
   );
 
-  test(
-    'hidden categories stay out while pinned categories keep their stored order',
-    () {
-      final allGroups = distinctSortedGroups([
-        _channel('Alpha'),
-        _channel('Beta'),
-        _channel('Gamma'),
-      ]);
+  test('hidden categories stay out while pinned categories keep their stored order', () {
+    final allGroups = distinctSortedGroups([
+      _channel('Alpha'),
+      _channel('Beta'),
+      _channel('Gamma'),
+    ]);
 
-      final hidden = visibleGroups(allGroups, {'Beta'});
-      expect(prioritizePinnedGroups(hidden, ['Beta', 'Gamma']), [
-        'Gamma',
-        'Alpha',
-      ]);
-      expect(
-        prioritizePinnedGroups(visibleGroups(allGroups, {}), ['Beta', 'Gamma']),
-        ['Beta', 'Gamma', 'Alpha'],
-      );
-    },
-  );
+    final hidden = visibleGroups(allGroups, {'Beta'});
+    expect(prioritizePinnedGroups(hidden, ['Beta', 'Gamma']), [
+      'Gamma',
+      'Alpha',
+    ]);
+    expect(
+      prioritizePinnedGroups(visibleGroups(allGroups, {}), ['Beta', 'Gamma']),
+      ['Beta', 'Gamma', 'Alpha'],
+    );
+  });
 
   test('filterChannelsByType isolates categories by content type', () {
     final channels = [

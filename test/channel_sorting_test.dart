@@ -112,9 +112,8 @@ void main() {
         overrides: [
           filteredChannelsProvider.overrideWithValue(channels),
           effectivePlaylistCatalogScopeProvider.overrideWithValue(scope),
-          channelSortModeProvider(
-            1,
-          ).overrideWith((ref) => ChannelSortModeNotifier.test(1)),
+          channelSortModeProvider(1)
+              .overrideWith((ref) => ChannelSortModeNotifier.test(1)),
         ],
       );
       addTearDown(container.dispose);

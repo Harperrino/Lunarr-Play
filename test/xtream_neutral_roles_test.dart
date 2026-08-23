@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
@@ -13,7 +13,7 @@ import 'package:m3uxtream_player/shared/theme/app_theme.dart';
 import 'package:m3uxtream_player/shared/theme/catalogue_surface_roles.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_poster_frame.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:m3uxtream_player/shared/widgets/app_shimmer.dart';
 
 const _movie = Channel(
   providerOrder: 0,
@@ -124,12 +124,11 @@ void main() {
     final roles = CatalogueSurfaceRoles.fromTheme(
       AppTheme.highContrastDarkTheme,
     );
-    final shimmer = tester.widget<Shimmer>(find.byType(Shimmer));
-    final gradient = shimmer.gradient as LinearGradient;
-    expect(gradient.colors.first, roles.shimmerBase);
-    expect(gradient.colors[2], roles.shimmerHighlight);
+    final shimmer = tester.widget<AppShimmer>(find.byType(AppShimmer));
+    expect(shimmer.baseColor, roles.shimmerBase);
+    expect(shimmer.highlightColor, roles.shimmerHighlight);
     final tiles = find.descendant(
-      of: find.byType(Shimmer),
+      of: find.byType(AppShimmer),
       matching: find.byWidgetPredicate(
         (widget) =>
             widget is Container &&

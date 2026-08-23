@@ -20,9 +20,8 @@ void main() {
         overrides: [
           epgRepositoryProvider.overrideWithValue(repository),
           effectivePlaylistCatalogScopeProvider.overrideWithValue(scope),
-          playlistCatalogPlaylistIdsProvider(
-            scope,
-          ).overrideWith((ref) => const [1]),
+          playlistCatalogPlaylistIdsProvider(scope)
+              .overrideWith((ref) => const [1]),
           knownEpgChannelIdsProvider.overrideWith(
             (ref) => Stream.value(const {
               1: {'shared.id'},

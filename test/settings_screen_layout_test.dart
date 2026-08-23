@@ -1,5 +1,5 @@
 import 'package:drift/native.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
@@ -76,9 +76,8 @@ void main() {
         container: container,
         child: MaterialApp(
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: TextScaler.linear(textScaleFactor)),
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(textScaleFactor)),
             child: child!,
           ),
           home: const Scaffold(body: SettingsScreen()),

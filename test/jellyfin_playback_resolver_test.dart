@@ -65,10 +65,7 @@ void main() {
       item: _item,
       playbackInfo: const JellyfinPlaybackInfo(
         mediaSources: [
-          JellyfinMediaSource(
-            id: 'ms-transcode',
-            supportsTranscoding: true,
-          ),
+          JellyfinMediaSource(id: 'ms-transcode', supportsTranscoding: true),
           JellyfinMediaSource(
             id: 'ms-direct',
             container: 'mkv',
@@ -90,17 +87,18 @@ void main() {
       item: _item,
       playbackInfo: const JellyfinPlaybackInfo(
         mediaSources: [
-            JellyfinMediaSource(
-              id: 'ms-remux',
-              container: 'ts',
-              supportsDirectStream: true,
-              transcodingUrl:
-                  '/Videos/movie-1/master.m3u8?Existing=value%20with%20spaces',
+          JellyfinMediaSource(
+            id: 'ms-remux',
+            container: 'ts',
+            supportsDirectStream: true,
+            transcodingUrl:
+                '/Videos/movie-1/master.m3u8?Existing=value%20with%20spaces',
           ),
           JellyfinMediaSource(
             id: 'ms-transcode',
             supportsTranscoding: true,
-            transcodingUrl: '/Videos/movie-1/master.m3u8?MediaSourceId=ms-transcode',
+            transcodingUrl:
+                '/Videos/movie-1/master.m3u8?MediaSourceId=ms-transcode',
           ),
         ],
       ),
@@ -153,10 +151,7 @@ void main() {
         item: _item,
         playbackInfo: const JellyfinPlaybackInfo(
           mediaSources: [
-            JellyfinMediaSource(
-              id: 'ms-transcode',
-              supportsTranscoding: true,
-            ),
+            JellyfinMediaSource(id: 'ms-transcode', supportsTranscoding: true),
           ],
         ),
       ),
@@ -171,10 +166,7 @@ void main() {
       item: _item,
       playbackInfo: const JellyfinPlaybackInfo(
         mediaSources: [
-          JellyfinMediaSource(
-            id: 'ms-missing-url',
-            supportsDirectStream: true,
-          ),
+          JellyfinMediaSource(id: 'ms-missing-url', supportsDirectStream: true),
           JellyfinMediaSource(
             id: 'ms-transcode',
             supportsTranscoding: true,
@@ -188,29 +180,36 @@ void main() {
     expect(resolved.mediaSourceId, 'ms-transcode');
   });
 
-  test('rejects a playback URL on another origin without exposing the token', () {
-    expect(
-      () => resolver.resolve(
-        baseUrl: 'https://server:8096',
-        accessToken: 'secret-token',
-        item: _item,
-        playbackInfo: const JellyfinPlaybackInfo(
-          mediaSources: [
-            JellyfinMediaSource(
-              id: 'ms-external',
-              supportsTranscoding: true,
-              transcodingUrl: 'https://evil.example/stream.m3u8',
-            ),
-          ],
+  test(
+    'rejects a playback URL on another origin without exposing the token',
+    () {
+      expect(
+        () => resolver.resolve(
+          baseUrl: 'https://server:8096',
+          accessToken: 'secret-token',
+          item: _item,
+          playbackInfo: const JellyfinPlaybackInfo(
+            mediaSources: [
+              JellyfinMediaSource(
+                id: 'ms-external',
+                supportsTranscoding: true,
+                transcodingUrl: 'https://evil.example/stream.m3u8',
+              ),
+            ],
+          ),
         ),
-      ),
-      throwsA(
-        isA<JellyfinPlaybackResolutionException>()
-            .having((error) => error.message, 'message', contains('outside'))
-            .having((error) => error.message, 'message', isNot(contains('secret-token'))),
-      ),
-    );
-  });
+        throwsA(
+          isA<JellyfinPlaybackResolutionException>()
+              .having((error) => error.message, 'message', contains('outside'))
+              .having(
+                (error) => error.message,
+                'message',
+                isNot(contains('secret-token')),
+              ),
+        ),
+      );
+    },
+  );
 
   test('rejects an HTTPS-to-HTTP playback downgrade', () {
     expect(
@@ -266,12 +265,7 @@ void main() {
           'SupportsDirectPlay': true,
           'DefaultAudioStreamIndex': 1,
           'MediaStreams': [
-            {
-              'Index': 0,
-              'Type': 1,
-              'Codec': 'h264',
-              'IsDefault': true,
-            },
+            {'Index': 0, 'Type': 1, 'Codec': 'h264', 'IsDefault': true},
             {
               'Index': 1,
               'Type': 0,

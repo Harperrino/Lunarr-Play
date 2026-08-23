@@ -24,22 +24,19 @@ void main() {
       },
     );
 
-    test(
-      'fast path skips when audio params are missing but no risk indicators exist',
-      () {
-        expect(
-          PlayerNotifier.shouldWaitForLiveAudioStabilization(
-            hasDecodedAudioInfo: false,
-            audioRecoveryWasNeeded: false,
-            liveAudioInitialAutoOnly: false,
-            liveAudioHadNoAudioState: false,
-            liveAudioTrackSwitchedDuringPrep: false,
-            isDirectMpegTs: false,
-          ),
-          isFalse,
-        );
-      },
-    );
+    test('fast path skips when audio params are missing but no risk indicators exist', () {
+      expect(
+        PlayerNotifier.shouldWaitForLiveAudioStabilization(
+          hasDecodedAudioInfo: false,
+          audioRecoveryWasNeeded: false,
+          liveAudioInitialAutoOnly: false,
+          liveAudioHadNoAudioState: false,
+          liveAudioTrackSwitchedDuringPrep: false,
+          isDirectMpegTs: false,
+        ),
+        isFalse,
+      );
+    });
 
     test('waits when audio recovery was needed even if params are present', () {
       expect(

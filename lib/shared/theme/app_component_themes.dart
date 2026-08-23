@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../layout/live_composition_geometry.dart';
 import 'app_elevation.dart';

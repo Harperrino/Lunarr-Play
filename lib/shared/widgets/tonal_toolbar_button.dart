@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Compact Material 3 action used by catalogue toolbars.
 class TonalToolbarButton extends StatelessWidget {

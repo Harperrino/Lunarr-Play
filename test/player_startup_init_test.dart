@@ -79,61 +79,58 @@ void main() {
     },
   );
 
-  test(
-    'openStream waits for player initialization instead of returning early',
-    () async {
-      final tempDir = Directory.systemTemp.createTempSync(
-        'player_startup_init_test',
-      );
-      final missingFile = File(
-        '${tempDir.path}${Platform.pathSeparator}missing.mp4',
-      );
-      final fileUrl = Uri.file(missingFile.path).toString();
+  test('openStream waits for player initialization instead of returning early', () async {
+    final tempDir = Directory.systemTemp.createTempSync(
+      'player_startup_init_test',
+    );
+    final missingFile = File(
+      '${tempDir.path}${Platform.pathSeparator}missing.mp4',
+    );
+    final fileUrl = Uri.file(missingFile.path).toString();
 
-      final container = ProviderContainer(
-        overrides: [
-          playerBufferSecondsProvider.overrideWith(
-            _TestBufferSecondsNotifier.new,
+    final container = ProviderContainer(
+      overrides: [
+        playerBufferSecondsProvider.overrideWith(
+          _TestBufferSecondsNotifier.new,
+        ),
+        forceStereoEnabledProvider.overrideWith(_TestForceStereoNotifier.new),
+        preferredAudioLanguageProvider.overrideWith(
+          _TestPreferredAudioLanguageNotifier.new,
+        ),
+        streamingDiagnosticsSettingsProvider.overrideWith(
+          _TestStreamingDiagnosticsSettingsNotifier.new,
+        ),
+        selectedChannelProvider.overrideWith(
+          (ref) => const Channel(
+            providerOrder: 0,
+            id: 1,
+            playlistId: 1,
+            name: 'VOD Dummy',
+            streamUrl: 'https://example.com/dummy.mp4',
+            isFavorite: false,
+            isWatchLater: false,
+            channelType: 'vod',
           ),
-          forceStereoEnabledProvider.overrideWith(_TestForceStereoNotifier.new),
-          preferredAudioLanguageProvider.overrideWith(
-            _TestPreferredAudioLanguageNotifier.new,
-          ),
-          streamingDiagnosticsSettingsProvider.overrideWith(
-            _TestStreamingDiagnosticsSettingsNotifier.new,
-          ),
-          selectedChannelProvider.overrideWith(
-            (ref) => const Channel(
-              providerOrder: 0,
-              id: 1,
-              playlistId: 1,
-              name: 'VOD Dummy',
-              streamUrl: 'https://example.com/dummy.mp4',
-              isFavorite: false,
-              isWatchLater: false,
-              channelType: 'vod',
-            ),
-          ),
-        ],
-      );
-      addTearDown(() {
-        container.dispose();
-        if (tempDir.existsSync()) {
-          tempDir.deleteSync(recursive: true);
-        }
-      });
+        ),
+      ],
+    );
+    addTearDown(() {
+      container.dispose();
+      if (tempDir.existsSync()) {
+        tempDir.deleteSync(recursive: true);
+      }
+    });
 
-      // Trigger initialization but do not await it.
-      container.read(playerNotifierProvider);
-      expect(container.read(playerNotifierProvider).isLoading, isTrue);
+    // Trigger initialization but do not await it.
+    container.read(playerNotifierProvider);
+    expect(container.read(playerNotifierProvider).isLoading, isTrue);
 
-      // This should wait for initialization and then attempt to open the stream.
-      await container.read(playerNotifierProvider.notifier).openStream(fileUrl);
+    // This should wait for initialization and then attempt to open the stream.
+    await container.read(playerNotifierProvider.notifier).openStream(fileUrl);
 
-      // After awaiting openStream the provider must have left the loading state.
-      final asyncValue = container.read(playerNotifierProvider);
-      expect(asyncValue.isLoading, isFalse);
-      expect(asyncValue.hasValue, isTrue);
-    },
-  );
+    // After awaiting openStream the provider must have left the loading state.
+    final asyncValue = container.read(playerNotifierProvider);
+    expect(asyncValue.isLoading, isFalse);
+    expect(asyncValue.hasValue, isTrue);
+  });
 }

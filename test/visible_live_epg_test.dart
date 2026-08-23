@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/native.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
@@ -90,10 +90,7 @@ void main() {
       registry.unregister(2);
       await Future<void>.delayed(const Duration(milliseconds: 20));
       expect(emitted, hasLength(3));
-      expect(
-        emitted.last.map((c) => c.channelId).toSet(),
-        {1, 3},
-      );
+      expect(emitted.last.map((c) => c.channelId).toSet(), {1, 3});
     });
 
     test('publishes at most 64 most recently visible candidates', () async {
@@ -211,9 +208,7 @@ void main() {
             (ref) => candidates(),
           ),
           epgMatchingIndexProvider.overrideWithValue(index),
-          epgMatchingInputsReadyProvider.overrideWith(
-            (ref) => inputsReady,
-          ),
+          epgMatchingInputsReadyProvider.overrideWith((ref) => inputsReady),
         ],
       );
       addTearDown(container.dispose);
@@ -228,8 +223,7 @@ void main() {
 
     test('an empty visible set opens no SQL query', () async {
       final container = buildContainer(
-        candidates: () =>
-            Stream.value(const <VisibleLiveChannelCandidate>[]),
+        candidates: () => Stream.value(const <VisibleLiveChannelCandidate>[]),
         index: buildIndex(4),
       );
 
@@ -256,18 +250,21 @@ void main() {
       expect(epgRepository.queries, isEmpty);
     });
 
-    test('matching stays in a neutral loading state while inputs warm up', () async {
-      final container = buildContainer(
-        candidates: () => Stream.value([_candidate(1)]),
-        index: buildIndex(4),
-        inputsReady: false,
-      );
+    test(
+      'matching stays in a neutral loading state while inputs warm up',
+      () async {
+        final container = buildContainer(
+          candidates: () => Stream.value([_candidate(1)]),
+          index: buildIndex(4),
+          inputsReady: false,
+        );
 
-      final matches = container.read(visibleLiveEpgMatchesProvider);
-      expect(matches.isLoading, isTrue);
-      expect(matches.hasValue, isFalse);
-      expect(epgRepository.queries, isEmpty);
-    });
+        final matches = container.read(visibleLiveEpgMatchesProvider);
+        expect(matches.isLoading, isTrue);
+        expect(matches.hasValue, isFalse);
+        expect(epgRepository.queries, isEmpty);
+      },
+    );
 
     test('the Live tab never builds the global catalogue match map', () async {
       var globalMatchBuilds = 0;

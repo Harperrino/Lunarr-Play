@@ -4,9 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('the jellyfin feature never touches Drift or the app database', () {
-    final featureDirectory = Directory(
-      'lib/features/jellyfin',
-    ).absolute;
+    final featureDirectory = Directory('lib/features/jellyfin').absolute;
 
     expect(featureDirectory.existsSync(), isTrue);
 
@@ -22,9 +20,7 @@ void main() {
         if (trimmed.contains('package:drift/') ||
             trimmed.contains('app_database') ||
             trimmed.contains('package:sqlite3')) {
-          violations.add(
-            '${entity.absolute.path}:\n  $trimmed',
-          );
+          violations.add('${entity.absolute.path}:\n  $trimmed');
         }
       }
     }
@@ -32,7 +28,8 @@ void main() {
     expect(
       violations,
       isEmpty,
-      reason: 'Jellyfin credentials and metadata must never reach Drift:\n'
+      reason:
+          'Jellyfin credentials and metadata must never reach Drift:\n'
           '${violations.join('\n')}',
     );
   });

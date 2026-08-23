@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/app/services/app_error_handlers.dart';
@@ -59,45 +59,42 @@ void main() {
     expect(logs.last, isNot(contains('token=abc')));
   });
 
-  test(
-    'forwards Flutter error details including library, context, and collector info',
-    () async {
-      final restorer = installAppErrorHandlers();
-      addTearDown(restorer.restore);
+  test('forwards Flutter error details including library, context, and collector info', () async {
+    final restorer = installAppErrorHandlers();
+    addTearDown(restorer.restore);
 
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
 
-      container.read(uiLogsProvider);
+    container.read(uiLogsProvider);
 
-      FlutterError.onError?.call(
-        FlutterErrorDetails(
-          exception: StateError(
-            'RenderFlex overflowed by 18 pixels on the bottom.',
-          ),
-          stack: StackTrace.current,
-          library: 'rendering library',
-          context: ErrorDescription('while laying out a widget'),
-          informationCollector: () sync* {
-            yield ErrorDescription('The relevant error-causing widget was:');
-            yield ErrorDescription('Column');
-            yield ErrorDescription(
-              'Column:file:///app/features/player/widgets/player_panel.dart:123',
-            );
-          },
+    FlutterError.onError?.call(
+      FlutterErrorDetails(
+        exception: StateError(
+          'RenderFlex overflowed by 18 pixels on the bottom.',
         ),
-      );
+        stack: StackTrace.current,
+        library: 'rendering library',
+        context: ErrorDescription('while laying out a widget'),
+        informationCollector: () sync* {
+          yield ErrorDescription('The relevant error-causing widget was:');
+          yield ErrorDescription('Column');
+          yield ErrorDescription(
+            'Column:file:///app/features/player/widgets/player_panel.dart:123',
+          );
+        },
+      ),
+    );
 
-      await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
 
-      final logs = container.read(uiLogsProvider);
-      expect(logs.last, contains('FlutterError'));
-      expect(logs.last, contains('library: rendering library'));
-      expect(logs.last, contains('context: while laying out a widget'));
-      expect(logs.last, contains('The relevant error-causing widget was:'));
-      expect(logs.last, isNot(contains('user:pass')));
-    },
-  );
+    final logs = container.read(uiLogsProvider);
+    expect(logs.last, contains('FlutterError'));
+    expect(logs.last, contains('library: rendering library'));
+    expect(logs.last, contains('context: while laying out a widget'));
+    expect(logs.last, contains('The relevant error-causing widget was:'));
+    expect(logs.last, isNot(contains('user:pass')));
+  });
 
   test('restores previous Flutter and platform error handlers', () {
     final originalFlutterHandler = FlutterError.onError;

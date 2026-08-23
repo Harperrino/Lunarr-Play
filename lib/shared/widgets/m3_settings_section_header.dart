@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_component_metrics.dart';
 import 'm3_slots.dart';
@@ -56,9 +56,8 @@ class M3SettingsSectionHeader extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: compact ? 13 : 14,
-                      ),
+                      style: Theme.of(context).textTheme.titleLarge
+                          ?.copyWith(fontSize: compact ? 13 : 14),
                     ),
                   ),
                   if (titleSuffix != null) ...[

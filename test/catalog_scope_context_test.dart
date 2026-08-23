@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
@@ -25,10 +25,7 @@ void main() {
       ref.read(playlistCatalogScopeProvider),
       const PlaylistCatalogScope.allActive(),
     );
-    expect(
-      ref.read(effectivePlaylistCatalogScopeProvider).isAllActive,
-      isTrue,
-    );
+    expect(ref.read(effectivePlaylistCatalogScopeProvider).isAllActive, isTrue);
   });
 
   testWidgets('All catalogue scope survives opening a series episode', (
@@ -59,10 +56,7 @@ void main() {
       ref.read(playlistCatalogScopeProvider),
       const PlaylistCatalogScope.allActive(),
     );
-    expect(
-      ref.read(effectivePlaylistCatalogScopeProvider).isAllActive,
-      isTrue,
-    );
+    expect(ref.read(effectivePlaylistCatalogScopeProvider).isAllActive, isTrue);
   });
 
   testWidgets('an explicit single scope is not rewritten either', (

@@ -2,7 +2,7 @@ library;
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit/media_kit.dart';
@@ -165,7 +165,7 @@ void main() {
     expect(player.stopCount, greaterThanOrEqualTo(1));
   });
 
-  testWidgets('episode player exposes next, previous and expandable picker', (
+  testWidgets('episode player exposes navigation and a closable side overlay', (
     tester,
   ) async {
     final player = _TeardownFakePlayer();
@@ -195,6 +195,7 @@ void main() {
       find.byKey(const ValueKey('jellyfin-episode-picker-button')),
       findsOneWidget,
     );
+    expect(find.byKey(const ValueKey('jellyfin-episode-picker')), findsNothing);
 
     await tester.tap(
       find.byKey(const ValueKey('jellyfin-episode-picker-button')),
@@ -208,12 +209,40 @@ void main() {
       find.byKey(const ValueKey('jellyfin-player-episode-episode-1')),
       findsOneWidget,
     );
+    final currentRow = find.byKey(
+      const ValueKey('jellyfin-player-episode-episode-2'),
+    );
+    expect(tester.widget<InkWell>(currentRow).onTap, isNull);
 
-    await tester.tap(find.byTooltip('Next episode'));
+    await tester.tap(
+      find.byKey(const ValueKey('jellyfin-player-episode-episode-1')),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(player.openedMedia, hasLength(2));
     expect(player.openedMedia.last.uri, contains('/Videos/episode-1/'));
+
+    await tester.tap(
+      find.byKey(const ValueKey('jellyfin-episode-picker-button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('jellyfin-episode-picker')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('jellyfin-episode-overlay-mounted')),
+      findsNothing,
+    );
+    expect(
+      tester
+          .widget<Focus>(
+            find.byKey(const ValueKey('jellyfin-episode-overlay-button')),
+          )
+          .focusNode
+          ?.hasFocus,
+      isTrue,
+    );
   });
 
   testWidgets('fullscreen player covers the root overlay viewport', (
@@ -244,9 +273,7 @@ void main() {
     );
     await tester.pump();
 
-    final overlay = find.byKey(
-      const ValueKey('jellyfin-fullscreen-overlay'),
-    );
+    final overlay = find.byKey(const ValueKey('jellyfin-fullscreen-overlay'));
     expect(overlay, findsOneWidget);
     expect(tester.getSize(overlay), const Size(1280, 720));
     expect(

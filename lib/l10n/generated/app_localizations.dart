@@ -3202,6 +3202,18 @@ abstract class AppLocalizations {
   /// **'Episodes'**
   String get jellyfinEpisodesTitle;
 
+  /// No description provided for @jellyfinNoEpisodes.
+  ///
+  /// In en, this message translates to:
+  /// **'No episodes are available.'**
+  String get jellyfinNoEpisodes;
+
+  /// No description provided for @jellyfinEpisodeSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{episodeLabel}, {title}'**
+  String jellyfinEpisodeSemantics(String episodeLabel, String title);
+
   /// No description provided for @jellyfinSeasonSelectorLabel.
   ///
   /// In en, this message translates to:

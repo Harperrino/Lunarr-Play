@@ -74,9 +74,9 @@ void main() {
       for (var switchIndex = 0; switchIndex < 20; switchIndex++) {
         final playlistId = playlistIds[switchIndex % playlistIds.length];
         final stopwatch = Stopwatch()..start();
-        final channels = await repository
-            .watchChannelsByPlaylistIdsAndType([playlistId], 'live')
-            .first;
+        final channels = await repository.watchChannelsByPlaylistIdsAndType([
+          playlistId,
+        ], 'live').first;
         stopwatch.stop();
         expect(channels, hasLength(channelsPerPlaylist));
         coldDurations.add(stopwatch.elapsed);

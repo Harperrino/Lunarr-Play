@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_connection_providers.dart';
@@ -43,13 +43,15 @@ class JellyfinConnectionMenu extends ConsumerWidget {
               await ref
                   .read(jellyfinSessionControllerProvider.notifier)
                   .selectConnection(connection);
-              jellyfinSelectOverview(ref);
               controller.close();
             },
             onAdd: () {
-              ref
-                  .read(jellyfinSessionControllerProvider.notifier)
-                  .startAddingConnection();
+              jellyfinSelectOverview(ref);
+              unawaited(
+                ref
+                    .read(jellyfinSessionControllerProvider.notifier)
+                    .startAddingConnection(),
+              );
               controller.close();
             },
           ),
@@ -120,9 +122,8 @@ class _ConnectionTrigger extends StatelessWidget {
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(context).textTheme.labelLarge
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
                   if (!compact) const SizedBox(width: 4),

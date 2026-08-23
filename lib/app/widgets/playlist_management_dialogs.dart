@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/playlist_epg.dart';
@@ -78,9 +78,8 @@ class _PlaylistAddDialogState extends ConsumerState<_PlaylistAddDialog> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -174,9 +173,8 @@ class _PlaylistEditDialogState extends ConsumerState<_PlaylistEditDialog> {
     if (!mounted) return;
     switch (result) {
       case PlaylistFormValidationError(:final message):
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
       case PlaylistFormSuccess():
         Navigator.of(context).pop();
     }

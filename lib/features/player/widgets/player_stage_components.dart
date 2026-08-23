@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
@@ -137,9 +137,8 @@ class WindowedPlayerEmptyState extends StatelessWidget {
                 Text(
                   context.l10n.playerEmptySubtitle,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: colors.onSurfaceVariant),
                 ),
               ],
             ),

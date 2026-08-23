@@ -207,9 +207,8 @@ List<Channel> sortPlaylistCatalogChannels({
         .compareTo(orderByPlaylist[b.playlistId] ?? 1 << 30);
     if (playlistCompare != 0) return playlistCompare;
 
-    final providerCompare = effectiveChannelProviderOrder(
-      a,
-    ).compareTo(effectiveChannelProviderOrder(b));
+    final providerCompare = effectiveChannelProviderOrder(a)
+        .compareTo(effectiveChannelProviderOrder(b));
     if (providerCompare != 0) return providerCompare;
     final nameCompare = a.name.toLowerCase().compareTo(b.name.toLowerCase());
     if (nameCompare != 0) return nameCompare;

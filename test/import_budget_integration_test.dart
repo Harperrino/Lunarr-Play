@@ -195,9 +195,7 @@ void main() {
         PlaylistsCompanion(
           name: const Value('Controlled Xtream'),
           type: const Value('xtream'),
-          urlOrHost: Value(
-            'http://${server.address.host}:${server.port}',
-          ),
+          urlOrHost: Value('http://${server.address.host}:${server.port}'),
           username: const Value('user'),
           password: const Value('pass'),
         ),
@@ -210,62 +208,63 @@ void main() {
     }, RealHttpOverrides());
   });
 
-  test('Xtream limit cancels outstanding requests and publishes nothing', () async {
-    await HttpOverrides.runWithHttpOverrides(() async {
-      final db = AppDatabase.executor(NativeDatabase.memory());
-      addTearDown(db.close);
-      final repository = PlaylistRepository(db);
-      final service = PlaylistSyncService(
-        repository,
-        xtreamLimits: _integrationLimits(transport: 4, endpoint: 4),
-      );
-      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-      addTearDown(() => server.close(force: true));
-      var requested = 0;
-      server.listen((request) async {
-        requested++;
-        final action = request.uri.queryParameters['action'];
-        try {
-          if (action == 'get_live_categories') {
+  test(
+    'Xtream limit cancels outstanding requests and publishes nothing',
+    () async {
+      await HttpOverrides.runWithHttpOverrides(() async {
+        final db = AppDatabase.executor(NativeDatabase.memory());
+        addTearDown(db.close);
+        final repository = PlaylistRepository(db);
+        final service = PlaylistSyncService(
+          repository,
+          xtreamLimits: _integrationLimits(transport: 4, endpoint: 4),
+        );
+        final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+        addTearDown(() => server.close(force: true));
+        var requested = 0;
+        server.listen((request) async {
+          requested++;
+          final action = request.uri.queryParameters['action'];
+          try {
+            if (action == 'get_live_categories') {
+              request.response
+                ..statusCode = HttpStatus.ok
+                ..write('[12345]')
+                ..close();
+              return;
+            }
+            await Future<void>.delayed(const Duration(seconds: 2));
             request.response
               ..statusCode = HttpStatus.ok
-              ..write('[12345]')
+              ..write('[]')
               ..close();
-            return;
+          } on HttpException {
+            // Expected: the shared cancellation closes the other client.
           }
-          await Future<void>.delayed(const Duration(seconds: 2));
-          request.response
-            ..statusCode = HttpStatus.ok
-            ..write('[]')
-            ..close();
-        } on HttpException {
-          // Expected: the shared cancellation closes the other client.
-        }
-      });
-      final playlistId = await repository.insertPlaylist(
-        PlaylistsCompanion(
-          name: const Value('Cancelled Xtream'),
-          type: const Value('xtream'),
-          urlOrHost: Value(
-            'http://${server.address.host}:${server.port}',
+        });
+        final playlistId = await repository.insertPlaylist(
+          PlaylistsCompanion(
+            name: const Value('Cancelled Xtream'),
+            type: const Value('xtream'),
+            urlOrHost: Value('http://${server.address.host}:${server.port}'),
+            username: const Value('user'),
+            password: const Value('pass'),
           ),
-          username: const Value('user'),
-          password: const Value('pass'),
-        ),
-      );
-      final stopwatch = Stopwatch()..start();
+        );
+        final stopwatch = Stopwatch()..start();
 
-      await expectLater(
-        service.syncPlaylist(playlistId),
-        throwsA(isA<ImportLimitException>()),
-      );
-      stopwatch.stop();
+        await expectLater(
+          service.syncPlaylist(playlistId),
+          throwsA(isA<ImportLimitException>()),
+        );
+        stopwatch.stop();
 
-      expect(stopwatch.elapsed, lessThan(const Duration(seconds: 1)));
-      expect(requested, lessThanOrEqualTo(2));
-      expect(await db.select(db.channels).get(), isEmpty);
-    }, RealHttpOverrides());
-  });
+        expect(stopwatch.elapsed, lessThan(const Duration(seconds: 1)));
+        expect(requested, lessThanOrEqualTo(2));
+        expect(await db.select(db.channels).get(), isEmpty);
+      }, RealHttpOverrides());
+    },
+  );
 
   test('GZip expansion rejection preserves existing EPG rows', () async {
     final db = AppDatabase.executor(NativeDatabase.memory());
@@ -279,15 +278,17 @@ void main() {
         urlOrHost: 'fixture.m3u',
       ),
     );
-    await db.into(db.epgEntries).insert(
-      EpgEntriesCompanion.insert(
-        playlistId: playlistId,
-        channelId: 'old',
-        title: 'Existing guide',
-        startTime: DateTime(2030),
-        endTime: DateTime(2030, 1, 1, 1),
-      ),
-    );
+    await db
+        .into(db.epgEntries)
+        .insert(
+          EpgEntriesCompanion.insert(
+            playlistId: playlistId,
+            channelId: 'old',
+            title: 'Existing guide',
+            startTime: DateTime(2030),
+            endTime: DateTime(2030, 1, 1, 1),
+          ),
+        );
     final xml =
         '<tv><channel id="new"><display-name>New</display-name></channel>'
         '<programme start="20300101000000 +0000" '
@@ -318,56 +319,61 @@ void main() {
     expect(rows.single.title, 'Existing guide');
   });
 
-  test('XMLTV persistence rejection happens before any cache mutation', () async {
-    final db = AppDatabase.executor(NativeDatabase.memory());
-    addTearDown(db.close);
-    final playlistRepository = PlaylistRepository(db);
-    final epgRepository = EpgRepository(db);
-    final playlistId = await playlistRepository.insertPlaylist(
-      PlaylistsCompanion.insert(
-        name: 'Persist XMLTV',
-        type: 'm3u',
-        urlOrHost: 'fixture.m3u',
-      ),
-    );
-    await db.into(db.epgEntries).insert(
-      EpgEntriesCompanion.insert(
-        playlistId: playlistId,
-        channelId: 'old',
-        title: 'Existing guide',
-        startTime: DateTime(2030),
-        endTime: DateTime(2030, 1, 1, 1),
-      ),
-    );
-    const xml =
-        '<tv><channel id="new"><display-name>New</display-name></channel>'
-        '<programme start="20300101000000 +0000" '
-        'stop="20300101010000 +0000" channel="new">'
-        '<title>New guide</title></programme></tv>';
-    final tempDir = await Directory.systemTemp.createTemp('xmltv_persist');
-    addTearDown(() => tempDir.delete(recursive: true));
-    final source = File('${tempDir.path}/guide.xml');
-    await source.writeAsString(xml);
-    final service = EpgSyncService(
-      epgRepository,
-      playlistRepository,
-      xmltvLimits: _integrationLimits(persisted: 1),
-    );
-
-    await expectLater(
-      service.syncEpg(playlistId: playlistId, urlOrFilePath: source.path),
-      throwsA(
-        isA<ImportLimitException>().having(
-          (error) => error.code,
-          'code',
-          ImportLimitCode.persistedRows,
+  test(
+    'XMLTV persistence rejection happens before any cache mutation',
+    () async {
+      final db = AppDatabase.executor(NativeDatabase.memory());
+      addTearDown(db.close);
+      final playlistRepository = PlaylistRepository(db);
+      final epgRepository = EpgRepository(db);
+      final playlistId = await playlistRepository.insertPlaylist(
+        PlaylistsCompanion.insert(
+          name: 'Persist XMLTV',
+          type: 'm3u',
+          urlOrHost: 'fixture.m3u',
         ),
-      ),
-    );
-    final rows = await db.select(db.epgEntries).get();
-    expect(rows, hasLength(1));
-    expect(rows.single.title, 'Existing guide');
-  });
+      );
+      await db
+          .into(db.epgEntries)
+          .insert(
+            EpgEntriesCompanion.insert(
+              playlistId: playlistId,
+              channelId: 'old',
+              title: 'Existing guide',
+              startTime: DateTime(2030),
+              endTime: DateTime(2030, 1, 1, 1),
+            ),
+          );
+      const xml =
+          '<tv><channel id="new"><display-name>New</display-name></channel>'
+          '<programme start="20300101000000 +0000" '
+          'stop="20300101010000 +0000" channel="new">'
+          '<title>New guide</title></programme></tv>';
+      final tempDir = await Directory.systemTemp.createTemp('xmltv_persist');
+      addTearDown(() => tempDir.delete(recursive: true));
+      final source = File('${tempDir.path}/guide.xml');
+      await source.writeAsString(xml);
+      final service = EpgSyncService(
+        epgRepository,
+        playlistRepository,
+        xmltvLimits: _integrationLimits(persisted: 1),
+      );
+
+      await expectLater(
+        service.syncEpg(playlistId: playlistId, urlOrFilePath: source.path),
+        throwsA(
+          isA<ImportLimitException>().having(
+            (error) => error.code,
+            'code',
+            ImportLimitCode.persistedRows,
+          ),
+        ),
+      );
+      final rows = await db.select(db.epgEntries).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.title, 'Existing guide');
+    },
+  );
 
   test('explicit XMLTV cancellation kills the worker and preserves data', () async {
     final db = AppDatabase.executor(NativeDatabase.memory());

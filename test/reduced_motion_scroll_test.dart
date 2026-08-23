@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/features/diagnostics/widgets/ui_log_console_card.dart';
 import 'package:m3uxtream_player/features/settings/widgets/settings_layout.dart';

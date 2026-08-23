@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Canonical application branding bundled with every Lunarr Player build.
 abstract final class AppBrandAssets {

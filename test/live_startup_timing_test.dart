@@ -76,8 +76,7 @@ void main() {
   test('summary never exposes URLs, credentials, or control characters', () {
     final timing = LiveStartupTiming()..start();
     timing.recordCandidate(
-      attemptLabel:
-          'http://secret-user:secret-pass@example.invalid/live/secret-user/42?token=top-secret\nnext',
+      attemptLabel: 'http://secret-user:secret-pass@example.invalid/live/secret-user/42?token=top-secret\nnext',
       headerProfile: 'App/mpv',
       delivery: 'continuous',
     );

@@ -1,22 +1,26 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
+import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_episode_catalog.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
 import 'package:m3uxtream_player/core/models/playback_preferences.dart';
 import 'package:m3uxtream_player/core/providers/playback_preferences_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_assist.dart';
 import 'package:m3uxtream_player/features/jellyfin/services/jellyfin_image_service.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_playback_resolver.dart';
+import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_episode_navigation.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_controller.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_state.dart';
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_library_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_playback_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_connection_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_player_controls.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_player_episode_overlay.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_player_episode_overlay_layer.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_player_shortcut_region.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_formatting.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/shared/providers/app_shell_state_providers.dart';
@@ -53,7 +57,10 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
   bool _leavingPlayer = false;
   bool _fullscreenBusy = false;
   bool _fullscreenControlsVisible = true;
-  bool _episodePickerExpanded = false;
+  bool _episodeOverlayVisible = false;
+  int? _episodeOverlaySeason;
+  final FocusNode _episodeOverlayButtonFocusNode = FocusNode();
+  final FocusNode _episodeOverlayCloseFocusNode = FocusNode();
   bool _switchingEpisode = false;
   List<JellyfinMediaSegment> _segments = const [];
   JellyfinTrickplayManifest? _trickplayManifest;
@@ -91,15 +98,19 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     _cancelFullscreenControlsHide();
     _endcardTimer?.cancel();
     _listenedController?.state.removeListener(_onPlayerStateChanged);
+    _episodeOverlayButtonFocusNode.dispose();
+    _episodeOverlayCloseFocusNode.dispose();
     super.dispose();
   }
 
   @override
   void didUpdateWidget(JellyfinPlayerView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.item.id != widget.item.id) {
+    if (oldWidget.item.id != widget.item.id ||
+        oldWidget.connection.credentialId != widget.connection.credentialId) {
       _currentItem = widget.item;
-      _episodePickerExpanded = false;
+      _episodeOverlayVisible = false;
+      _episodeOverlaySeason = null;
       _resetAssistForItem();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -114,7 +125,8 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     setState(() {
       _switchingEpisode = true;
       _currentItem = episode;
-      _episodePickerExpanded = false;
+      _episodeOverlayVisible = false;
+      _episodeOverlaySeason = null;
     });
     _resetAssistForItem();
     try {
@@ -245,6 +257,7 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
         const PlaybackPreferences();
     setState(() {
       _endcardVisible = true;
+      _episodeOverlayVisible = false;
       _endcardRemaining = preferences.nextEpisodeAutoplayEnabled
           ? preferences.endcardCountdownSeconds
           : null;
@@ -314,12 +327,12 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
   }
 
   void _scheduleFullscreenControlsHide() {
-    if (!ref.read(isFullscreenProvider) || _episodePickerExpanded) return;
+    if (!ref.read(isFullscreenProvider) || _episodeOverlayVisible) return;
     _cancelFullscreenControlsHide();
     _fullscreenControlsHideTimer = Timer(_fullscreenControlsHideDelay, () {
       if (!mounted ||
           !ref.read(isFullscreenProvider) ||
-          _episodePickerExpanded) {
+          _episodeOverlayVisible) {
         return;
       }
       setState(() => _fullscreenControlsVisible = false);
@@ -342,18 +355,36 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     _scheduleFullscreenControlsHide();
   }
 
-  void _toggleEpisodePicker() {
-    final expanded = !_episodePickerExpanded;
-    setState(() {
-      _episodePickerExpanded = expanded;
-      if (expanded) _fullscreenControlsVisible = true;
-    });
-    if (!ref.read(isFullscreenProvider)) return;
-    if (expanded) {
-      _cancelFullscreenControlsHide();
-    } else {
-      _scheduleFullscreenControlsHide();
+  void _toggleEpisodeOverlay(JellyfinEpisodeCatalog catalog) {
+    if (_episodeOverlayVisible) {
+      _closeEpisodeOverlay();
+      return;
     }
+    final initialSeason =
+        catalog.seasonForItem(_currentItem.id) ??
+        catalog.normalizedSeason(_currentItem.seasonNumber);
+    setState(() {
+      _episodeOverlayVisible = true;
+      _episodeOverlaySeason = initialSeason;
+      _fullscreenControlsVisible = true;
+    });
+    _cancelFullscreenControlsHide();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _episodeOverlayVisible) {
+        _episodeOverlayCloseFocusNode.requestFocus();
+      }
+    });
+  }
+
+  void _closeEpisodeOverlay({bool restoreFocus = true}) {
+    if (!_episodeOverlayVisible) return;
+    setState(() => _episodeOverlayVisible = false);
+    if (restoreFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _episodeOverlayButtonFocusNode.requestFocus();
+      });
+    }
+    _scheduleFullscreenControlsHide();
   }
 
   @override
@@ -364,20 +395,24 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     final episodesAsync = seriesId == null
         ? null
         : ref.watch(jellyfinSeriesEpisodesProvider(seriesId));
-    final episodes = [...?episodesAsync?.valueOrNull]..sort(_compareEpisodes);
+    final catalog = JellyfinEpisodeCatalog.fromEpisodes(
+      episodesAsync?.valueOrNull ?? const <JellyfinItem>[],
+    );
+    final episodes = catalog.episodes;
     final currentIndex = episodes.indexWhere(
       (episode) => episode.id == _currentItem.id,
     );
-    final hasEpisodeNavigation = _currentItem.isEpisode && seriesId != null;
+    final hasEpisodeNavigation =
+        _currentItem.isEpisode && seriesId != null && seriesId.isNotEmpty;
     final previousEpisode = currentIndex > 0
         ? episodes[currentIndex - 1]
         : null;
     final nextEpisode = currentIndex >= 0 && currentIndex + 1 < episodes.length
         ? episodes[currentIndex + 1]
         : null;
-    _nextEpisode = nextEpisode;
+    _nextEpisode = jellyfinUnambiguousNextEpisode(episodes, _currentItem);
     if (controller.state.value.completed &&
-        nextEpisode != null &&
+        _nextEpisode != null &&
         !_endcardVisible &&
         !_endcardCancelled) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _showEndcard());
@@ -385,20 +420,12 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     final preferences =
         ref.watch(playbackPreferencesProvider).valueOrNull ??
         const PlaybackPreferences();
-
-    final videoSurface = _buildVideoSurface(controller, fullscreen: fullscreen);
-    final episodePicker = AnimatedSize(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-      child: _episodePickerExpanded && hasEpisodeNavigation
-          ? _EpisodePicker(
-              episodes: episodes,
-              currentItemId: _currentItem.id,
-              loading: episodesAsync?.isLoading ?? false,
-              onSelect: (episode) => unawaited(_playEpisode(episode)),
-            )
-          : const SizedBox.shrink(),
+    final overlaySeason = catalog.normalizedSeason(
+      _episodeOverlaySeason ??
+          catalog.seasonForItem(_currentItem.id) ??
+          _currentItem.seasonNumber,
     );
+
     final controls = JellyfinPlayerControls(
       controller: controller,
       onStop: () => unawaited(_leavePlayer()),
@@ -408,8 +435,11 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
       onNextEpisode: nextEpisode == null || _switchingEpisode
           ? null
           : () => unawaited(_playEpisode(nextEpisode)),
-      onToggleEpisodePicker: hasEpisodeNavigation ? _toggleEpisodePicker : null,
-      episodePickerExpanded: _episodePickerExpanded,
+      onToggleEpisodeOverlay: hasEpisodeNavigation
+          ? () => _toggleEpisodeOverlay(catalog)
+          : null,
+      episodeOverlayVisible: _episodeOverlayVisible,
+      episodeOverlayButtonFocusNode: _episodeOverlayButtonFocusNode,
       onToggleFullscreen: () => unawaited(_toggleFullscreen()),
       isFullscreen: fullscreen,
       seekIntervalSeconds: preferences.seekIntervalSeconds,
@@ -419,6 +449,16 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
       apiClient: ref.watch(jellyfinApiClientProvider),
       connection: widget.connection,
       itemId: _currentItem.id,
+    );
+    final playerStage = _buildPlayerStage(
+      controller,
+      fullscreen: fullscreen,
+      hasEpisodeNavigation: hasEpisodeNavigation,
+      catalog: catalog,
+      selectedSeason: overlaySeason,
+      loading: episodesAsync?.isLoading ?? false,
+      hasError: episodesAsync?.hasError ?? false,
+      seriesId: seriesId,
     );
 
     final windowedPlayer = _withShortcuts(
@@ -431,8 +471,7 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
             controller: controller,
             onBack: () => unawaited(_leavePlayer()),
           ),
-          Expanded(child: videoSurface),
-          episodePicker,
+          Expanded(child: playerStage),
           controls,
         ],
       ),
@@ -443,24 +482,14 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
       child: Listener(
         onPointerDown: (_) => _onFullscreenUserActivity(),
         onPointerMove: (_) => _onFullscreenUserActivity(),
+        onPointerHover: (_) => _onFullscreenUserActivity(),
         child: _withShortcuts(
           controller,
           preferences.seekIntervalSeconds,
           Stack(
             fit: StackFit.expand,
             children: [
-              videoSurface,
-              Positioned.fill(
-                child: MouseRegion(
-                  onEnter: (_) => _onFullscreenUserActivity(),
-                  onHover: (_) => _onFullscreenUserActivity(),
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTap: _onFullscreenUserActivity,
-                    child: const SizedBox.expand(),
-                  ),
-                ),
-              ),
+              playerStage,
               Positioned(
                 left: 12,
                 right: 12,
@@ -493,13 +522,7 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
                   curve: Curves.easeOutCubic,
                   child: IgnorePointer(
                     ignoring: !_fullscreenControlsVisible,
-                    child: SafeArea(
-                      top: false,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [episodePicker, controls],
-                      ),
-                    ),
+                    child: SafeArea(top: false, child: controls),
                   ),
                 ),
               ),
@@ -522,6 +545,64 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     );
   }
 
+  Widget _buildPlayerStage(
+    JellyfinPlayerController controller, {
+    required bool fullscreen,
+    required bool hasEpisodeNavigation,
+    required JellyfinEpisodeCatalog catalog,
+    required int? selectedSeason,
+    required bool loading,
+    required bool hasError,
+    required String? seriesId,
+  }) {
+    final videoSurface = _buildVideoSurface(controller, fullscreen: fullscreen);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = (constraints.maxWidth - 24).clamp(0.0, 440.0);
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            videoSurface,
+            if (hasEpisodeNavigation)
+              Positioned(
+                top: fullscreen ? 76 : 12,
+                right: 12,
+                bottom: fullscreen ? 116 : 12,
+                width: width,
+                child: JellyfinPlayerEpisodeOverlayLayer(
+                  visible: _episodeOverlayVisible && !_endcardVisible,
+                  child: JellyfinPlayerEpisodeOverlay(
+                    connection: widget.connection,
+                    imageService: ref.watch(jellyfinImageServiceProvider),
+                    catalog: catalog,
+                    selectedSeason: selectedSeason,
+                    currentItemId: _currentItem.id,
+                    loading: loading,
+                    switchingEpisode: _switchingEpisode,
+                    hasError: hasError,
+                    onSeasonSelected: (season) {
+                      setState(() => _episodeOverlaySeason = season);
+                    },
+                    onSelect: (episode) => unawaited(_playEpisode(episode)),
+                    onRetry: seriesId == null
+                        ? () {}
+                        : () => ref
+                              .read(
+                                jellyfinSeriesEpisodesProvider(seriesId)
+                                    .notifier,
+                              )
+                              .refresh(),
+                    onClose: _closeEpisodeOverlay,
+                    closeFocusNode: _episodeOverlayCloseFocusNode,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _withShortcuts(
     JellyfinPlayerController controller,
     int seekIntervalSeconds,
@@ -532,26 +613,20 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
       unawaited(action());
     }
 
-    return Focus(
-      autofocus: true,
-      child: CallbackShortcuts(
-        bindings: <ShortcutActivator, VoidCallback>{
-          SingleActivator(LogicalKeyboardKey.space): () =>
-              runWithActivity(controller.togglePlayPause),
-          SingleActivator(LogicalKeyboardKey.keyM): () =>
-              runWithActivity(controller.toggleMute),
-          SingleActivator(LogicalKeyboardKey.arrowLeft): () => runWithActivity(
-            () => controller.seekRelative(
-              Duration(seconds: -seekIntervalSeconds),
-            ),
-          ),
-          SingleActivator(LogicalKeyboardKey.arrowRight): () => runWithActivity(
-            () =>
-                controller.seekRelative(Duration(seconds: seekIntervalSeconds)),
-          ),
-        },
-        child: child,
+    return JellyfinPlayerShortcutRegion(
+      episodeOverlayVisible: _episodeOverlayVisible,
+      onTogglePlayPause: () => runWithActivity(controller.togglePlayPause),
+      onToggleMute: () => runWithActivity(controller.toggleMute),
+      onSeekBackward: () => runWithActivity(
+        () => controller.seekRelative(Duration(seconds: -seekIntervalSeconds)),
       ),
+      onSeekForward: () => runWithActivity(
+        () => controller.seekRelative(Duration(seconds: seekIntervalSeconds)),
+      ),
+      onEscape: () {
+        if (_episodeOverlayVisible) _closeEpisodeOverlay();
+      },
+      child: child,
     );
   }
 
@@ -571,6 +646,7 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
               children: [
                 if (state.initialized)
                   Video(
+                    key: ValueKey(state.playerGeneration),
                     controller: controller.videoController,
                     controls: NoVideoControls,
                     fit: BoxFit.contain,
@@ -768,109 +844,6 @@ class _JellyfinEndcard extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-int _compareEpisodes(JellyfinItem left, JellyfinItem right) {
-  final season = (left.seasonNumber ?? 0).compareTo(right.seasonNumber ?? 0);
-  if (season != 0) return season;
-  final episode = (left.episodeNumber ?? 0).compareTo(right.episodeNumber ?? 0);
-  if (episode != 0) return episode;
-  return left.name.compareTo(right.name);
-}
-
-class _EpisodePicker extends StatelessWidget {
-  const _EpisodePicker({
-    required this.episodes,
-    required this.currentItemId,
-    required this.loading,
-    required this.onSelect,
-  });
-
-  final List<JellyfinItem> episodes;
-  final String currentItemId;
-  final bool loading;
-  final ValueChanged<JellyfinItem> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return AppSurface(
-      key: const ValueKey('jellyfin-episode-picker'),
-      level: AppSurfaceLevel.high,
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            context.l10n.jellyfinEpisodesTitle,
-            style: Theme.of(context).textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 88,
-            child: loading && episodes.isEmpty
-                ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-                : ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: episodes.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final episode = episodes[index];
-                      final selected = episode.id == currentItemId;
-                      return SizedBox(
-                        width: 210,
-                        child: Material(
-                          color: selected
-                              ? colors.secondaryContainer
-                              : colors.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(14),
-                          child: InkWell(
-                            key: ValueKey(
-                              'jellyfin-player-episode-${episode.id}',
-                            ),
-                            borderRadius: BorderRadius.circular(14),
-                            onTap: selected ? null : () => onSelect(episode),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    jellyfinSeasonEpisodeLabel(
-                                      context.l10n,
-                                      season: episode.seasonNumber,
-                                      episode: episode.episodeNumber,
-                                    ),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelSmall,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    episode.name,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(fontWeight: FontWeight.w700),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
       ),
     );
   }

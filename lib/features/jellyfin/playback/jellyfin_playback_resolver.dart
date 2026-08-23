@@ -10,7 +10,7 @@ class JellyfinResolvedPlayback {
   const JellyfinResolvedPlayback({
     required this.uri,
     required this.headers,
-    required this.mediaSourceId,
+    required this.mediaSource,
     required this.playSessionId,
     required this.startPosition,
     required this.method,
@@ -18,7 +18,8 @@ class JellyfinResolvedPlayback {
 
   final String uri;
   final Map<String, String> headers;
-  final String mediaSourceId;
+  final JellyfinMediaSource mediaSource;
+  String get mediaSourceId => mediaSource.id;
   final String? playSessionId;
   final Duration startPosition;
   final JellyfinPlaybackMethod method;
@@ -116,7 +117,7 @@ class JellyfinPlaybackResolver {
     return JellyfinResolvedPlayback(
       uri: uri,
       headers: {'X-Emby-Token': accessToken},
-      mediaSourceId: source.id,
+      mediaSource: source,
       playSessionId: playbackInfo.playSessionId,
       startPosition: ticks > 0
           ? Duration(microseconds: ticks ~/ 10)
@@ -139,10 +140,7 @@ class JellyfinPlaybackResolver {
     required int? subtitleStreamIndex,
   }) {
     final base = _parseBaseUrl(baseUrl);
-    final path = _appendBasePath(
-      base,
-      ['Videos', item.id, 'stream'],
-    );
+    final path = _appendBasePath(base, ['Videos', item.id, 'stream']);
     return _withPlaybackQuery(
       path,
       accessToken: accessToken,
@@ -219,13 +217,12 @@ class JellyfinPlaybackResolver {
             .split('/')
             .where((segment) => segment.isNotEmpty)
             .toList(),
-      ).replace(
-        query: parsedRaw.query,
-        fragment: parsedRaw.fragment,
-      );
+      ).replace(query: parsedRaw.query, fragment: parsedRaw.fragment);
     }
 
-    if (candidate == null || candidate.host.isEmpty || candidate.userInfo.isNotEmpty) {
+    if (candidate == null ||
+        candidate.host.isEmpty ||
+        candidate.userInfo.isNotEmpty) {
       throw const JellyfinPlaybackResolutionException(
         'Jellyfin returned an invalid playback URL.',
       );

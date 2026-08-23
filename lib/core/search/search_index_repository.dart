@@ -620,13 +620,11 @@ LIMIT $fetchLimit
       if (relevance != 0) return relevance;
       final pinned = (b.isPinned ? 1 : 0).compareTo(a.isPinned ? 1 : 0);
       if (pinned != 0) return pinned;
-      final title = normalizeSearchText(
-        a.title,
-      ).compareTo(normalizeSearchText(b.title));
+      final title = normalizeSearchText(a.title)
+          .compareTo(normalizeSearchText(b.title));
       if (title != 0) return title;
-      final playlist = normalizeSearchText(
-        a.playlistName,
-      ).compareTo(normalizeSearchText(b.playlistName));
+      final playlist = normalizeSearchText(a.playlistName)
+          .compareTo(normalizeSearchText(b.playlistName));
       if (playlist != 0) return playlist;
       final type = a.mediaType.compareTo(b.mediaType);
       if (type != 0) return type;

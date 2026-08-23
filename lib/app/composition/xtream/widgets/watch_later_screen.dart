@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
@@ -53,9 +53,9 @@ class WatchLaterScreen extends ConsumerWidget {
               final spacing = 14.0;
               final cellWidth =
                   (constraints.maxWidth - spacing * (columns - 1)) / columns;
-              final textScale = MediaQuery.textScalerOf(
-                context,
-              ).scale(1).clamp(1, 2);
+              final textScale = MediaQuery.textScalerOf(context)
+                  .scale(1)
+                  .clamp(1, 2);
               final cellHeight = cellWidth / (2 / 3) + 70 * textScale;
               return GridView.builder(
                 key: const PageStorageKey<String>('watch-later-grid'),

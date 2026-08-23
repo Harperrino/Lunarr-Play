@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/playlist_epg.dart';
@@ -17,7 +17,7 @@ import 'package:m3uxtream_player/features/player/providers/player_providers.dart
 import 'package:m3uxtream_player/features/search/providers/search_providers.dart';
 import 'package:m3uxtream_player/shared/providers/app_shell_state_providers.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:m3uxtream_player/shared/widgets/app_shimmer.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// EPG guide screen — sidebar index 2.
@@ -216,19 +216,15 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(fontSize: 14, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: 12,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(fontSize: 12, color: colorScheme.onSurfaceVariant),
           ),
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(height: 16),
@@ -256,10 +252,9 @@ class _EpgGridShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Shimmer.fromColors(
+    return AppShimmer(
       baseColor: colorScheme.surfaceContainer,
       highlightColor: colorScheme.surfaceContainerHighest,
-      enabled: !MediaQuery.disableAnimationsOf(context),
       child: ListView.builder(
         itemCount: rowCount,
         itemBuilder: (_, _) => Padding(

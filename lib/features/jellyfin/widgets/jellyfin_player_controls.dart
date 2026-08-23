@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_controller.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_state.dart';
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_client.dart';
@@ -22,8 +22,9 @@ class JellyfinPlayerControls extends StatelessWidget {
     required this.onStop,
     this.onPreviousEpisode,
     this.onNextEpisode,
-    this.onToggleEpisodePicker,
-    this.episodePickerExpanded = false,
+    this.onToggleEpisodeOverlay,
+    this.episodeOverlayVisible = false,
+    this.episodeOverlayButtonFocusNode,
     this.onToggleFullscreen,
     this.isFullscreen = false,
     this.seekIntervalSeconds = 15,
@@ -37,8 +38,9 @@ class JellyfinPlayerControls extends StatelessWidget {
   final VoidCallback onStop;
   final VoidCallback? onPreviousEpisode;
   final VoidCallback? onNextEpisode;
-  final VoidCallback? onToggleEpisodePicker;
-  final bool episodePickerExpanded;
+  final VoidCallback? onToggleEpisodeOverlay;
+  final bool episodeOverlayVisible;
+  final FocusNode? episodeOverlayButtonFocusNode;
   final VoidCallback? onToggleFullscreen;
   final bool isFullscreen;
   final int seekIntervalSeconds;
@@ -84,7 +86,7 @@ class JellyfinPlayerControls extends StatelessWidget {
                     onStop: onStop,
                     onPreviousEpisode: onPreviousEpisode,
                     onNextEpisode: onNextEpisode,
-                    showEpisodeNavigation: onToggleEpisodePicker != null,
+                    showEpisodeNavigation: onToggleEpisodeOverlay != null,
                     seekIntervalSeconds: seekIntervalSeconds,
                     onSeekRelative: (delta) =>
                         unawaited(controller.seekRelative(delta)),
@@ -101,8 +103,10 @@ class JellyfinPlayerControls extends StatelessWidget {
                     enabled: controlsEnabled,
                     compact: compact,
                     isFullscreen: isFullscreen,
-                    episodePickerExpanded: episodePickerExpanded,
-                    onToggleEpisodePicker: onToggleEpisodePicker,
+                    episodeOverlayVisible: episodeOverlayVisible,
+                    episodeOverlayButtonFocusNode:
+                        episodeOverlayButtonFocusNode,
+                    onToggleEpisodeOverlay: onToggleEpisodeOverlay,
                     onToggleFullscreen: onToggleFullscreen,
                   );
                   if (compact) {
@@ -349,8 +353,9 @@ class _TrackAndFullscreenControls extends StatelessWidget {
     required this.enabled,
     required this.compact,
     required this.isFullscreen,
-    required this.episodePickerExpanded,
-    this.onToggleEpisodePicker,
+    required this.episodeOverlayVisible,
+    this.episodeOverlayButtonFocusNode,
+    this.onToggleEpisodeOverlay,
     this.onToggleFullscreen,
   });
 
@@ -359,8 +364,9 @@ class _TrackAndFullscreenControls extends StatelessWidget {
   final bool enabled;
   final bool compact;
   final bool isFullscreen;
-  final bool episodePickerExpanded;
-  final VoidCallback? onToggleEpisodePicker;
+  final bool episodeOverlayVisible;
+  final FocusNode? episodeOverlayButtonFocusNode;
+  final VoidCallback? onToggleEpisodeOverlay;
   final VoidCallback? onToggleFullscreen;
 
   @override
@@ -371,18 +377,22 @@ class _TrackAndFullscreenControls extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (onToggleEpisodePicker != null) ...[
-          M3TransportIconButton(
-            key: const ValueKey('jellyfin-episode-picker-button'),
-            icon: episodePickerExpanded
-                ? Icons.expand_more_rounded
-                : Icons.video_library_rounded,
-            tooltip: episodePickerExpanded
-                ? l10n.jellyfinHideEpisodesTooltip
-                : l10n.jellyfinShowEpisodesTooltip,
-            size: size,
-            iconSize: iconSize,
-            onPressed: onToggleEpisodePicker,
+        if (onToggleEpisodeOverlay != null) ...[
+          Focus(
+            key: const ValueKey('jellyfin-episode-overlay-button'),
+            focusNode: episodeOverlayButtonFocusNode,
+            child: M3TransportIconButton(
+              key: const ValueKey('jellyfin-episode-picker-button'),
+              icon: episodeOverlayVisible
+                  ? Icons.close_rounded
+                  : Icons.video_library_rounded,
+              tooltip: episodeOverlayVisible
+                  ? l10n.jellyfinHideEpisodesTooltip
+                  : l10n.jellyfinShowEpisodesTooltip,
+              size: size,
+              iconSize: iconSize,
+              onPressed: onToggleEpisodeOverlay,
+            ),
           ),
           SizedBox(width: compact ? 4 : 6),
         ],

@@ -1786,6 +1786,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jellyfinEpisodesTitle => 'Episodes';
 
   @override
+  String get jellyfinNoEpisodes => 'No episodes are available.';
+
+  @override
+  String jellyfinEpisodeSemantics(String episodeLabel, String title) {
+    return '$episodeLabel, $title';
+  }
+
+  @override
   String get jellyfinSeasonSelectorLabel => 'Season';
 
   @override

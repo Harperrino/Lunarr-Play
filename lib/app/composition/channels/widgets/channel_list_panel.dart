@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/models/epg_sync_job.dart';
@@ -24,12 +24,12 @@ import 'package:m3uxtream_player/features/playlists/providers/playlist_providers
 import 'package:m3uxtream_player/features/playlists/providers/playlist_sync_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
+import 'package:m3uxtream_player/shared/widgets/app_shimmer.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
 import 'package:m3uxtream_player/shared/widgets/group_accent.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_media_list_item.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_slots.dart';
 import 'package:m3uxtream_player/shared/widgets/status_snack_bar.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// Live channel list panel — consumes Drift watch streams via Riverpod.
@@ -446,9 +446,8 @@ class _ChannelListPanelState extends ConsumerState<ChannelListPanel> {
                 context.l10n.channelLiveTitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontSize: 14),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontSize: 14),
               ),
             ),
             if (showCatalogProgress) ...[
@@ -604,10 +603,9 @@ class _ChannelListPanelState extends ConsumerState<ChannelListPanel> {
 
   Widget _buildLoadingList(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Shimmer.fromColors(
+    return AppShimmer(
       baseColor: colorScheme.surfaceContainerLow,
       highlightColor: colorScheme.surfaceContainerHighest,
-      enabled: !MediaQuery.disableAnimationsOf(context),
       child: ListView.builder(
         itemCount: 8,
         itemBuilder: (_, _) => Padding(
@@ -807,9 +805,8 @@ class _ChannelCatalogNotice extends StatelessWidget {
                 message,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onErrorContainer,
-                ),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: colorScheme.onErrorContainer),
               ),
             ),
           ],

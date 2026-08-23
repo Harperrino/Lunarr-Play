@@ -85,19 +85,20 @@ class JellyfinSessionFailure extends JellyfinSessionState {
 }
 
 class JellyfinSessionController extends Notifier<JellyfinSessionState> {
-  var _operation = 0;
+  var _restoreGeneration = 0;
+  Future<void> _actionTail = Future<void>.value();
 
   @override
   JellyfinSessionState build() {
-    final operation = ++_operation;
+    final restoreGeneration = ++_restoreGeneration;
     Future<void>(() async {
       try {
         final connection = await ref
             .read(jellyfinCredentialsStoreProvider)
             .readActive();
-        if (operation == _operation && connection != null) {
+        if (restoreGeneration == _restoreGeneration && connection != null) {
           state = JellyfinAuthenticated(connection: connection);
-        } else if (operation == _operation) {
+        } else if (restoreGeneration == _restoreGeneration) {
           state = const JellyfinIdle();
         }
       } catch (error, stackTrace) {
@@ -106,95 +107,109 @@ class JellyfinSessionController extends Notifier<JellyfinSessionState> {
           error,
           stackTrace,
         );
-        if (operation == _operation) state = const JellyfinIdle();
+        if (restoreGeneration == _restoreGeneration) {
+          state = const JellyfinIdle();
+        }
       }
     });
     return const JellyfinRestoringSession();
   }
 
   Future<void> checkServer(String inputUrl) async {
-    ++_operation;
-    state = JellyfinVerifyingServer(inputUrl: inputUrl);
-    try {
-      final server = await ref
-          .read(jellyfinAuthRepositoryProvider)
-          .validateServer(inputUrl);
-      state = JellyfinServerVerified(server: server);
-    } on JellyfinApiException catch (error) {
-      state = JellyfinSessionFailure(
-        kind: error.kind,
-        statusCode: error.statusCode,
-      );
-    } catch (error, stackTrace) {
-      AppLogger.error(
-        'JellyfinSessionController: Unexpected server validation failure.',
-        error,
-        stackTrace,
-      );
-      state = const JellyfinSessionFailure(kind: JellyfinFailureKind.unknown);
-    }
+    return _enqueue(() async {
+      state = JellyfinVerifyingServer(inputUrl: inputUrl);
+      try {
+        final server = await ref
+            .read(jellyfinAuthRepositoryProvider)
+            .validateServer(inputUrl);
+        state = JellyfinServerVerified(server: server);
+      } on JellyfinApiException catch (error) {
+        state = JellyfinSessionFailure(
+          kind: error.kind,
+          statusCode: error.statusCode,
+        );
+      } catch (error, stackTrace) {
+        AppLogger.error(
+          'JellyfinSessionController: Unexpected server validation failure.',
+          error,
+          stackTrace,
+        );
+        state = const JellyfinSessionFailure(kind: JellyfinFailureKind.unknown);
+      }
+    });
   }
 
   Future<void> signIn({
     required String username,
     required String password,
   }) async {
-    final current = state;
-    if (current is! JellyfinServerVerified) return;
+    return _enqueue(() async {
+      final current = state;
+      if (current is! JellyfinServerVerified) return;
 
-    ++_operation;
-    state = JellyfinSigningIn(server: current.server);
-    try {
-      final connection = await ref
-          .read(jellyfinAuthRepositoryProvider)
-          .login(
-            server: current.server,
-            username: username,
-            password: password,
-          );
-      state = JellyfinAuthenticated(connection: connection);
-      ref.invalidate(jellyfinConnectionsProvider);
-    } on JellyfinApiException catch (error) {
-      state = JellyfinSessionFailure(
-        kind: error.kind,
-        statusCode: error.statusCode,
-        server: current.server,
-      );
-    } catch (error, stackTrace) {
-      AppLogger.error(
-        'JellyfinSessionController: Unexpected sign-in failure.',
-        error,
-        stackTrace,
-      );
-      state = JellyfinSessionFailure(
-        kind: JellyfinFailureKind.unknown,
-        server: current.server,
-      );
-    }
+      state = JellyfinSigningIn(server: current.server);
+      try {
+        final connection = await ref
+            .read(jellyfinAuthRepositoryProvider)
+            .login(
+              server: current.server,
+              username: username,
+              password: password,
+            );
+        state = JellyfinAuthenticated(connection: connection);
+        ref.invalidate(jellyfinConnectionsProvider);
+      } on JellyfinApiException catch (error) {
+        state = JellyfinSessionFailure(
+          kind: error.kind,
+          statusCode: error.statusCode,
+          server: current.server,
+        );
+      } catch (error, stackTrace) {
+        AppLogger.error(
+          'JellyfinSessionController: Unexpected sign-in failure.',
+          error,
+          stackTrace,
+        );
+        state = JellyfinSessionFailure(
+          kind: JellyfinFailureKind.unknown,
+          server: current.server,
+        );
+      }
+    });
   }
 
   Future<void> signOut() async {
-    ++_operation;
-    final current = state;
-    if (current is JellyfinAuthenticated) {
-      await ref.read(jellyfinAuthRepositoryProvider).logout(current.connection);
-    }
-    state = const JellyfinIdle();
-    ref.invalidate(jellyfinConnectionsProvider);
+    return _enqueue(() async {
+      final current = state;
+      if (current is JellyfinAuthenticated) {
+        await ref
+            .read(jellyfinAuthRepositoryProvider)
+            .logout(current.connection);
+      }
+      state = const JellyfinIdle();
+      ref.invalidate(jellyfinConnectionsProvider);
+    });
   }
 
   Future<void> selectConnection(JellyfinConnection connection) async {
-    ++_operation;
-    await ref
-        .read(jellyfinCredentialsStoreProvider)
-        .select(connection.credentialId);
-    state = JellyfinAuthenticated(connection: connection);
-    ref.invalidate(jellyfinConnectionsProvider);
+    return _enqueue(() async {
+      await ref
+          .read(jellyfinCredentialsStoreProvider)
+          .select(connection.credentialId);
+      state = JellyfinAuthenticated(connection: connection);
+      ref.invalidate(jellyfinConnectionsProvider);
+    });
   }
 
-  void startAddingConnection() {
-    ++_operation;
-    state = const JellyfinIdle();
+  Future<void> startAddingConnection() {
+    return _enqueue(() async => state = const JellyfinIdle());
+  }
+
+  Future<void> _enqueue(Future<void> Function() action) {
+    ++_restoreGeneration;
+    final completion = _actionTail.then((_) => action());
+    _actionTail = completion.then<void>((_) {}, onError: (_, _) {});
+    return completion;
   }
 }
 

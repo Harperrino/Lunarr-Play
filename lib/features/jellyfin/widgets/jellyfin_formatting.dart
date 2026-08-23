@@ -1,11 +1,11 @@
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
+import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_episode_catalog.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_info.dart';
 import 'package:m3uxtream_player/l10n/generated/app_localizations.dart';
 
 /// Formats Jellyfin ticks (100 ns units) as a compact runtime label.
 String jellyfinRuntimeLabel(AppLocalizations l10n, int runTimeTicks) {
-  final minutes =
-      runTimeTicks ~/ Duration.microsecondsPerSecond ~/ 10 ~/ 60;
+  final minutes = runTimeTicks ~/ Duration.microsecondsPerSecond ~/ 10 ~/ 60;
   if (minutes < 60) {
     return l10n.jellyfinRuntimeMinutes(minutes);
   }
@@ -34,20 +34,11 @@ String jellyfinSeasonEpisodeLabel(
 Map<int, List<JellyfinItem>> jellyfinGroupEpisodesBySeason(
   List<JellyfinItem> episodes,
 ) {
-  final bySeason = <int, List<JellyfinItem>>{};
-  for (final episode in episodes) {
-    final season = episode.seasonNumber ?? 0;
-    bySeason.putIfAbsent(season, () => []).add(episode);
-  }
-  for (final seasonEpisodes in bySeason.values) {
-    seasonEpisodes.sort(
-      (a, b) =>
-          (a.episodeNumber ?? 999999).compareTo(b.episodeNumber ?? 999999),
-    );
-  }
-  final entries = bySeason.entries.toList()
-    ..sort((a, b) => a.key.compareTo(b.key));
-  return {for (final entry in entries) entry.key: entry.value};
+  final catalog = JellyfinEpisodeCatalog.fromEpisodes(episodes);
+  return {
+    for (final entry in catalog.episodesBySeason.entries)
+      entry.key: entry.value.toList(growable: false),
+  };
 }
 
 /// Formats a duration as `H:MM:SS` or `M:SS` for player time labels.

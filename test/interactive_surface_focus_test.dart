@@ -1,23 +1,25 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
+import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
+import 'package:m3uxtream_player/app/widgets/playlist_hub_screen.dart';
+import 'package:m3uxtream_player/core/database/app_database.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/group_visibility_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/pinned_groups_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_activity_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_hub_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
-import 'package:m3uxtream_player/app/widgets/playlist_hub_screen.dart';
-import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 
 void main() {
   testWidgets(
     'Playlist Hub keeps InkWell as the only focus owner for expressive actions',
     (tester) async {
-      final container = await _pumpPlaylistHub(tester);
+      await _pumpPlaylistHub(tester);
       final semantics = tester.ensureSemantics();
 
       expect(find.byType(FilterChip), findsNWidgets(4));
@@ -40,7 +42,6 @@ void main() {
       );
 
       semantics.dispose();
-      container.dispose();
     },
   );
 
@@ -75,7 +76,6 @@ void main() {
       );
 
       semantics.dispose();
-      container.dispose();
     },
   );
 
@@ -122,8 +122,10 @@ Future<ProviderContainer> _pumpPlaylistHub(WidgetTester tester) async {
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
 
+  final database = AppDatabase.executor(NativeDatabase.memory());
   final container = ProviderContainer(
     overrides: [
+      databaseProvider.overrideWithValue(database),
       playlistsStreamProvider.overrideWith(
         (ref) => Stream.value(<Playlist>[_playlist]),
       ),
@@ -137,6 +139,12 @@ Future<ProviderContainer> _pumpPlaylistHub(WidgetTester tester) async {
       pinnedGroupsProvider.overrideWith(_EmptyPinnedGroupsNotifier.new),
     ],
   );
+  addTearDown(() async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    container.dispose();
+    await database.close();
+  });
 
   await tester.pumpWidget(
     UncontrolledProviderScope(

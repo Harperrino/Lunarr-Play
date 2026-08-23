@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
@@ -7,7 +7,10 @@ import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_library_pr
 
 import 'jellyfin_test_helpers.dart';
 
-ProviderContainer _container({bool failResume = false, bool failViews = false}) {
+ProviderContainer _container({
+  bool failResume = false,
+  bool failViews = false,
+}) {
   return ProviderContainer(
     overrides: [
       ...jellyfinTestOverrides(
@@ -95,7 +98,9 @@ void main() {
     final stackNotifier = container.read(jellyfinViewStackProvider.notifier);
     stackNotifier.state = const [
       JellyfinHomeRoute(),
-      JellyfinLibraryRoute(library: JellyfinLibrary(id: 'library-1', name: 'Movies')),
+      JellyfinLibraryRoute(
+        library: JellyfinLibrary(id: 'library-1', name: 'Movies'),
+      ),
     ];
     expect(
       container.read(jellyfinViewStackProvider).last,
@@ -119,45 +124,55 @@ void main() {
     ]);
   });
 
-  testWidgets('sidebar route helpers replace browse paths and preserve context', (
-    tester,
-  ) async {
-    late WidgetRef ref;
-    await tester.pumpWidget(
-      ProviderScope(
-        child: Consumer(
-          builder: (context, widgetRef, child) {
-            ref = widgetRef;
-            return const SizedBox.shrink();
-          },
+  testWidgets(
+    'sidebar route helpers replace browse paths and preserve context',
+    (tester) async {
+      late WidgetRef ref;
+      await tester.pumpWidget(
+        ProviderScope(
+          child: Consumer(
+            builder: (context, widgetRef, child) {
+              ref = widgetRef;
+              return const SizedBox.shrink();
+            },
+          ),
         ),
-      ),
-    );
+      );
 
-    const library = JellyfinLibrary(
-      id: 'library-1',
-      name: 'Movies',
-      collectionType: 'movies',
-    );
-    jellyfinSelectLibrary(ref, library);
-    final selectedStack = ref.read(jellyfinViewStackProvider);
-    expect(selectedStack, hasLength(2));
-    expect(selectedStack.first, isA<JellyfinHomeRoute>());
-    expect(selectedStack.last, isA<JellyfinLibraryRoute>());
-    expect((selectedStack.last as JellyfinLibraryRoute).library, library);
-    expect(
-      jellyfinSelectedLibrary(ref.read(jellyfinViewStackProvider)),
-      library,
-    );
+      const library = JellyfinLibrary(
+        id: 'library-1',
+        name: 'Movies',
+        collectionType: 'movies',
+      );
+      jellyfinSelectLibrary(ref, library);
+      final selectedStack = ref.read(jellyfinViewStackProvider);
+      expect(selectedStack, hasLength(2));
+      expect(selectedStack.first, isA<JellyfinHomeRoute>());
+      expect(selectedStack.last, isA<JellyfinLibraryRoute>());
+      expect((selectedStack.last as JellyfinLibraryRoute).library, library);
+      expect(
+        jellyfinSelectedLibrary(ref.read(jellyfinViewStackProvider)),
+        library,
+      );
 
-    jellyfinOpenDetails(ref, JellyfinItem.fromJson(jellyfinMovieJson()));
-    jellyfinOpenPlayer(ref, JellyfinItem.fromJson(jellyfinMovieJson()));
-    expect(ref.read(jellyfinViewStackProvider).last, isA<JellyfinPlayerRoute>());
-    jellyfinGoBack(ref);
-    expect(ref.read(jellyfinViewStackProvider).last, isA<JellyfinDetailsRoute>());
+      jellyfinOpenDetails(ref, JellyfinItem.fromJson(jellyfinMovieJson()));
+      jellyfinOpenPlayer(ref, JellyfinItem.fromJson(jellyfinMovieJson()));
+      expect(
+        ref.read(jellyfinViewStackProvider).last,
+        isA<JellyfinPlayerRoute>(),
+      );
+      jellyfinGoBack(ref);
+      expect(
+        ref.read(jellyfinViewStackProvider).last,
+        isA<JellyfinDetailsRoute>(),
+      );
 
-    jellyfinSelectOverview(ref);
-    expect(ref.read(jellyfinViewStackProvider), const [JellyfinHomeRoute()]);
-    expect(jellyfinSelectedLibrary(ref.read(jellyfinViewStackProvider)), isNull);
-  });
+      jellyfinSelectOverview(ref);
+      expect(ref.read(jellyfinViewStackProvider), const [JellyfinHomeRoute()]);
+      expect(
+        jellyfinSelectedLibrary(ref.read(jellyfinViewStackProvider)),
+        isNull,
+      );
+    },
+  );
 }

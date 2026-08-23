@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/app/shell/shell_layout.dart';
 import 'package:m3uxtream_player/shared/layout/live_layout_geometry.dart';
 import 'package:m3uxtream_player/app/widgets/global_search_field.dart';

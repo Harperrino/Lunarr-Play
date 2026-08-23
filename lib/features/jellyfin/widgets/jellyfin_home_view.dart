@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
@@ -94,17 +94,15 @@ class _HomeHeader extends StatelessWidget {
                 connection.baseUrl,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
               Text(
                 context.l10n.jellyfinSignedInAs(connection.username),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colors.onSurfaceVariant,
-                ),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: colors.onSurfaceVariant),
               ),
             ],
           ),
@@ -194,9 +192,8 @@ class _HomeEmpty extends StatelessWidget {
           Text(
             context.l10n.jellyfinHomeEmptySubtitle,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colors.onSurfaceVariant,
-            ),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: colors.onSurfaceVariant),
           ),
           const SizedBox(height: 14),
           FilledButton.tonalIcon(
@@ -241,7 +238,9 @@ class _HomeSections extends StatelessWidget {
             ],
           ),
         if (data.resumeItems.isNotEmpty &&
-            (data.nextUpItems.isNotEmpty || data.latestItems.isNotEmpty || data.libraries.isNotEmpty))
+            (data.nextUpItems.isNotEmpty ||
+                data.latestItems.isNotEmpty ||
+                data.libraries.isNotEmpty))
           const SizedBox(height: 28),
         if (data.nextUpItems.isNotEmpty)
           JellyfinMediaShelf(
@@ -251,7 +250,8 @@ class _HomeSections extends StatelessWidget {
                 _buildItemCard(context, item),
             ],
           ),
-        if (data.nextUpItems.isNotEmpty && (data.latestItems.isNotEmpty || data.libraries.isNotEmpty))
+        if (data.nextUpItems.isNotEmpty &&
+            (data.latestItems.isNotEmpty || data.libraries.isNotEmpty))
           const SizedBox(height: 28),
         if (data.latestItems.isNotEmpty)
           JellyfinMediaShelf(

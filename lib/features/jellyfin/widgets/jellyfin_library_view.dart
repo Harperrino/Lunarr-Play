@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_library.dart';
@@ -54,9 +54,8 @@ class JellyfinLibraryView extends ConsumerWidget {
                 library.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
             if (value != null)
@@ -70,10 +69,9 @@ class JellyfinLibraryView extends ConsumerWidget {
               tooltip: l10n.jellyfinRefreshTooltip,
               onPressed: items.isLoading
                   ? null
-                  : () =>
-                        ref
-                            .read(jellyfinLibraryItemsProvider(library.id).notifier)
-                            .refresh(),
+                  : () => ref
+                        .read(jellyfinLibraryItemsProvider(library.id).notifier)
+                        .refresh(),
               icon: items.isLoading
                   ? const SizedBox(
                       width: 18,
@@ -93,8 +91,7 @@ class JellyfinLibraryView extends ConsumerWidget {
                   .read(jellyfinLibraryItemsProvider(library.id).notifier)
                   .refresh(),
             ),
-            (_, null) =>
-              const Center(child: CircularProgressIndicator()),
+            (_, null) => const Center(child: CircularProgressIndicator()),
             (_, final data?) when data.isEmpty => _LibraryEmpty(
               onRefresh: () => ref
                   .read(jellyfinLibraryItemsProvider(library.id).notifier)

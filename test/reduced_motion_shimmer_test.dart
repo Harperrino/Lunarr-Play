@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
@@ -21,13 +21,13 @@ import 'package:m3uxtream_player/features/playlists/providers/playlist_sync_prov
 import 'package:m3uxtream_player/app/composition/xtream/providers/series_providers.dart';
 import 'package:m3uxtream_player/app/composition/xtream/widgets/series_detail_screen.dart';
 import 'package:m3uxtream_player/shared/theme/app_theme.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:m3uxtream_player/shared/widgets/app_shimmer.dart';
 
 void main() {
   testWidgets('EPG grid shimmer respects reduced motion', (tester) async {
     await _pumpEpg(tester, disableAnimations: true);
 
-    expect(_shimmer(tester).enabled, isFalse);
+    expect(_shimmerAnimationEnabled(tester), isFalse);
   });
 
   testWidgets('EPG grid shimmer animates when motion is enabled', (
@@ -35,7 +35,7 @@ void main() {
   ) async {
     await _pumpEpg(tester, disableAnimations: false);
 
-    expect(_shimmer(tester).enabled, isTrue);
+    expect(_shimmerAnimationEnabled(tester), isTrue);
   });
 
   testWidgets('channel loading shimmer respects reduced motion', (
@@ -50,7 +50,7 @@ void main() {
       channelsStream: channels.stream,
     );
 
-    expect(_shimmer(tester).enabled, isFalse);
+    expect(_shimmerAnimationEnabled(tester), isFalse);
   });
 
   testWidgets('channel loading shimmer animates when motion is enabled', (
@@ -65,7 +65,7 @@ void main() {
       channelsStream: channels.stream,
     );
 
-    expect(_shimmer(tester).enabled, isTrue);
+    expect(_shimmerAnimationEnabled(tester), isTrue);
   });
 
   testWidgets('channel sync uses a built-in loading state', (tester) async {
@@ -97,7 +97,7 @@ void main() {
   testWidgets('series episode shimmer respects reduced motion', (tester) async {
     await _pumpSeriesDetail(tester, disableAnimations: true);
 
-    expect(_shimmer(tester).enabled, isFalse);
+    expect(_shimmerAnimationEnabled(tester), isFalse);
   });
 
   testWidgets('series episode shimmer animates when motion is enabled', (
@@ -105,14 +105,15 @@ void main() {
   ) async {
     await _pumpSeriesDetail(tester, disableAnimations: false);
 
-    expect(_shimmer(tester).enabled, isTrue);
+    expect(_shimmerAnimationEnabled(tester), isTrue);
   });
 }
 
-Shimmer _shimmer(WidgetTester tester) {
-  final matches = find.byType(Shimmer);
-  expect(matches, findsOneWidget);
-  return tester.widget<Shimmer>(matches);
+bool _shimmerAnimationEnabled(WidgetTester tester) {
+  expect(find.byType(AppShimmer), findsOneWidget);
+  final ticker = find.byKey(const ValueKey('app-shimmer-ticker-mode'));
+  expect(ticker, findsOneWidget);
+  return tester.widget<TickerMode>(ticker).enabled;
 }
 
 Future<void> _pumpEpg(
@@ -187,9 +188,8 @@ Future<void> _pumpChannelList(
           ),
         ),
         liveChannelsStreamProvider.overrideWith((ref) => channelsStream),
-        channelSortModeProvider(
-          1,
-        ).overrideWith((ref) => ChannelSortModeNotifier.test(1)),
+        channelSortModeProvider(1)
+            .overrideWith((ref) => ChannelSortModeNotifier.test(1)),
         hiddenGroupsProvider.overrideWith(_EmptyHiddenGroupsNotifier.new),
         channelFavoriteControllerProvider.overrideWith(
           (ref) => ChannelFavoriteController((channelId) async => true),

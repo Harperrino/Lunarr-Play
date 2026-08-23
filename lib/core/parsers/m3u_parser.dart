@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:m3uxtream_player/core/imports/import_budget.dart';
 import 'package:m3uxtream_player/core/imports/import_limit_exception.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
@@ -67,10 +68,7 @@ class M3uParser {
 
   /// Parses M3U content string and returns a list of [ParsedChannel] objects.
   /// This operation is optimized for O(N) parsing in a single pass.
-  static List<ParsedChannel> parse(
-    String content, {
-    ImportBudget? budget,
-  }) {
+  static List<ParsedChannel> parse(String content, {ImportBudget? budget}) {
     final stopwatch = Stopwatch()..start();
     final List<ParsedChannel> channels = [];
 

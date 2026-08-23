@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
 import 'package:m3uxtream_player/features/epg/widgets/epg_interactive_surface.dart';
@@ -108,9 +108,9 @@ class EpgProgramCell extends StatelessWidget {
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface,
                                 ),
                           ),
                         ),

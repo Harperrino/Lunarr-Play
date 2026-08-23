@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 import 'package:m3uxtream_player/app/composition/diagnostics/widgets/diagnostics_screen.dart';
@@ -81,9 +81,8 @@ class _ComingSoonPlaceholder extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               context.l10n.comingSoonTitle,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontSize: 18),
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontSize: 18),
             ),
             const SizedBox(height: 8),
             Text(

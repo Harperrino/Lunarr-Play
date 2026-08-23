@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
@@ -220,9 +220,8 @@ class PlaylistHubScreen extends ConsumerWidget {
                                 onEpgIntervalChanged: (interval) => unawaited(
                                   ref
                                       .read(
-                                        epgRefreshIntervalProvider(
-                                          playlist.id,
-                                        ).notifier,
+                                        epgRefreshIntervalProvider(playlist.id)
+                                            .notifier,
                                       )
                                       .setInterval(interval),
                                 ),

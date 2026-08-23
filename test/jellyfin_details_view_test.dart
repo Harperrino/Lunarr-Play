@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -59,8 +60,16 @@ MockClient _seriesTransportWithSeasons() {
       return http.Response(
         jsonEncode({
           'Items': [
-            jellyfinEpisodeJson(id: 's1e1', name: 'Season One First', episode: 1),
-            jellyfinEpisodeJson(id: 's1e2', name: 'Season One Second', episode: 2),
+            jellyfinEpisodeJson(
+              id: 's1e1',
+              name: 'Season One First',
+              episode: 1,
+            ),
+            jellyfinEpisodeJson(
+              id: 's1e2',
+              name: 'Season One Second',
+              episode: 2,
+            ),
             jellyfinEpisodeJson(
               id: 's2e1',
               name: 'Season Two First',
@@ -69,6 +78,28 @@ MockClient _seriesTransportWithSeasons() {
             ),
           ],
         }),
+        200,
+      );
+    }
+    final detailMatch = RegExp(r'/Users/user-id-1/Items/(s[12]e[12])$')
+        .firstMatch(request.url.path);
+    if (detailMatch != null) {
+      final id = detailMatch.group(1)!;
+      final season = id.startsWith('s2') ? 2 : 1;
+      final episode = int.parse(id.substring(3));
+      return http.Response(
+        jsonEncode(
+          jellyfinEpisodeJson(
+            id: id,
+            name: season == 2
+                ? 'Season Two First'
+                : episode == 1
+                ? 'Season One First'
+                : 'Season One Second',
+            season: season,
+            episode: episode,
+          ),
+        ),
         200,
       );
     }
@@ -109,7 +140,10 @@ void main() {
     final container = ProviderScope.containerOf(
       tester.element(find.byType(JellyfinDetailsView)),
     );
-    expect(container.read(jellyfinViewStackProvider).last, isA<JellyfinPlayerRoute>());
+    expect(
+      container.read(jellyfinViewStackProvider).last,
+      isA<JellyfinPlayerRoute>(),
+    );
     final play = find.widgetWithText(FilledButton, 'Play');
     expect(play, findsOneWidget);
     expect(tester.widget<FilledButton>(play).onPressed, isNotNull);
@@ -139,20 +173,60 @@ void main() {
     expect(find.text('Season 1'), findsWidgets);
     expect(find.text('E1'), findsOneWidget);
     expect(find.text('E2'), findsOneWidget);
-    expect(find.text('Season One First'), findsOneWidget);
+    expect(find.text('Season One First'), findsWidgets);
     expect(find.text('Season Two First'), findsNothing);
-    expect(find.widgetWithText(FilledButton, 'Play'), findsNothing);
+    expect(find.widgetWithText(FilledButton, 'Play'), findsOneWidget);
 
-    await tester.tap(
-      find.byKey(const ValueKey('jellyfin-season-selector')),
-    );
+    await tester.tap(find.byKey(const ValueKey('jellyfin-season-selector')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Season 2').last);
     await tester.pumpAndSettle();
 
     expect(find.text('Season 2'), findsWidgets);
-    expect(find.text('Season Two First'), findsOneWidget);
+    expect(find.text('Season Two First'), findsWidgets);
     expect(find.text('Season One First'), findsNothing);
+  });
+
+  testWidgets('wide series detail embeds and updates the selected episode', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      jellyfinTestHost(
+        const JellyfinDetailsView(
+          connection: jellyfinTestConnection,
+          item: _series,
+        ),
+        transport: _seriesTransportWithSeasons(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(JellyfinDetailsView)),
+    );
+    final routeCount = container.read(jellyfinViewStackProvider).length;
+
+    expect(
+      find.byKey(const ValueKey('jellyfin-episode-detail-s1e1')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('jellyfin-embedded-episode-play')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('jellyfin-episode-row-s1e2')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('jellyfin-episode-detail-s1e2')),
+      findsOneWidget,
+    );
+    expect(container.read(jellyfinViewStackProvider), hasLength(routeCount));
   });
 
   testWidgets('episode detail shows the SxxExx metadata and play', (
@@ -380,6 +454,67 @@ void main() {
       isTrue,
     );
     expect(find.text('Remove favorite'), findsOneWidget);
+  });
+
+  testWidgets('stale optimistic actions cannot leak into a different item', (
+    tester,
+  ) async {
+    final favoriteResponse = Completer<http.Response>();
+    final transport = MockClient((request) async {
+      if (request.url.path.endsWith('/FavoriteItems/movie-1')) {
+        return favoriteResponse.future;
+      }
+      if (request.url.path.endsWith('/Items/episode-1')) {
+        return http.Response(
+          jsonEncode(
+            jellyfinEpisodeJson(
+              id: _episode.id,
+              name: _episode.name,
+              season: _episode.seasonNumber!,
+              episode: _episode.episodeNumber!,
+            ),
+          ),
+          200,
+        );
+      }
+      if (request.url.path.endsWith('/Items/movie-1')) {
+        return http.Response(jsonEncode(jellyfinMovieJson(id: 'movie-1')), 200);
+      }
+      return http.Response('not found', 404);
+    });
+    var item = _movie;
+    late StateSetter rebuild;
+    await tester.pumpWidget(
+      jellyfinTestHost(
+        StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            return JellyfinDetailsView(
+              connection: jellyfinTestConnection,
+              item: item,
+            );
+          },
+        ),
+        transport: transport,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Favorite'));
+    await tester.pump();
+    expect(find.text('Remove favorite'), findsOneWidget);
+
+    rebuild(() => item = _episode);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Test Episode'), findsWidgets);
+    expect(find.text('Favorite'), findsOneWidget);
+    expect(find.text('Remove favorite'), findsNothing);
+
+    favoriteResponse.complete(http.Response('failed', 500));
+    await tester.pumpAndSettle();
+    expect(find.byType(SnackBar), findsNothing);
+    expect(find.text('Favorite'), findsOneWidget);
   });
 
   testWidgets('compact detail layout keeps the poster at a 2:3 ratio', (

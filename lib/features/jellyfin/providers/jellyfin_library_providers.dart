@@ -67,12 +67,15 @@ class JellyfinLibraryItemsNotifier
 }
 
 final jellyfinLibraryItemsProvider =
-    AsyncNotifierProvider.family<JellyfinLibraryItemsNotifier, List<JellyfinItem>, String>(
-      JellyfinLibraryItemsNotifier.new,
-    );
+    AsyncNotifierProvider.family<
+      JellyfinLibraryItemsNotifier,
+      List<JellyfinItem>,
+      String
+    >(JellyfinLibraryItemsNotifier.new);
 
 /// Full detail of a single item.
-class JellyfinItemDetailNotifier extends FamilyAsyncNotifier<JellyfinItem, String> {
+class JellyfinItemDetailNotifier
+    extends FamilyAsyncNotifier<JellyfinItem, String> {
   @override
   Future<JellyfinItem> build(String itemId) async {
     final connection = _currentConnection(ref);
@@ -91,9 +94,11 @@ class JellyfinItemDetailNotifier extends FamilyAsyncNotifier<JellyfinItem, Strin
 }
 
 final jellyfinItemDetailProvider =
-    AsyncNotifierProvider.family<JellyfinItemDetailNotifier, JellyfinItem, String>(
-      JellyfinItemDetailNotifier.new,
-    );
+    AsyncNotifierProvider.family<
+      JellyfinItemDetailNotifier,
+      JellyfinItem,
+      String
+    >(JellyfinItemDetailNotifier.new);
 
 /// Episodes of a series.
 class JellyfinSeriesEpisodesNotifier
@@ -116,9 +121,11 @@ class JellyfinSeriesEpisodesNotifier
 }
 
 final jellyfinSeriesEpisodesProvider =
-    AsyncNotifierProvider.family<JellyfinSeriesEpisodesNotifier, List<JellyfinItem>, String>(
-      JellyfinSeriesEpisodesNotifier.new,
-    );
+    AsyncNotifierProvider.family<
+      JellyfinSeriesEpisodesNotifier,
+      List<JellyfinItem>,
+      String
+    >(JellyfinSeriesEpisodesNotifier.new);
 
 /// Internal Jellyfin navigation stack. Home is the root; libraries and
 /// details push onto it. Never touches global Lunarr navigation.
@@ -154,8 +161,9 @@ final jellyfinViewStackProvider = StateProvider<List<JellyfinRoute>>(
 
 /// Select the Jellyfin overview and discard any deeper browse path.
 void jellyfinSelectOverview(WidgetRef ref) {
-  ref.read(jellyfinViewStackProvider.notifier).state =
-      const [JellyfinHomeRoute()];
+  ref.read(jellyfinViewStackProvider.notifier).state = const [
+    JellyfinHomeRoute(),
+  ];
 }
 
 /// Select a library from feature-local navigation and reset its browse path.
@@ -178,29 +186,33 @@ JellyfinLibrary? jellyfinSelectedLibrary(List<JellyfinRoute> stack) {
 
 void jellyfinOpenLibrary(WidgetRef ref, JellyfinLibrary library) {
   final stack = ref.read(jellyfinViewStackProvider);
-  ref
-      .read(jellyfinViewStackProvider.notifier)
-      .state = [...stack, JellyfinLibraryRoute(library: library)];
+  ref.read(jellyfinViewStackProvider.notifier).state = [
+    ...stack,
+    JellyfinLibraryRoute(library: library),
+  ];
 }
 
 void jellyfinOpenDetails(WidgetRef ref, JellyfinItem item) {
   final stack = ref.read(jellyfinViewStackProvider);
-  ref
-      .read(jellyfinViewStackProvider.notifier)
-      .state = [...stack, JellyfinDetailsRoute(item: item)];
+  ref.read(jellyfinViewStackProvider.notifier).state = [
+    ...stack,
+    JellyfinDetailsRoute(item: item),
+  ];
 }
 
 void jellyfinOpenPlayer(WidgetRef ref, JellyfinItem item) {
   final stack = ref.read(jellyfinViewStackProvider);
-  ref
-      .read(jellyfinViewStackProvider.notifier)
-      .state = [...stack, JellyfinPlayerRoute(item: item)];
+  ref.read(jellyfinViewStackProvider.notifier).state = [
+    ...stack,
+    JellyfinPlayerRoute(item: item),
+  ];
 }
 
 void jellyfinGoBack(WidgetRef ref) {
   final stack = ref.read(jellyfinViewStackProvider);
   if (stack.length <= 1) return;
-  ref
-      .read(jellyfinViewStackProvider.notifier)
-      .state = stack.sublist(0, stack.length - 1);
+  ref.read(jellyfinViewStackProvider.notifier).state = stack.sublist(
+    0,
+    stack.length - 1,
+  );
 }

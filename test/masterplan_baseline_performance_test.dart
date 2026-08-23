@@ -63,10 +63,7 @@ void main() {
       final xmltvSource = syntheticXmltv();
       final xmltvBytes = utf8.encode(xmltvSource);
       final xmltvBudget = ImportBudget(limits: ImportProfiles.xmltv)
-        ..consumeTransportBytes(
-          xmltvBytes.length,
-          phase: 'xmltv_transport',
-        );
+        ..consumeTransportBytes(xmltvBytes.length, phase: 'xmltv_transport');
       final xmltvWatch = Stopwatch()..start();
       final xmltv = await EpgParser.parse(
         byteStream: Stream.value(xmltvBytes),

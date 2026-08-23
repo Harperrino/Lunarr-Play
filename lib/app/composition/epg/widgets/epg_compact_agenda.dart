@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
 import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
@@ -124,9 +124,8 @@ class EpgAgendaRow extends StatelessWidget {
               children: [
                 Text(
                   row.channel.name,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(context).textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 if (isLive) const _EpgLiveBadge(),
               ],
@@ -205,12 +204,12 @@ class _EpgLiveBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final liveContainer = Theme.of(
-      context,
-    ).extension<AppStatusColors>()!.liveContainer;
-    final onLiveContainer = Theme.of(
-      context,
-    ).extension<AppStatusColors>()!.onLiveContainer;
+    final liveContainer = Theme.of(context)
+        .extension<AppStatusColors>()!
+        .liveContainer;
+    final onLiveContainer = Theme.of(context)
+        .extension<AppStatusColors>()!
+        .onLiveContainer;
     return Semantics(
       label: context.l10n.epgLiveNowSemantics,
       child: ExcludeSemantics(

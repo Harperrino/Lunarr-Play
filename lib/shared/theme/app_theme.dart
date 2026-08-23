@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'app_color_roles.dart';
@@ -136,7 +136,7 @@ class AppTheme {
         AppShapes.standard,
         AppMotion.standard,
       ],
-      textTheme: GoogleFonts.interTextTheme(baseTheme.textTheme).copyWith(
+      textTheme: _interTextTheme(baseTheme.textTheme).copyWith(
         titleLarge: GoogleFonts.inter(
           fontSize: 22,
           fontWeight: FontWeight.w800,
@@ -150,6 +150,29 @@ class AppTheme {
         ),
         bodySmall: GoogleFonts.inter(fontSize: 12, color: colors.outline),
       ),
+    );
+  }
+
+  static TextTheme _interTextTheme(TextTheme base) {
+    TextStyle? inter(TextStyle? style) =>
+        style == null ? null : GoogleFonts.inter(textStyle: style);
+
+    return base.copyWith(
+      displayLarge: inter(base.displayLarge),
+      displayMedium: inter(base.displayMedium),
+      displaySmall: inter(base.displaySmall),
+      headlineLarge: inter(base.headlineLarge),
+      headlineMedium: inter(base.headlineMedium),
+      headlineSmall: inter(base.headlineSmall),
+      titleLarge: inter(base.titleLarge),
+      titleMedium: inter(base.titleMedium),
+      titleSmall: inter(base.titleSmall),
+      bodyLarge: inter(base.bodyLarge),
+      bodyMedium: inter(base.bodyMedium),
+      bodySmall: inter(base.bodySmall),
+      labelLarge: inter(base.labelLarge),
+      labelMedium: inter(base.labelMedium),
+      labelSmall: inter(base.labelSmall),
     );
   }
 }

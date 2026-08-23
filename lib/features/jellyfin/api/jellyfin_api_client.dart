@@ -40,9 +40,10 @@ class JellyfinApiClient {
   static const int maximumTrickplayTileBytes = 8 * 1024 * 1024;
   JellyfinApiClient({
     http.Client? transport,
-    this._requestTimeout = const Duration(seconds: 8),
+    Duration requestTimeout = const Duration(seconds: 8),
     this._urlBuilder = const JellyfinUrlBuilder(),
-  }) : _transport = transport ?? http.Client();
+  }) : _transport = transport ?? http.Client(),
+       _requestTimeout = Duration(microseconds: requestTimeout.inMicroseconds);
 
   static const String _clientName = 'Lunarr Player';
   static const String _clientVersion = '1.0.0';
@@ -382,6 +383,7 @@ class JellyfinApiClient {
     required int width,
     required int index,
   }) async {
+    final deadline = Stopwatch()..start();
     try {
       final uri = _urlBuilder.trickplayTile(
         connection.baseUrl,
@@ -398,20 +400,19 @@ class JellyfinApiClient {
       }
       final request = http.Request('GET', uri)
         ..headers['X-Emby-Token'] = connection.accessToken;
-      final response = await _transport.send(request).timeout(_requestTimeout);
+      final response = await _transport
+          .send(request)
+          .timeout(_remainingRequestTime(deadline));
       if (response.statusCode != 200 ||
           (response.contentLength != null &&
               response.contentLength! > maximumTrickplayTileBytes)) {
         return null;
       }
-      final bytes = BytesBuilder(copy: false);
-      await for (final chunk in response.stream.timeout(_requestTimeout)) {
-        if (bytes.length + chunk.length > maximumTrickplayTileBytes) {
-          return null;
-        }
-        bytes.add(chunk);
-      }
-      final result = bytes.takeBytes();
+      final result = await _readStreamedBytes(
+        response.stream,
+        _remainingRequestTime(deadline),
+        maximumBytes: maximumTrickplayTileBytes,
+      );
       return result.isEmpty ? null : result;
     } catch (_) {
       return null;
@@ -750,12 +751,27 @@ class JellyfinApiClient {
     Map<String, String>? headers,
     Map<String, dynamic>? body,
   }) async {
+    final deadline = Stopwatch()..start();
     try {
       final request = http.Request(method, uri);
       if (headers != null) request.headers.addAll(headers);
       if (body != null) request.body = jsonEncode(body);
-      final streamed = await _transport.send(request).timeout(_requestTimeout);
-      final response = await http.Response.fromStream(streamed);
+      final streamed = await _transport
+          .send(request)
+          .timeout(_remainingRequestTime(deadline));
+      final bytes = await _readStreamedBytes(
+        streamed.stream,
+        _remainingRequestTime(deadline),
+      );
+      final response = http.Response.bytes(
+        bytes,
+        streamed.statusCode,
+        headers: streamed.headers,
+        isRedirect: streamed.isRedirect,
+        persistentConnection: streamed.persistentConnection,
+        reasonPhrase: streamed.reasonPhrase,
+        request: streamed.request,
+      );
       AppLogger.info(
         _redactor.redact(
           'JellyfinApiClient: $method ${uri.path} → ${response.statusCode}.',
@@ -788,6 +804,65 @@ class JellyfinApiClient {
         message: 'The HTTP request failed.',
       );
     }
+  }
+
+  Duration _remainingRequestTime(Stopwatch deadline) {
+    final remaining = _requestTimeout - deadline.elapsed;
+    if (remaining <= Duration.zero) throw TimeoutException('Request deadline');
+    return remaining;
+  }
+
+  Future<Uint8List> _readStreamedBytes(
+    Stream<List<int>> stream,
+    Duration timeout, {
+    int? maximumBytes,
+  }) {
+    final completer = Completer<Uint8List>();
+    final bytes = BytesBuilder(copy: false);
+    StreamSubscription<List<int>>? subscription;
+    var settled = false;
+
+    void completeError(Object error, [StackTrace? stackTrace]) {
+      if (settled) return;
+      settled = true;
+      if (stackTrace == null) {
+        completer.completeError(error);
+      } else {
+        completer.completeError(error, stackTrace);
+      }
+    }
+
+    final timer = Timer(timeout, () {
+      if (settled) return;
+      settled = true;
+      final activeSubscription = subscription;
+      if (activeSubscription != null) unawaited(activeSubscription.cancel());
+      completer.completeError(TimeoutException('Response body deadline'));
+    });
+    subscription = stream.listen(
+      (chunk) {
+        if (settled) return;
+        if (maximumBytes != null &&
+            bytes.length + chunk.length > maximumBytes) {
+          settled = true;
+          final activeSubscription = subscription;
+          if (activeSubscription != null) {
+            unawaited(activeSubscription.cancel());
+          }
+          completer.completeError(const _JellyfinResponseTooLarge());
+          return;
+        }
+        bytes.add(chunk);
+      },
+      onError: completeError,
+      onDone: () {
+        if (settled) return;
+        settled = true;
+        completer.complete(bytes.takeBytes());
+      },
+      cancelOnError: true,
+    );
+    return completer.future.whenComplete(timer.cancel);
   }
 
   JellyfinFailureKind _classifySocketError(SocketException error) {
@@ -832,4 +907,8 @@ class JellyfinApiClient {
     }
     return JellyfinFailureKind.unknown;
   }
+}
+
+class _JellyfinResponseTooLarge implements Exception {
+  const _JellyfinResponseTooLarge();
 }

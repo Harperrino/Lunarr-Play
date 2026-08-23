@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/shared/widgets/group_accent.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_metadata_row.dart';

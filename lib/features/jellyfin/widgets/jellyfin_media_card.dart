@@ -1,5 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_metadata_row.dart';
 import 'package:m3uxtream_player/shared/widgets/media/media_poster_frame.dart';
 
@@ -76,10 +76,8 @@ class JellyfinMediaCard extends StatelessWidget {
                 trimmedDescription,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colors.onSurfaceVariant,
-                  height: 1.25,
-                ),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: colors.onSurfaceVariant, height: 1.25),
               ),
             ],
             if (progress != null && progress! > 0) ...[

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Owns and synchronizes the five scroll positions used by the desktop EPG.
 class EpgScrollCoordinator {
