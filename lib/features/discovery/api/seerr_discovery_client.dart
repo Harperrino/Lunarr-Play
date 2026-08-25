@@ -16,11 +16,19 @@ class SeerrDiscoveryClient implements RequestCapableDiscoveryDataSource {
     required DiscoveryHttpClient httpClient,
     required String endpoint,
     required String apiKey,
+    String confirmedHttpEndpoint = '',
     DateTime Function()? clock,
   }) : _http = httpClient,
        _baseUri = normalizeSeerrApiBase(endpoint),
        _apiKey = apiKey.trim(),
-       _clock = clock ?? DateTime.now;
+       _clock = clock ?? DateTime.now {
+    if (_baseUri.scheme == 'http' &&
+        confirmedHttpEndpoint.trim() != _baseUri.toString()) {
+      throw const DiscoveryApiException(
+        DiscoveryFailureKind.insecureEndpointNotConfirmed,
+      );
+    }
+  }
 
   final DiscoveryHttpClient _http;
   final Uri _baseUri;
@@ -531,6 +539,11 @@ Uri normalizeSeerrApiBase(String endpoint) {
   var path = uri.path.replaceAll(RegExp(r'/+$'), '');
   if (!path.endsWith('/api/v1')) path = '$path/api/v1';
   return uri.replace(path: path, query: null, fragment: null);
+}
+
+String? normalizedSeerrHttpEndpoint(String endpoint) {
+  final normalized = normalizeSeerrApiBase(endpoint);
+  return normalized.scheme == 'http' ? normalized.toString() : null;
 }
 
 bool seerrVersionAtLeast(String value, int major, int minor, int patch) {

@@ -22,20 +22,25 @@ class DiscoveryPreferences {
   const DiscoveryPreferences({
     this.source = DiscoverySource.tmdb,
     this.seerrEndpoint = '',
+    this.seerrHttpConfirmedEndpoint = '',
     this.startupDestination = AppStartupDestination.home,
   });
 
   final DiscoverySource source;
   final String seerrEndpoint;
+  final String seerrHttpConfirmedEndpoint;
   final AppStartupDestination startupDestination;
 
   DiscoveryPreferences copyWith({
     DiscoverySource? source,
     String? seerrEndpoint,
+    String? seerrHttpConfirmedEndpoint,
     AppStartupDestination? startupDestination,
   }) => DiscoveryPreferences(
     source: source ?? this.source,
     seerrEndpoint: seerrEndpoint ?? this.seerrEndpoint,
+    seerrHttpConfirmedEndpoint:
+        seerrHttpConfirmedEndpoint ?? this.seerrHttpConfirmedEndpoint,
     startupDestination: startupDestination ?? this.startupDestination,
   );
 }

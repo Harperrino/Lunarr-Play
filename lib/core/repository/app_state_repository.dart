@@ -176,6 +176,15 @@ class AppStateRepository {
       _discovery.setSource(source);
   Future<void> setDiscoverySeerrEndpoint(String endpoint) =>
       _discovery.setSeerrEndpoint(endpoint);
+  Future<void> setDiscoverySeerrHttpConfirmedEndpoint(String endpoint) =>
+      _discovery.setSeerrHttpConfirmedEndpoint(endpoint);
+  Future<void> setDiscoverySeerrConfiguration({
+    required String endpoint,
+    required String confirmedHttpEndpoint,
+  }) => _discovery.setSeerrConfiguration(
+    endpoint: endpoint,
+    confirmedHttpEndpoint: confirmedHttpEndpoint,
+  );
   Future<void> setStartupDestination(AppStartupDestination destination) =>
       _discovery.setStartupDestination(destination);
 

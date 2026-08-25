@@ -1,6 +1,7 @@
 enum DiscoveryFailureKind {
   missingConfiguration,
   invalidEndpoint,
+  insecureEndpointNotConfirmed,
   unauthorized,
   forbidden,
   conflict,

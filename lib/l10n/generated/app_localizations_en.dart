@@ -2384,6 +2384,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'This endpoint uses unencrypted HTTP. Continue only for a trusted local network.';
 
   @override
+  String get discoverySettingsHttpConfirmTitle =>
+      'Confirm unencrypted Seerr connection';
+
+  @override
+  String discoverySettingsHttpConfirmMessage(String host) {
+    return 'The Seerr administrator API key will be sent without transport encryption to $host. Continue only if this host is on a trusted local network.';
+  }
+
+  @override
+  String get discoverySettingsHttpConfirmCancel => 'Cancel';
+
+  @override
+  String get discoverySettingsHttpConfirmContinue => 'Continue';
+
+  @override
   String get discoverySettingsSecretsInfo =>
       'Secrets are DPAPI-encrypted on Windows and are never written to logs or the app database.';
 
@@ -2402,6 +2417,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get discoverySettingsClearSecretTooltip => 'Remove stored secret';
+
+  @override
+  String get discoveryFailureInsecureEndpointNotConfirmed =>
+      'Confirm this unencrypted Seerr endpoint in Settings before connecting.';
 
   @override
   String discoveryEpisodeCount(int count) {

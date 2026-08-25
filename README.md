@@ -77,23 +77,24 @@ series or looking through your provider's catalogue.
 
 ## Installation
 
-The current Windows x64 release is available as a portable ZIP through GitHub
-Releases.
+The Windows x64 release is distributed as one self-contained installer through
+GitHub Releases.
 
-1. Download `Lunarr-Player-1.0.0-windows-x64.zip` and extract it completely.
-2. Keep the included DLL files and the `data` directory beside the executable.
-3. Start `lunarr_one.exe`.
+1. Download `Lunarr-Player-1.0.1-windows-x64-setup.exe`.
+2. Start the installer and choose where LUNARR should be stored.
+3. Launch LUNARR from the Start menu.
 
-The archive already contains MPV/libmpv and every required application runtime:
-extract and start. No installer or separate resource download is required.
-Windows may display a SmartScreen warning because the application is not
-currently code-signed.
+The installer contains MPV/libmpv, Flutter, the Visual C++ runtime and every
+required application file. It installs them persistently at the selected
+location, creates a Start menu shortcut and registers a standard Windows
+uninstaller. No separate resource download is needed. Windows may display a
+SmartScreen warning because the application is not code-signed.
 
 ## Current Status
 
-The current stable release is **Lunarr Player 1.0.0** (`v1.0.0`).
+The current stable release is **Lunarr Player 1.0.1** (`v1.0.1`).
 
-[See what is new in 1.0.0](CHANGELOG.md).
+[See what is new in 1.0.1](RELEASE_NOTES_1.0.1.md).
 
 Windows desktop is the currently supported platform. Android smartphone and
 foldable support is the next planned platform effort; Android TV is a separate
@@ -122,13 +123,20 @@ Lunarr is built with Flutter. A Windows build requires:
 
 - Flutter 3.47 or newer with Windows desktop support
 - Visual Studio with the Desktop development with C++ workload
+- Inno Setup 6.7 or newer (`winget install JRSoftware.InnoSetup`)
 
 ```powershell
 flutter pub get
 flutter analyze lib test --no-pub
 flutter test --concurrency=1 --no-pub
 flutter build windows --release
+dart run tool/build_windows_installer.dart
 ```
+
+The installer builder creates the release build, adds the app-local Visual C++
+runtime and compiles a persistent per-user installer with selectable destination,
+Start menu shortcuts and an uninstaller. The setup executable and its SHA-256
+file are written to `release/`.
 
 ## Contributors
 
@@ -140,3 +148,5 @@ flutter build windows --release
 ## License
 
 Lunarr Player is available under the [MIT License](LICENSE).
+Licenses and source provenance for bundled native playback and graphics
+components are documented in [Third-Party Notices](THIRD_PARTY_NOTICES.md).

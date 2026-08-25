@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.0.1
+
+### Fixes and security
+
+- TMDB and Seerr searches now preserve multiword, Unicode and special-character
+  queries through strict percent encoding, including reverse-proxy base paths.
+- Jellyfin subtitles can be switched from Off to an available track and back
+  again. The player retains the current source's subtitle catalogue and ignores
+  stale track actions after a playback change.
+- Unencrypted Seerr endpoints require an explicit confirmation before the
+  administrator API key can be transmitted. Approval is bound to the normalized
+  endpoint and is requested again after an endpoint change.
+
+### Windows distribution
+
+- Windows is now distributed as one persistent all-in-one setup executable
+  instead of a portable ZIP. It supports a selectable install directory, Start
+  menu shortcuts and a standard uninstaller while bundling MPV and all required
+  runtime files.
+- The installer remains unsigned and can therefore trigger a Windows
+  SmartScreen warning.
+- Third-party notices and license texts for bundled native playback and graphics
+  components are included in the installed application directory.
+
 ## 1.0.0
 
 Lunarr Player 1.0 is the first stable, feature-complete Windows release. It
@@ -22,7 +46,8 @@ area modular and optional.
   request flows. Both services can be configured and switched from Home;
   validated trailer links open in the system browser.
 - Bundled MPV/libmpv playback and all required Windows runtime files in one
-  portable archive: extract the ZIP and start `lunarr_one.exe`.
+  setup executable with a selectable persistent installation directory and a
+  Start menu shortcut.
 - A responsive Material 3 Expressive interface with adjustable accent/surface
   colors, the optional Lunarr ambient background, hideable tabs, high contrast,
   reduced motion, keyboard navigation and large-text support.
@@ -55,8 +80,8 @@ area modular and optional.
 
 - Existing 0.9.x and 0.10.x local databases, playlists, settings, favorites,
   Watch Later entries and playback progress remain compatible.
-- Replace the complete previous application folder with the contents of the
-  new portable ZIP. Do not copy only the executable.
+- Run the new setup executable and select the desired installation directory.
+  Existing local application data remains compatible.
 - The Windows build is not code-signed, so SmartScreen may show a warning.
 
 ## 0.10.0 RC1

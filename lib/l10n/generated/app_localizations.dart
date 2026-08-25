@@ -4214,6 +4214,30 @@ abstract class AppLocalizations {
   /// **'This endpoint uses unencrypted HTTP. Continue only for a trusted local network.'**
   String get discoverySettingsHttpWarning;
 
+  /// No description provided for @discoverySettingsHttpConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm unencrypted Seerr connection'**
+  String get discoverySettingsHttpConfirmTitle;
+
+  /// No description provided for @discoverySettingsHttpConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The Seerr administrator API key will be sent without transport encryption to {host}. Continue only if this host is on a trusted local network.'**
+  String discoverySettingsHttpConfirmMessage(String host);
+
+  /// No description provided for @discoverySettingsHttpConfirmCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get discoverySettingsHttpConfirmCancel;
+
+  /// No description provided for @discoverySettingsHttpConfirmContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get discoverySettingsHttpConfirmContinue;
+
   /// No description provided for @discoverySettingsSecretsInfo.
   ///
   /// In en, this message translates to:
@@ -4249,6 +4273,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove stored secret'**
   String get discoverySettingsClearSecretTooltip;
+
+  /// No description provided for @discoveryFailureInsecureEndpointNotConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm this unencrypted Seerr endpoint in Settings before connecting.'**
+  String get discoveryFailureInsecureEndpointNotConfirmed;
 
   /// No description provided for @discoveryEpisodeCount.
   ///

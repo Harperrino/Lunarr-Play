@@ -57,6 +57,8 @@ class AppStateKeys {
   static const hiddenShellTabs = 'hidden_shell_tabs';
   static const discoverySource = 'discovery_source';
   static const discoverySeerrEndpoint = 'discovery_seerr_endpoint';
+  static const discoverySeerrHttpConfirmedEndpoint =
+      'discovery_seerr_http_confirmed_endpoint';
   static const startupDestination = 'startup_destination';
   static const startupPreferenceInitialized = 'startup_preference_initialized';
 }
@@ -122,6 +124,10 @@ class DiscoveryStateStore {
     );
     final endpoint =
         (await _values.read(AppStateKeys.discoverySeerrEndpoint) ?? '').trim();
+    final confirmedHttpEndpoint =
+        (await _values.read(AppStateKeys.discoverySeerrHttpConfirmedEndpoint) ??
+                '')
+            .trim();
     final storedStartup = await _values.read(AppStateKeys.startupDestination);
     final initialized =
         await _values.read(AppStateKeys.startupPreferenceInitialized) == 'true';
@@ -142,6 +148,7 @@ class DiscoveryStateStore {
     return DiscoveryPreferences(
       source: source,
       seerrEndpoint: endpoint,
+      seerrHttpConfirmedEndpoint: confirmedHttpEndpoint,
       startupDestination: startup,
     );
   }
@@ -151,6 +158,21 @@ class DiscoveryStateStore {
 
   Future<void> setSeerrEndpoint(String endpoint) =>
       _values.write(AppStateKeys.discoverySeerrEndpoint, endpoint.trim());
+
+  Future<void> setSeerrHttpConfirmedEndpoint(String endpoint) => _values.write(
+    AppStateKeys.discoverySeerrHttpConfirmedEndpoint,
+    endpoint.trim(),
+  );
+
+  Future<void> setSeerrConfiguration({
+    required String endpoint,
+    required String confirmedHttpEndpoint,
+  }) async {
+    // Writing the endpoint before its approval fails closed if the process is
+    // interrupted between the two writes.
+    await setSeerrEndpoint(endpoint);
+    await setSeerrHttpConfirmedEndpoint(confirmedHttpEndpoint);
+  }
 
   Future<void> setStartupDestination(AppStartupDestination destination) async {
     await _values.write(AppStateKeys.startupDestination, destination.name);

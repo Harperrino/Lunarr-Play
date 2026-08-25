@@ -332,6 +332,59 @@ void main() {
       },
     );
 
+    test('HTTP rejects API-key use until the exact endpoint is confirmed', () {
+      var requests = 0;
+      final transport = MockClient((_) async {
+        requests++;
+        return http.Response('{}', 200);
+      });
+
+      expect(
+        () => SeerrDiscoveryClient(
+          httpClient: DiscoveryHttpClient(transport),
+          endpoint: 'http://192.168.1.20:5055/base/',
+          apiKey: 'fixture-admin-key',
+        ),
+        throwsA(
+          isA<DiscoveryApiException>().having(
+            (error) => error.kind,
+            'kind',
+            DiscoveryFailureKind.insecureEndpointNotConfirmed,
+          ),
+        ),
+      );
+      expect(
+        () => SeerrDiscoveryClient(
+          httpClient: DiscoveryHttpClient(transport),
+          endpoint: 'http://192.168.1.20:5055/base/',
+          apiKey: 'fixture-admin-key',
+          confirmedHttpEndpoint: 'http://192.168.1.21:5055/base/api/v1',
+        ),
+        throwsA(isA<DiscoveryApiException>()),
+      );
+
+      final client = SeerrDiscoveryClient(
+        httpClient: DiscoveryHttpClient(transport),
+        endpoint: 'http://192.168.1.20:5055/base/',
+        apiKey: 'fixture-admin-key',
+        confirmedHttpEndpoint: 'http://192.168.1.20:5055/base/api/v1',
+      );
+      expect(client.usesInsecureHttp, isTrue);
+      expect(requests, 0);
+    });
+
+    test('HTTPS remains available without an HTTP confirmation', () {
+      final client = SeerrDiscoveryClient(
+        httpClient: DiscoveryHttpClient(
+          MockClient((_) async => http.Response('{}', 200)),
+        ),
+        endpoint: 'https://example.test/seerr',
+        apiKey: 'fixture-admin-key',
+      );
+
+      expect(client.usesInsecureHttp, isFalse);
+    });
+
     test(
       'maps HTTP failures to invalid responses, not network errors',
       () async {

@@ -353,18 +353,32 @@ class _DiscoverySettingsCardState extends ConsumerState<DiscoverySettingsCard> {
     });
     try {
       final preferences = ref.read(discoveryPreferencesProvider.notifier);
-      await preferences.setSource(_source);
-      await preferences.setStartupDestination(_startup);
-      await preferences.setSeerrEndpoint(_seerrEndpoint.text);
       final secrets = ref.read(discoverySecretsProvider.notifier);
-      if (_tmdbToken.text.trim().isNotEmpty) {
+      if (_source == DiscoverySource.seerr) {
+        final confirmedHttpEndpoint = await _confirmSeerrHttpIfNeeded();
+        if (confirmedHttpEndpoint == null) return;
+
+        // Clear the persisted endpoint before changing its key. This keeps
+        // every provider fail-closed until the complete configuration is
+        // published as one notifier state.
+        await preferences.setSeerrConfiguration(
+          endpoint: '',
+          confirmedHttpEndpoint: '',
+        );
+        if (_seerrApiKey.text.trim().isNotEmpty) {
+          await secrets.setSeerrApiKey(_seerrApiKey.text);
+          _seerrApiKey.clear();
+        }
+        await preferences.setSeerrConfiguration(
+          endpoint: _seerrEndpoint.text,
+          confirmedHttpEndpoint: confirmedHttpEndpoint,
+        );
+      } else if (_tmdbToken.text.trim().isNotEmpty) {
         await secrets.setTmdbToken(_tmdbToken.text);
         _tmdbToken.clear();
       }
-      if (_seerrApiKey.text.trim().isNotEmpty) {
-        await secrets.setSeerrApiKey(_seerrApiKey.text);
-        _seerrApiKey.clear();
-      }
+      await preferences.setSource(_source);
+      await preferences.setStartupDestination(_startup);
       ref.invalidate(discoveryHomeProvider);
       ref.read(discoverySearchProvider.notifier).clear();
       if (!mounted) return;
@@ -399,6 +413,8 @@ class _DiscoverySettingsCardState extends ConsumerState<DiscoverySettingsCard> {
           );
         }
       } else {
+        final confirmedHttpEndpoint = await _confirmSeerrHttpIfNeeded();
+        if (confirmedHttpEndpoint == null) return;
         final key = _seerrApiKey.text.trim().isNotEmpty
             ? _seerrApiKey.text.trim()
             : stored.seerrApiKey;
@@ -406,6 +422,7 @@ class _DiscoverySettingsCardState extends ConsumerState<DiscoverySettingsCard> {
           httpClient: http,
           endpoint: _seerrEndpoint.text,
           apiKey: key,
+          confirmedHttpEndpoint: confirmedHttpEndpoint,
         ).testConnection();
         if (mounted) {
           setState(
@@ -419,6 +436,46 @@ class _DiscoverySettingsCardState extends ConsumerState<DiscoverySettingsCard> {
     } finally {
       if (mounted) setState(() => _testing = false);
     }
+  }
+
+  Future<String?> _confirmSeerrHttpIfNeeded() async {
+    final normalizedHttp = normalizedSeerrHttpEndpoint(_seerrEndpoint.text);
+    if (normalizedHttp == null) return '';
+
+    final preferences = await ref.read(discoveryPreferencesProvider.future);
+    if (preferences.seerrHttpConfirmedEndpoint == normalizedHttp) {
+      return normalizedHttp;
+    }
+    if (!mounted) return null;
+
+    final authority = Uri.parse(normalizedHttp).authority;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.discoverySettingsHttpConfirmTitle),
+        content: Text(
+          dialogContext.l10n.discoverySettingsHttpConfirmMessage(authority),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(dialogContext.l10n.discoverySettingsHttpConfirmCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              dialogContext.l10n.discoverySettingsHttpConfirmContinue,
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return null;
+
+    await ref
+        .read(discoveryPreferencesProvider.notifier)
+        .setSeerrHttpConfirmedEndpoint(normalizedHttp);
+    return normalizedHttp;
   }
 
   Future<void> _clearSecret({required bool tmdb}) async {

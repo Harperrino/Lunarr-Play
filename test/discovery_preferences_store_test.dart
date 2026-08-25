@@ -47,12 +47,19 @@ void main() {
       final store = DiscoveryStateStore(values);
       await store.setSource(DiscoverySource.seerr);
       await store.setSeerrEndpoint('  https://example.test/seerr  ');
+      await store.setSeerrHttpConfirmedEndpoint(
+        '  http://example.test/seerr/api/v1  ',
+      );
       await store.setStartupDestination(AppStartupDestination.live);
 
       final preferences = await store.getPreferences();
 
       expect(preferences.source, DiscoverySource.seerr);
       expect(preferences.seerrEndpoint, 'https://example.test/seerr');
+      expect(
+        preferences.seerrHttpConfirmedEndpoint,
+        'http://example.test/seerr/api/v1',
+      );
       expect(preferences.startupDestination, AppStartupDestination.live);
       expect(database.schemaVersion, 10);
     },
@@ -67,5 +74,21 @@ void main() {
 
     expect(preferences.source, DiscoverySource.tmdb);
     expect(preferences.startupDestination, AppStartupDestination.live);
+  });
+
+  test('Seerr configuration writes endpoint and bound HTTP approval', () async {
+    final store = DiscoveryStateStore(values);
+
+    await store.setSeerrConfiguration(
+      endpoint: 'http://192.168.1.20:5055/base',
+      confirmedHttpEndpoint: 'http://192.168.1.20:5055/base/api/v1',
+    );
+
+    final preferences = await store.getPreferences();
+    expect(preferences.seerrEndpoint, 'http://192.168.1.20:5055/base');
+    expect(
+      preferences.seerrHttpConfirmedEndpoint,
+      'http://192.168.1.20:5055/base/api/v1',
+    );
   });
 }

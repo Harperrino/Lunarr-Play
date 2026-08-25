@@ -1132,12 +1132,22 @@
   },
   "discoverySettingsAdminKeyWarning": "This API key grants administrator access to Seerr. LUNARR uses it only for discovery and new media requests.",
   "discoverySettingsHttpWarning": "This endpoint uses unencrypted HTTP. Continue only for a trusted local network.",
+  "discoverySettingsHttpConfirmTitle": "Confirm unencrypted Seerr connection",
+  "discoverySettingsHttpConfirmMessage": "The Seerr administrator API key will be sent without transport encryption to {host}. Continue only if this host is on a trusted local network.",
+  "@discoverySettingsHttpConfirmMessage": {
+    "placeholders": {
+      "host": {"type": "String"}
+    }
+  },
+  "discoverySettingsHttpConfirmCancel": "Cancel",
+  "discoverySettingsHttpConfirmContinue": "Continue",
   "discoverySettingsSecretsInfo": "Secrets are DPAPI-encrypted on Windows and are never written to logs or the app database.",
   "discoverySettingsMinimumVersion": "Seerr 3.1.0 or newer is required.",
   "discoverySettingsSaved": "Discovery settings saved.",
   "discoverySettingsShowSecretTooltip": "Show secret",
   "discoverySettingsHideSecretTooltip": "Hide secret",
   "discoverySettingsClearSecretTooltip": "Remove stored secret",
+  "discoveryFailureInsecureEndpointNotConfirmed": "Confirm this unencrypted Seerr endpoint in Settings before connecting.",
   "discoveryEpisodeCount": "{count, plural, =1{1 episode} other{{count} episodes}}",
   "@discoveryEpisodeCount": {
     "placeholders": {

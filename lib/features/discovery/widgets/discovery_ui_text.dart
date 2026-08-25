@@ -11,6 +11,8 @@ String discoveryFailureText(AppLocalizations l10n, Object error) {
       l10n.discoveryFailureMissingConfiguration,
     DiscoveryFailureKind.invalidEndpoint =>
       l10n.discoveryFailureInvalidEndpoint,
+    DiscoveryFailureKind.insecureEndpointNotConfirmed =>
+      l10n.discoveryFailureInsecureEndpointNotConfirmed,
     DiscoveryFailureKind.unauthorized => l10n.discoveryFailureUnauthorized,
     DiscoveryFailureKind.forbidden => l10n.discoveryFailureForbidden,
     DiscoveryFailureKind.conflict => l10n.discoveryFailureConflict,

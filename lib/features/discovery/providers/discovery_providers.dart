@@ -65,6 +65,38 @@ class DiscoveryPreferencesNotifier extends AsyncNotifier<DiscoveryPreferences> {
     );
   }
 
+  Future<void> setSeerrHttpConfirmedEndpoint(String endpoint) async {
+    final normalized = endpoint.trim();
+    await ref
+        .read(appStateRepositoryProvider)
+        .setDiscoverySeerrHttpConfirmedEndpoint(normalized);
+    state = AsyncData(
+      (state.valueOrNull ?? const DiscoveryPreferences()).copyWith(
+        seerrHttpConfirmedEndpoint: normalized,
+      ),
+    );
+  }
+
+  Future<void> setSeerrConfiguration({
+    required String endpoint,
+    required String confirmedHttpEndpoint,
+  }) async {
+    final normalizedEndpoint = endpoint.trim();
+    final normalizedConfirmation = confirmedHttpEndpoint.trim();
+    await ref
+        .read(appStateRepositoryProvider)
+        .setDiscoverySeerrConfiguration(
+          endpoint: normalizedEndpoint,
+          confirmedHttpEndpoint: normalizedConfirmation,
+        );
+    state = AsyncData(
+      (state.valueOrNull ?? const DiscoveryPreferences()).copyWith(
+        seerrEndpoint: normalizedEndpoint,
+        seerrHttpConfirmedEndpoint: normalizedConfirmation,
+      ),
+    );
+  }
+
   Future<void> setStartupDestination(AppStartupDestination destination) async {
     await ref
         .read(appStateRepositoryProvider)
@@ -162,6 +194,7 @@ DiscoveryDataSource discoveryDataSourceFor(
     httpClient: ref.read(discoveryHttpClientProvider),
     endpoint: preferences.seerrEndpoint,
     apiKey: secrets.seerrApiKey,
+    confirmedHttpEndpoint: preferences.seerrHttpConfirmedEndpoint,
   ),
 };
 
