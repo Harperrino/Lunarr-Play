@@ -57,6 +57,67 @@ void main() {
       },
     );
 
+    test('search percent-encodes multiword and special query values', () async {
+      final urls = <Uri>[];
+      final transport = MockClient((request) async {
+        urls.add(request.url);
+        return http.Response(
+          jsonEncode(<String, Object?>{
+            'page': 1,
+            'total_pages': 1,
+            'results': const <Object?>[],
+          }),
+          200,
+        );
+      });
+      final client = TmdbDiscoveryClient(
+        httpClient: DiscoveryHttpClient(transport),
+        readAccessToken: 'fixture-token',
+      );
+
+      await client.search('  die verräter  ', locale: locale);
+      const special = 'die  verräter + & = # _ 🛰️';
+      await client.search(special, locale: locale);
+
+      expect(urls, hasLength(2));
+      expect(
+        urls.first.query,
+        contains('query=${Uri.encodeComponent('die verräter')}'),
+      );
+      expect(urls.first.query, isNot(contains('query=die+verr')));
+      expect(urls.first.queryParameters['query'], 'die verräter');
+      expect(
+        urls.last.query,
+        contains('query=${Uri.encodeComponent(special)}'),
+      );
+      expect(urls.last.queryParameters['query'], special);
+    });
+
+    test(
+      'maps HTTP failures to invalid responses, not network errors',
+      () async {
+        final client = TmdbDiscoveryClient(
+          httpClient: DiscoveryHttpClient(
+            MockClient((_) async => http.Response('{}', 503)),
+          ),
+          readAccessToken: 'fixture-token',
+        );
+
+        await expectLater(
+          client.search('query', locale: locale),
+          throwsA(
+            isA<DiscoveryApiException>()
+                .having(
+                  (error) => error.kind,
+                  'kind',
+                  DiscoveryFailureKind.invalidResponse,
+                )
+                .having((error) => error.statusCode, 'statusCode', 503),
+          ),
+        );
+      },
+    );
+
     test('home uses the official list endpoints', () async {
       final paths = <String>[];
       final transport = MockClient((request) async {
@@ -220,6 +281,86 @@ void main() {
         expect(
           normalizeSeerrApiBase('http://192.168.1.5:5055/api/v1/').toString(),
           'http://192.168.1.5:5055/api/v1',
+        );
+      },
+    );
+
+    test(
+      'search percent-encodes multiword values and keeps proxy paths',
+      () async {
+        final urls = <Uri>[];
+        final transport = MockClient((request) async {
+          if (request.url.path.endsWith('/status')) {
+            return http.Response(
+              jsonEncode(<String, Object?>{'version': '3.1.0'}),
+              200,
+            );
+          }
+          urls.add(request.url);
+          return http.Response(
+            jsonEncode(<String, Object?>{
+              'page': 1,
+              'totalPages': 1,
+              'results': const <Object?>[],
+            }),
+            200,
+          );
+        });
+        final client = SeerrDiscoveryClient(
+          httpClient: DiscoveryHttpClient(transport),
+          endpoint: 'https://example.test/seerr',
+          apiKey: 'fixture-admin-key',
+        );
+
+        await client.search('  die verräter  ', locale: locale);
+        const special = 'die  verräter + & = # _ 🛰️';
+        await client.search(special, locale: locale);
+
+        expect(urls, hasLength(2));
+        expect(urls.first.path, '/seerr/api/v1/search');
+        expect(
+          urls.first.query,
+          contains('query=${Uri.encodeComponent('die verräter')}'),
+        );
+        expect(urls.first.query, isNot(contains('query=die+verr')));
+        expect(urls.first.queryParameters['query'], 'die verräter');
+        expect(
+          urls.last.query,
+          contains('query=${Uri.encodeComponent(special)}'),
+        );
+        expect(urls.last.queryParameters['query'], special);
+      },
+    );
+
+    test(
+      'maps HTTP failures to invalid responses, not network errors',
+      () async {
+        final transport = MockClient((request) async {
+          if (request.url.path.endsWith('/status')) {
+            return http.Response(
+              jsonEncode(<String, Object?>{'version': '3.1.0'}),
+              200,
+            );
+          }
+          return http.Response('{}', 429);
+        });
+        final client = SeerrDiscoveryClient(
+          httpClient: DiscoveryHttpClient(transport),
+          endpoint: 'https://example.test',
+          apiKey: 'fixture-admin-key',
+        );
+
+        await expectLater(
+          client.search('query', locale: locale),
+          throwsA(
+            isA<DiscoveryApiException>()
+                .having(
+                  (error) => error.kind,
+                  'kind',
+                  DiscoveryFailureKind.invalidResponse,
+                )
+                .having((error) => error.statusCode, 'statusCode', 429),
+          ),
         );
       },
     );

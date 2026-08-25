@@ -10,6 +10,7 @@ import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_info.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_device_profile.dart';
+import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_native_subtitle_selection.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_playback_reporter.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_playback_resolver.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_state.dart';
@@ -40,10 +41,12 @@ class JellyfinPlayerController {
     JellyfinPlayerFactory? playerFactory,
     JellyfinVideoControllerFactory? videoControllerFactory,
     Duration playerOpenTimeout = const Duration(seconds: 10),
+    Duration nativeSubtitleTrackWait = const Duration(milliseconds: 250),
   }) {
     _playerFactory = playerFactory ?? Player.new;
     _videoControllerFactory = videoControllerFactory ?? VideoController.new;
     _playerOpenTimeout = playerOpenTimeout;
+    _nativeSubtitleTrackWait = nativeSubtitleTrackWait;
     _installPlayer(player ?? _playerFactory());
   }
 
@@ -59,6 +62,7 @@ class JellyfinPlayerController {
   late final JellyfinPlayerFactory _playerFactory;
   late final JellyfinVideoControllerFactory _videoControllerFactory;
   late final Duration _playerOpenTimeout;
+  late final Duration _nativeSubtitleTrackWait;
 
   late Player _player;
   late VideoController _videoController;
@@ -220,6 +224,10 @@ class JellyfinPlayerController {
     required bool resetSelections,
   }) async {
     if (_disposed) return;
+    final previousState = state.value;
+    final previousMediaSourceId = previousState.mediaSourceId;
+    final previousAudioTracks = previousState.audioTracks;
+    final previousSubtitleTracks = previousState.subtitleTracks;
     _currentItem = item;
     final attempt = ++_playAttempt;
     _reportPlaybackStopped();
@@ -313,12 +321,22 @@ class JellyfinPlayerController {
       final selectedStreams = resolved.mediaSource.mediaStreams.isNotEmpty
           ? resolved.mediaSource.mediaStreams
           : playbackInfo.mediaStreams;
-      final audioTracks = selectedStreams
+      final resolvedAudioTracks = selectedStreams
           .where((stream) => stream.type == JellyfinMediaStreamType.audio)
           .toList(growable: false);
-      final subtitleTracks = selectedStreams
+      final resolvedSubtitleTracks = selectedStreams
           .where((stream) => stream.type == JellyfinMediaStreamType.subtitle)
           .toList(growable: false);
+      final sameMediaSource =
+          !resetSelections &&
+          previousMediaSourceId != null &&
+          previousMediaSourceId == resolved.mediaSourceId;
+      final audioTracks = sameMediaSource && resolvedAudioTracks.isEmpty
+          ? previousAudioTracks
+          : resolvedAudioTracks;
+      final subtitleTracks = sameMediaSource && resolvedSubtitleTracks.isEmpty
+          ? previousSubtitleTracks
+          : resolvedSubtitleTracks;
       final selectedAudio = _validStreamIndex(
         audioStreamIndex ??
             resolved.mediaSource.defaultAudioStreamIndex ??
@@ -357,6 +375,12 @@ class JellyfinPlayerController {
           httpHeaders: resolved.headers,
           start: resolved.startPosition,
         ),
+        disableSubtitles: selectedSubtitle < 0,
+        selectedSubtitleStream: subtitleTracks
+            .where((track) => track.index == selectedSubtitle)
+            .firstOrNull,
+        subtitleTracks: subtitleTracks,
+        playbackMethod: resolved.method,
       );
       if (!_isCurrentAttempt(attempt)) return;
 
@@ -515,7 +539,14 @@ class JellyfinPlayerController {
 
   bool _isCurrentAttempt(int attempt) => !_disposed && attempt == _playAttempt;
 
-  Future<void> _openForAttempt(int attempt, Media media) {
+  Future<void> _openForAttempt(
+    int attempt,
+    Media media, {
+    required bool disableSubtitles,
+    required JellyfinMediaStream? selectedSubtitleStream,
+    required List<JellyfinMediaStream> subtitleTracks,
+    required JellyfinPlaybackMethod playbackMethod,
+  }) {
     return _enqueueLifecycleOperation(() async {
       if (!_isCurrentAttempt(attempt)) return;
       final openingPlayer = _player;
@@ -537,8 +568,64 @@ class JellyfinPlayerController {
         if (!_disposed && _queuedStops == 0) await openingPlayer.stop();
         return;
       }
+      if (disableSubtitles) {
+        await openingPlayer.setSubtitleTrack(SubtitleTrack.no());
+        if (!_isCurrentAttempt(attempt) ||
+            generation != _playerGeneration ||
+            !identical(openingPlayer, _player)) {
+          if (!_disposed && _queuedStops == 0) await openingPlayer.stop();
+          return;
+        }
+      } else if (playbackMethod == JellyfinPlaybackMethod.directPlay &&
+          selectedSubtitleStream != null) {
+        final nativeTrack = await _nativeSubtitleTrack(
+          openingPlayer,
+          selectedSubtitleStream.index,
+          subtitleTracks,
+        );
+        if (!_isCurrentAttempt(attempt) ||
+            generation != _playerGeneration ||
+            !identical(openingPlayer, _player)) {
+          if (!_disposed && _queuedStops == 0) await openingPlayer.stop();
+          return;
+        }
+        if (nativeTrack != null) {
+          await openingPlayer.setSubtitleTrack(nativeTrack);
+          if (!_isCurrentAttempt(attempt) ||
+              generation != _playerGeneration ||
+              !identical(openingPlayer, _player)) {
+            if (!_disposed && _queuedStops == 0) await openingPlayer.stop();
+            return;
+          }
+        }
+      }
       await openingPlayer.play();
     });
+  }
+
+  Future<SubtitleTrack?> _nativeSubtitleTrack(
+    Player player,
+    int selectedStreamIndex,
+    List<JellyfinMediaStream> subtitleTracks,
+  ) async {
+    SubtitleTrack? match(Tracks tracks) => jellyfinNativeSubtitleTrackFor(
+      selectedStreamIndex: selectedStreamIndex,
+      jellyfinTracks: subtitleTracks,
+      nativeTracks: tracks.subtitle,
+    );
+
+    final immediate = match(player.state.tracks);
+    if (immediate != null || _nativeSubtitleTrackWait <= Duration.zero) {
+      return immediate;
+    }
+    try {
+      final tracks = await player.stream.tracks
+          .firstWhere((tracks) => match(tracks) != null)
+          .timeout(_nativeSubtitleTrackWait);
+      return match(tracks);
+    } on TimeoutException {
+      return null;
+    }
   }
 
   Future<void> _retireTimedOutPlayer(

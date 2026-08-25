@@ -1,6 +1,7 @@
 import 'package:m3uxtream_player/core/models/discovery_preferences.dart';
 import 'package:m3uxtream_player/features/discovery/api/discovery_api_exception.dart';
 import 'package:m3uxtream_player/features/discovery/api/discovery_http_client.dart';
+import 'package:m3uxtream_player/features/discovery/api/discovery_uri.dart';
 import 'package:m3uxtream_player/features/discovery/models/discovery_models.dart';
 import 'package:m3uxtream_player/features/discovery/services/discovery_data_source.dart';
 
@@ -212,7 +213,7 @@ class TmdbDiscoveryClient implements DiscoveryDataSource {
     String path,
     Map<String, String> query,
   ) async {
-    final uri = _apiBase.resolve(path).replace(queryParameters: query);
+    final uri = discoveryUriWithQuery(_apiBase.resolve(path), query);
     final response = await _http.get(uri, headers: _headers);
     _checkStatus(response.statusCode);
     if (response.json is! Map) {
@@ -312,7 +313,7 @@ class TmdbDiscoveryClient implements DiscoveryDataSource {
       throw const DiscoveryApiException(DiscoveryFailureKind.forbidden);
     }
     throw DiscoveryApiException(
-      DiscoveryFailureKind.network,
+      DiscoveryFailureKind.invalidResponse,
       statusCode: statusCode,
     );
   }

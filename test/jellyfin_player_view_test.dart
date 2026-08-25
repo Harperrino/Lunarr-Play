@@ -9,6 +9,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_client.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
+import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_info.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_controller.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_player_controls.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_player_view.dart';
@@ -146,6 +147,57 @@ void main() {
       expect(fullscreenCalls, 1);
     },
   );
+
+  testWidgets('subtitle menu forwards Off to the player controller', (
+    tester,
+  ) async {
+    final player = _TeardownFakePlayer();
+    final controller = JellyfinPlayerController(
+      connection: jellyfinOfflineTestConnection,
+      apiClient: JellyfinApiClient(transport: jellyfinHappyTransport()),
+      player: player,
+      videoControllerFactory: (_) => _FakeVideoController(),
+    );
+    addTearDown(() => unawaited(controller.disposeAsync()));
+    await controller.play(_item);
+    player.subtitleTrackCalls.clear();
+    controller.state.value = controller.state.value.copyWith(
+      initialized: true,
+      subtitleTracks: const <JellyfinMediaStream>[
+        JellyfinMediaStream(
+          index: 3,
+          type: JellyfinMediaStreamType.subtitle,
+          language: 'deu',
+          displayTitle: 'Deutsch',
+        ),
+      ],
+      selectedSubtitleStreamIndex: 3,
+    );
+
+    await tester.pumpWidget(
+      jellyfinTestHost(
+        JellyfinPlayerControls(controller: controller, onStop: () {}),
+        playbackControllerOverride: controller,
+      ),
+    );
+
+    final subtitleButton = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byIcon(Icons.subtitles_rounded),
+        matching: find.byType(IconButton),
+      ),
+    );
+    expect(subtitleButton.onPressed, isNotNull);
+    await tester.tap(find.byIcon(Icons.subtitles_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Off'), findsOneWidget);
+    await tester.tap(find.text('Off'));
+    await tester.pumpAndSettle();
+
+    expect(controller.state.value.selectedSubtitleStreamIndex, -1);
+    expect(controller.state.value.subtitleTracks, hasLength(1));
+    expect(player.subtitleTrackCalls.map((track) => track.id), ['no']);
+  });
 
   testWidgets('player header back stops playback before leaving', (
     tester,
@@ -469,6 +521,7 @@ class _TeardownFakePlayer extends Fake implements Player {
   int stopCount = 0;
   int disposeCount = 0;
   final volumeCalls = <double>[];
+  final subtitleTrackCalls = <SubtitleTrack>[];
 
   @override
   PlatformPlayer? get platform => null;
@@ -487,6 +540,9 @@ class _TeardownFakePlayer extends Fake implements Player {
   }
 
   @override
+  Future<void> play() async {}
+
+  @override
   Future<void> playOrPause() async {}
 
   @override
@@ -495,6 +551,11 @@ class _TeardownFakePlayer extends Fake implements Player {
   @override
   Future<void> setVolume(double volume) async {
     volumeCalls.add(volume);
+  }
+
+  @override
+  Future<void> setSubtitleTrack(SubtitleTrack track) async {
+    subtitleTrackCalls.add(track);
   }
 
   @override

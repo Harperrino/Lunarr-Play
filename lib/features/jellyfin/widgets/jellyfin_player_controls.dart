@@ -6,6 +6,7 @@ import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_stat
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_client.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_assist.dart';
+import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_player_track_menu_button.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_trickplay_preview.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_formatting.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
@@ -367,54 +368,44 @@ class _TrackAndFullscreenControls extends StatelessWidget {
           ),
           SizedBox(width: compact ? 4 : 6),
         ],
-        PopupMenuButton<int>(
+        JellyfinPlayerTrackMenuButton(
           enabled: enabled && state.audioTracks.isNotEmpty,
           tooltip: l10n.jellyfinAudioTrackTooltip,
-          initialValue: state.selectedAudioStreamIndex >= 0
-              ? state.selectedAudioStreamIndex
-              : null,
+          selectedValue: state.selectedAudioStreamIndex,
           onSelected: (index) => unawaited(controller.selectAudioTrack(index)),
-          itemBuilder: (context) => [
+          entries: [
             for (final track in state.audioTracks)
-              PopupMenuItem<int>(
+              JellyfinPlayerTrackMenuEntry(
                 value: track.index,
-                child: Text(jellyfinStreamDisplayLabel(track)),
+                label: jellyfinStreamDisplayLabel(track),
               ),
           ],
-          child: M3TransportIconButton(
-            icon: Icons.audiotrack_rounded,
-            tooltip: l10n.jellyfinAudioTrackTooltip,
-            size: size,
-            iconSize: iconSize,
-            onPressed: null,
-          ),
+          icon: Icons.audiotrack_rounded,
+          size: size,
+          iconSize: iconSize,
         ),
         SizedBox(width: compact ? 4 : 6),
-        PopupMenuButton<int>(
+        JellyfinPlayerTrackMenuButton(
           enabled: enabled && state.subtitleTracks.isNotEmpty,
           tooltip: l10n.jellyfinSubtitleTrackTooltip,
-          initialValue: state.selectedSubtitleStreamIndex,
+          selectedValue: state.selectedSubtitleStreamIndex,
           onSelected: (index) => unawaited(
             controller.selectSubtitleTrack(index < 0 ? null : index),
           ),
-          itemBuilder: (context) => [
-            PopupMenuItem<int>(
+          entries: [
+            JellyfinPlayerTrackMenuEntry(
               value: -1,
-              child: Text(l10n.jellyfinSubtitleOff),
+              label: l10n.jellyfinSubtitleOff,
             ),
             for (final track in state.subtitleTracks)
-              PopupMenuItem<int>(
+              JellyfinPlayerTrackMenuEntry(
                 value: track.index,
-                child: Text(jellyfinStreamDisplayLabel(track)),
+                label: jellyfinStreamDisplayLabel(track),
               ),
           ],
-          child: M3TransportIconButton(
-            icon: Icons.subtitles_rounded,
-            tooltip: l10n.jellyfinSubtitleTrackTooltip,
-            size: size,
-            iconSize: iconSize,
-            onPressed: null,
-          ),
+          icon: Icons.subtitles_rounded,
+          size: size,
+          iconSize: iconSize,
         ),
         if (onToggleFullscreen != null) ...[
           SizedBox(width: compact ? 4 : 6),

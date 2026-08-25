@@ -1,6 +1,7 @@
 import 'package:m3uxtream_player/core/models/discovery_preferences.dart';
 import 'package:m3uxtream_player/features/discovery/api/discovery_api_exception.dart';
 import 'package:m3uxtream_player/features/discovery/api/discovery_http_client.dart';
+import 'package:m3uxtream_player/features/discovery/api/discovery_uri.dart';
 import 'package:m3uxtream_player/features/discovery/models/discovery_models.dart';
 import 'package:m3uxtream_player/features/discovery/services/discovery_data_source.dart';
 
@@ -270,11 +271,12 @@ class SeerrDiscoveryClient implements RequestCapableDiscoveryDataSource {
     final basePath = _baseUri.path.endsWith('/')
         ? _baseUri.path
         : '${_baseUri.path}/';
-    return _baseUri
-        .replace(
-          path: '$basePath${relativePath.replaceFirst(RegExp(r'^/'), '')}',
-        )
-        .replace(queryParameters: query);
+    return discoveryUriWithQuery(
+      _baseUri.replace(
+        path: '$basePath${relativePath.replaceFirst(RegExp(r'^/'), '')}',
+      ),
+      query,
+    );
   }
 
   DiscoveryMediaItem _item(
@@ -399,7 +401,7 @@ class SeerrDiscoveryClient implements RequestCapableDiscoveryDataSource {
       throw const DiscoveryApiException(DiscoveryFailureKind.conflict);
     }
     throw DiscoveryApiException(
-      DiscoveryFailureKind.network,
+      DiscoveryFailureKind.invalidResponse,
       statusCode: statusCode,
     );
   }

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
+import 'package:media_kit/media_kit.dart' as media_kit show PlayerState;
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_client.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_controller.dart';
@@ -20,6 +21,7 @@ class _ControllableStream extends Fake implements PlayerStream {
   final durationController = StreamController<Duration>.broadcast();
   final positionController = StreamController<Duration>.broadcast();
   final errorController = StreamController<String>.broadcast();
+  final tracksController = StreamController<Tracks>.broadcast();
 
   @override
   Stream<bool> get playing => playingController.stream;
@@ -41,6 +43,9 @@ class _ControllableStream extends Fake implements PlayerStream {
 
   @override
   Stream<String> get error => errorController.stream;
+
+  @override
+  Stream<Tracks> get tracks => tracksController.stream;
 }
 
 class _ControllablePlayer extends Fake implements Player {
@@ -53,13 +58,19 @@ class _ControllablePlayer extends Fake implements Player {
   final seekCalls = <Duration>[];
   final volumeCalls = <double>[];
   final openPlayValues = <bool>[];
+  final subtitleTrackCalls = <SubtitleTrack>[];
+  final operations = <String>[];
   Completer<void>? openStarted;
   Completer<void>? openGate;
   Object? openFailure;
+  Completer<void>? subtitleTrackStarted;
+  Completer<void>? subtitleTrackGate;
+  Object? subtitleTrackFailure;
   int playOrPauseCount = 0;
   int playCount = 0;
   int stopCount = 0;
   int disposeCount = 0;
+  media_kit.PlayerState playerState = const media_kit.PlayerState();
 
   @override
   PlatformPlayer? get platform => null;
@@ -68,9 +79,13 @@ class _ControllablePlayer extends Fake implements Player {
   PlayerStream get stream => _stream;
 
   @override
+  media_kit.PlayerState get state => playerState;
+
+  @override
   Future<void> open(Playable media, {bool play = true}) async {
     openedMedia.add(media as Media);
     openPlayValues.add(play);
+    operations.add('open:$play');
     openStarted?.complete();
     final failure = openFailure;
     if (failure != null) throw failure;
@@ -89,8 +104,21 @@ class _ControllablePlayer extends Fake implements Player {
   }
 
   @override
+  Future<void> setSubtitleTrack(SubtitleTrack track) async {
+    subtitleTrackCalls.add(track);
+    operations.add('subtitle:${track.id}');
+    final started = subtitleTrackStarted;
+    if (started != null && !started.isCompleted) started.complete();
+    final failure = subtitleTrackFailure;
+    if (failure != null) throw failure;
+    final gate = subtitleTrackGate;
+    if (gate != null) await gate.future;
+  }
+
+  @override
   Future<void> play() async {
     playCount++;
+    operations.add('play');
   }
 
   @override
@@ -101,6 +129,7 @@ class _ControllablePlayer extends Fake implements Player {
   @override
   Future<void> stop() async {
     stopCount++;
+    operations.add('stop');
   }
 
   @override
@@ -173,6 +202,81 @@ void main() {
     expect(controller.state.value.title, 'Test Movie');
   });
 
+  test('disables native subtitles after paused open before play', () async {
+    final controller = buildController();
+
+    await controller.play(_item);
+
+    expect(player.subtitleTrackCalls.map((track) => track.id), ['no']);
+    expect(player.operations.take(3), ['open:false', 'subtitle:no', 'play']);
+    expect(controller.state.value.selectedSubtitleStreamIndex, -1);
+  });
+
+  test('selects the matching native subtitle before direct play', () async {
+    player.playerState = media_kit.PlayerState(
+      tracks: const Tracks(
+        subtitle: [
+          SubtitleTrack('auto', null, null),
+          SubtitleTrack('no', null, null),
+          SubtitleTrack('7', 'Deutsch', 'deu', codec: 'subrip'),
+        ],
+      ),
+    );
+    final transport = MockClient((request) async {
+      if (!request.url.path.endsWith('/PlaybackInfo')) {
+        return http.Response('not found', 404);
+      }
+      return http.Response(
+        jsonEncode({
+          'MediaSources': [
+            {
+              'Id': 'ms-native',
+              'SupportsDirectPlay': true,
+              'DefaultSubtitleStreamIndex': 3,
+              'MediaStreams': [
+                {'Index': 0, 'Type': 'Video'},
+                {
+                  'Index': 3,
+                  'Type': 'Subtitle',
+                  'Codec': 'srt',
+                  'Language': 'deu',
+                  'DisplayTitle': 'Deutsch',
+                },
+              ],
+            },
+          ],
+          'PlaySessionId': 'ps-native',
+        }),
+        200,
+      );
+    });
+    final instance = JellyfinPlayerController(
+      connection: jellyfinTestConnection,
+      apiClient: JellyfinApiClient(transport: transport),
+      player: player,
+    );
+    controller = instance;
+
+    await instance.play(_item);
+
+    expect(player.subtitleTrackCalls.map((track) => track.id), ['7']);
+    expect(player.operations.take(3), ['open:false', 'subtitle:7', 'play']);
+    expect(instance.state.value.selectedSubtitleStreamIndex, 3);
+  });
+
+  test('does not start playback when native subtitle-off fails', () async {
+    player.subtitleTrackFailure = StateError('sid unavailable');
+    final controller = buildController();
+
+    await controller.play(_item);
+
+    expect(player.openPlayValues, [false]);
+    expect(player.subtitleTrackCalls.single.id, 'no');
+    expect(player.playCount, 0);
+    expect(controller.state.value.error, isTrue);
+    expect(controller.state.value.initialized, isFalse);
+  });
+
   test(
     'opens Jellyfin direct stream fallback and forwards its decision flags',
     () async {
@@ -221,6 +325,118 @@ void main() {
       expect(playbackInfoBodies.last['EnableDirectPlay'], isTrue);
       expect(playbackInfoBodies.last['EnableDirectStream'], isTrue);
       expect(playbackInfoBodies.last['EnableTranscoding'], isTrue);
+      expect(player.subtitleTrackCalls.single.id, 'no');
+    },
+  );
+
+  test('disables native and server subtitles for transcoding', () async {
+    final requestBodies = <Map<String, dynamic>>[];
+    final transport = MockClient((request) async {
+      if (request.url.path.endsWith('/PlaybackInfo')) {
+        requestBodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+        return http.Response(
+          jsonEncode({
+            'MediaSources': [
+              {
+                'Id': 'ms-transcode',
+                'SupportsTranscoding': true,
+                'TranscodingUrl': '/Videos/movie-1/master.m3u8',
+                'DefaultSubtitleStreamIndex': 3,
+                'MediaStreams': [
+                  {'Index': 0, 'Type': 'Video'},
+                  {'Index': 3, 'Type': 'Subtitle', 'Language': 'deu'},
+                ],
+              },
+            ],
+            'PlaySessionId': 'ps-transcode',
+          }),
+          200,
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    final instance = JellyfinPlayerController(
+      connection: jellyfinTestConnection,
+      apiClient: JellyfinApiClient(transport: transport),
+      player: player,
+    );
+    controller = instance;
+
+    await instance.play(_item);
+    expect(instance.state.value.method, JellyfinPlaybackMethod.transcode);
+    expect(instance.state.value.selectedSubtitleStreamIndex, 3);
+    expect(player.subtitleTrackCalls, isEmpty);
+
+    await instance.selectSubtitleTrack(null);
+
+    expect(requestBodies.last['SubtitleStreamIndex'], -1);
+    expect(player.openedMedia.last.uri, contains('SubtitleStreamIndex=-1'));
+    expect(instance.state.value.selectedSubtitleStreamIndex, -1);
+    expect(player.subtitleTrackCalls.single.id, 'no');
+  });
+
+  test(
+    'keeps same-source subtitle choices when a track reopen omits metadata',
+    () async {
+      final requestBodies = <Map<String, dynamic>>[];
+      var playbackInfoCalls = 0;
+      final transport = MockClient((request) async {
+        if (!request.url.path.endsWith('/PlaybackInfo')) {
+          return http.Response('not found', 404);
+        }
+        playbackInfoCalls++;
+        requestBodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+        final includeSubtitles = playbackInfoCalls == 1;
+        return http.Response(
+          jsonEncode({
+            'MediaSources': [
+              {
+                'Id': 'ms-stable',
+                'SupportsDirectPlay': true,
+                'DefaultSubtitleStreamIndex': includeSubtitles ? 3 : -1,
+                'MediaStreams': [
+                  {'Index': 0, 'Type': 'Video'},
+                  {'Index': 1, 'Type': 'Audio'},
+                  if (includeSubtitles)
+                    {
+                      'Index': 3,
+                      'Type': 'Subtitle',
+                      'Language': 'deu',
+                      'DisplayTitle': 'Deutsch',
+                    },
+                ],
+              },
+            ],
+            'PlaySessionId': 'ps-stable',
+          }),
+          200,
+        );
+      });
+      final instance = JellyfinPlayerController(
+        connection: jellyfinTestConnection,
+        apiClient: JellyfinApiClient(transport: transport),
+        player: player,
+      );
+      controller = instance;
+
+      await instance.play(_item);
+      expect(instance.state.value.subtitleTracks.map((track) => track.index), [
+        3,
+      ]);
+
+      await instance.selectSubtitleTrack(null);
+      expect(requestBodies.last['SubtitleStreamIndex'], -1);
+      expect(instance.state.value.selectedSubtitleStreamIndex, -1);
+      expect(instance.state.value.subtitleTracks.map((track) => track.index), [
+        3,
+      ]);
+
+      await instance.selectSubtitleTrack(3);
+      expect(requestBodies.last['SubtitleStreamIndex'], 3);
+      expect(instance.state.value.selectedSubtitleStreamIndex, 3);
+      expect(instance.state.value.subtitleTracks.map((track) => track.index), [
+        3,
+      ]);
     },
   );
 
@@ -236,6 +452,7 @@ void main() {
                 'Id': 'ms-1',
                 'SupportsDirectPlay': true,
                 'DefaultAudioStreamIndex': 1,
+                'DefaultSubtitleStreamIndex': 3,
                 'MediaStreams': [
                   {'Index': 0, 'Type': 1, 'Codec': 'h264'},
                   {
@@ -279,6 +496,8 @@ void main() {
     expect(instance.state.value.audioTracks, hasLength(2));
     expect(instance.state.value.subtitleTracks, hasLength(1));
     expect(instance.state.value.selectedAudioStreamIndex, 1);
+    expect(instance.state.value.selectedSubtitleStreamIndex, 3);
+    expect(player.subtitleTrackCalls, isEmpty);
 
     await instance.selectAudioTrack(2);
     expect(requestBodies.last['AudioStreamIndex'], 2);
@@ -289,6 +508,7 @@ void main() {
     expect(requestBodies.last['SubtitleStreamIndex'], -1);
     expect(player.openedMedia.last.uri, contains('SubtitleStreamIndex=-1'));
     expect(instance.state.value.selectedSubtitleStreamIndex, -1);
+    expect(player.subtitleTrackCalls.map((track) => track.id), ['no']);
   });
 
   test('player streams mirror into the UI state', () async {
@@ -523,6 +743,24 @@ void main() {
     expect(instance.state.value.title, 'Second Movie');
   });
 
+  test('stale native subtitle-off cannot start an older item', () async {
+    player.subtitleTrackGate = Completer<void>();
+    player.subtitleTrackStarted = Completer<void>();
+    final instance = buildController();
+
+    final firstPlay = instance.play(_item);
+    await player.subtitleTrackStarted!.future;
+    final secondPlay = instance.play(_secondItem);
+    player.subtitleTrackGate!.complete();
+    await Future.wait([firstPlay, secondPlay]);
+
+    expect(player.openedMedia, hasLength(2));
+    expect(player.openedMedia.last.uri, contains('/Videos/movie-2/stream'));
+    expect(player.subtitleTrackCalls.map((track) => track.id), ['no', 'no']);
+    expect(player.playCount, 1);
+    expect(instance.state.value.title, 'Second Movie');
+  });
+
   test('dispose invalidates a pending playback request', () async {
     final response = Completer<http.Response>();
     final requestSeen = Completer<void>();
@@ -665,6 +903,7 @@ void main() {
       expect(instance.state.value.error, isTrue);
       expect(instance.state.value.playerGeneration, 1);
       expect(first.openPlayValues, [false]);
+      expect(first.subtitleTrackCalls, isEmpty);
       expect(first.playCount, 0);
       first._stream.playingController.add(true);
       await Future<void>.delayed(Duration.zero);
@@ -673,6 +912,7 @@ void main() {
 
       await instance.play(_secondItem);
       expect(second.openPlayValues, [false]);
+      expect(second.subtitleTrackCalls.single.id, 'no');
       expect(second.playCount, 1);
       expect(instance.state.value.title, 'Second Movie');
 
