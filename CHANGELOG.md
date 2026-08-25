@@ -1,5 +1,64 @@
 # Changelog
 
+## 1.0.0
+
+Lunarr Player 1.0 is the first stable, feature-complete Windows release. It
+combines M3U/Xtream IPTV, Jellyfin playback and TMDB/Seerr discovery in a
+single Material 3 Expressive desktop application while keeping every major
+area modular and optional.
+
+### Highlights
+
+- M3U and Xtream-compatible Live TV, VOD and series libraries with catalogue
+  sorting, dynamic playlist activation, top-bar switching, favorites, Watch
+  Later, hidden or pinned categories and global Live TV search.
+- Multiple Jellyfin servers and user profiles, full library browsing,
+  Direct-Play-first playback, selectable audio tracks, resume, season/episode
+  navigation and top-bar account switching.
+- Jellyfin trickplay previews, configurable relative seeking, intro/recap skip
+  buttons or automatic skipping, and outro-aware endcards with configurable
+  next-episode autoplay when the server supplies the required metadata.
+- TMDB discovery and search plus optional Seerr discovery, availability and
+  request flows. Both services can be configured and switched from Home;
+  validated trailer links open in the system browser.
+- Bundled MPV/libmpv playback and all required Windows runtime files in one
+  portable archive: extract the ZIP and start `lunarr_one.exe`.
+- A responsive Material 3 Expressive interface with adjustable accent/surface
+  colors, the optional Lunarr ambient background, hideable tabs, high contrast,
+  reduced motion, keyboard navigation and large-text support.
+- Configurable Live TV startup buffering and VOD pre-buffering, stream fallback
+  policies, audio-track selection and stereo compatibility controls.
+- Local-first privacy: sensitive values are masked in settings, diagnostics and
+  logs; Jellyfin credentials and discovery API keys use Windows DPAPI-backed
+  secret storage and are never logged.
+
+### Stability and maintenance
+
+- Bounded Jellyfin, EPG and catalogue caches reduce tab-switch work without
+  keeping inactive tabs mounted.
+- Startup maintenance is serialized and deferred around tab changes and player
+  opens; routine logging no longer adds unnecessary release-console work.
+- Player controls share one responsive Material 3 chrome while Xtream and
+  Jellyfin retain separate controllers, lifecycle and stream policies.
+- Discovery navigation, search, source switching and refresh now live in the
+  common window top bar, leaving the Home feed more vertical space.
+
+### Project status
+
+- Version 1.0 is considered feature complete. Ongoing development prioritizes
+  bug fixes and maintenance; future features remain selective.
+- Windows x64 is the supported release platform. Android smartphone/foldable
+  support is the next planned platform effort. iOS and macOS are no longer
+  project targets.
+
+### Updating
+
+- Existing 0.9.x and 0.10.x local databases, playlists, settings, favorites,
+  Watch Later entries and playback progress remain compatible.
+- Replace the complete previous application folder with the contents of the
+  new portable ZIP. Do not copy only the executable.
+- The Windows build is not code-signed, so SmartScreen may show a warning.
+
 ## 0.10.0 RC1
 
 This release turns Lunarr Player into a combined IPTV and Jellyfin desktop
@@ -116,10 +175,10 @@ mix-ups, and introduces the final Lunarr Player branding.
 
 ## 0.9.0 RC1
 
-LUNARR One introduces the final product identity for the current Windows release
-candidate. The application now uses a neutral Material 3 moon-and-screen mark
-as its Windows, iOS and macOS icon and displays the same mark beside a centered
-LUNARR One wordmark in the desktop sidebar.
+LUNARR One introduced the product identity used by that Windows release
+candidate. The application adopted a neutral Material 3 moon-and-screen mark
+as its Windows icon and displayed the same mark beside a centered LUNARR One
+wordmark in the desktop sidebar.
 
 The release includes the responsive Material 3 redesign, favorites and Watch
 Later libraries, pinned and hidden category management, improved VOD/series and

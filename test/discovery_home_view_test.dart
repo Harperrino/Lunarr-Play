@@ -6,9 +6,11 @@ import 'package:m3uxtream_player/features/discovery/api/discovery_api_exception.
 import 'package:m3uxtream_player/features/discovery/models/discovery_models.dart';
 import 'package:m3uxtream_player/features/discovery/providers/discovery_providers.dart';
 import 'package:m3uxtream_player/features/discovery/widgets/discovery_home_view.dart';
+import 'package:m3uxtream_player/features/discovery/widgets/discovery_top_bar_controls.dart';
 import 'package:m3uxtream_player/shared/theme/app_motion.dart';
 import 'package:m3uxtream_player/shared/theme/app_shapes.dart';
 import 'package:m3uxtream_player/shared/theme/player_chrome_tokens.dart';
+import 'package:m3uxtream_player/shared/widgets/custom_app_bar.dart';
 
 const _adultItem = DiscoveryMediaItem(
   id: 7,
@@ -145,6 +147,11 @@ Widget _host({
         data: MediaQuery.of(context)
             .copyWith(textScaler: TextScaler.linear(textScale)),
         child: Scaffold(
+          appBar: CustomAppBar(
+            onCloseRequested: () {},
+            searchMaxWidth: DiscoveryTopBarControls.preferredWidth,
+            search: DiscoveryTopBarControls(onOpenSettings: onOpenSettings),
+          ),
           body: DiscoveryHomeView(onOpenSettings: onOpenSettings),
         ),
       ),
@@ -196,18 +203,19 @@ void main() {
       find.byKey(const ValueKey('discovery-search-field')),
       findsOneWidget,
     );
+    final search = find.byKey(const ValueKey('discovery-search-field'));
     expect(
-      tester
-          .getTopLeft(find.byKey(const ValueKey('discovery-search-field')))
-          .dx,
-      lessThan(40),
+      find.descendant(of: find.byType(CustomAppBar), matching: search),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: find.byType(DiscoveryHomeView), matching: search),
+      findsNothing,
     );
     expect(find.text('Visible adult title'), findsWidgets);
   });
 
-  testWidgets('desktop search stays left aligned and width bounded', (
-    tester,
-  ) async {
+  testWidgets('desktop Discovery controls live in the top bar', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1400, 900);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -218,8 +226,16 @@ void main() {
 
     final search = find.byKey(const ValueKey('discovery-search-field'));
     final rect = tester.getRect(search);
-    expect(rect.left, lessThan(400));
     expect(rect.width, lessThanOrEqualTo(420));
+    expect(rect.top, lessThan(CustomAppBar.toolbarHeight));
+    expect(
+      find.descendant(of: find.byType(CustomAppBar), matching: search),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: find.byType(DiscoveryHomeView), matching: search),
+      findsNothing,
+    );
   });
 
   testWidgets('selecting another title replaces the only detail pane', (
@@ -268,7 +284,12 @@ void main() {
 
     await tester.tap(find.text('Show all'));
     await tester.pumpAndSettle();
-    expect(find.text('Popular movies'), findsOneWidget);
+    expect(
+      find.byKey(
+        const PageStorageKey<String>('discovery-category-popularMovies'),
+      ),
+      findsOneWidget,
+    );
     expect(find.byTooltip('Back'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Back'));
@@ -290,12 +311,26 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    Widget app(Widget body) => UncontrolledProviderScope(
-      container: container,
-      child: MaterialApp(home: Scaffold(body: body)),
-    );
+    Widget app(Widget body, {required bool showDiscoveryTopBar}) =>
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: Scaffold(
+              appBar: showDiscoveryTopBar
+                  ? CustomAppBar(
+                      onCloseRequested: () {},
+                      searchMaxWidth: DiscoveryTopBarControls.preferredWidth,
+                      search: DiscoveryTopBarControls(onOpenSettings: () {}),
+                    )
+                  : null,
+              body: body,
+            ),
+          ),
+        );
 
-    await tester.pumpWidget(app(DiscoveryHomeView(onOpenSettings: () {})));
+    await tester.pumpWidget(
+      app(DiscoveryHomeView(onOpenSettings: () {}), showDiscoveryTopBar: true),
+    );
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const ValueKey('discovery-search-field')),
@@ -307,7 +342,9 @@ void main() {
       'temporary',
     );
 
-    await tester.pumpWidget(app(const SizedBox.shrink()));
+    await tester.pumpWidget(
+      app(const SizedBox.shrink(), showDiscoveryTopBar: false),
+    );
     await tester.pump();
     await tester.pump();
     final reset = await container.read(discoverySearchProvider.future);
@@ -329,7 +366,14 @@ void main() {
           discoveryCategoryProvider.overrideWith(_Category.new),
         ],
         child: MaterialApp(
-          home: Scaffold(body: DiscoveryHomeView(onOpenSettings: () {})),
+          home: Scaffold(
+            appBar: CustomAppBar(
+              onCloseRequested: () {},
+              searchMaxWidth: DiscoveryTopBarControls.preferredWidth,
+              search: DiscoveryTopBarControls(onOpenSettings: () {}),
+            ),
+            body: DiscoveryHomeView(onOpenSettings: () {}),
+          ),
         ),
       ),
     );

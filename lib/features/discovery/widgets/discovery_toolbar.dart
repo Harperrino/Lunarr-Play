@@ -1,7 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/core/models/discovery_preferences.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
-import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_dropdown_field.dart';
 
 class DiscoveryToolbar extends StatelessWidget {
@@ -45,83 +44,79 @@ class DiscoveryToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppSurface(
-      level: AppSurfaceLevel.high,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact =
-              constraints.maxWidth < 620 ||
-              MediaQuery.textScalerOf(context).scale(1) > 1.4;
-          final navigation = _navigation(context);
-          final search = SearchBar(
-            key: const ValueKey('discovery-search-field'),
-            controller: controller,
-            constraints: const BoxConstraints(
-              minHeight: 48,
-              maxHeight: 48,
-              maxWidth: 420,
-            ),
-            hintText: context.l10n.discoverySearchHint,
-            leading: const Icon(Icons.search_rounded),
-            trailing: <Widget>[
-              if (controller.text.isNotEmpty)
-                IconButton(
-                  tooltip: context.l10n.discoverySearchClearTooltip,
-                  onPressed: onClear,
-                  icon: const Icon(Icons.close_rounded),
-                ),
-            ],
-            onChanged: onChanged,
-            onSubmitted: onSubmitted,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textScale = MediaQuery.textScalerOf(context).scale(1);
+        final ultraCompact = constraints.maxWidth < 380;
+        final compact = constraints.maxWidth < 620 || textScale > 1.4;
+        final search = _search(context, ultraCompact: ultraCompact);
+
+        // A synthetic very narrow window cannot fit desktop navigation and
+        // native window controls together. Keep search accessible and omit
+        // secondary actions instead of overflowing the title bar.
+        if (ultraCompact) {
+          return SizedBox(
+            width: constraints.maxWidth,
+            height: 48,
+            child: search,
           );
-          final actions = <Widget>[
+        }
+
+        return Row(
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: compact ? 96 : 220),
+              child: _navigation(context, showTitle: !compact),
+            ),
+            SizedBox(width: compact ? 8 : 12),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: search,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
             _sourceControl(context),
             IconButton(
               tooltip: context.l10n.discoveryRefreshTooltip,
               onPressed: onRefresh,
               icon: const Icon(Icons.refresh_rounded),
             ),
-          ];
-          if (compact) {
-            final searchWidth = constraints.maxWidth > 420
-                ? 420.0
-                : constraints.maxWidth;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(child: navigation),
-                    ...actions,
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SizedBox(width: searchWidth, child: search),
-              ],
-            );
-          }
-          return Row(
-            children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 300),
-                child: navigation,
-              ),
-              const SizedBox(width: 12),
-              Flexible(
-                fit: FlexFit.loose,
-                child: SizedBox(width: 420, child: search),
-              ),
-              const SizedBox(width: 8),
-              ...actions,
-            ],
-          );
-        },
-      ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _navigation(BuildContext context) => Row(
+  Widget _search(BuildContext context, {required bool ultraCompact}) {
+    return SearchBar(
+      key: const ValueKey('discovery-search-field'),
+      controller: controller,
+      constraints: const BoxConstraints(
+        minWidth: 0,
+        minHeight: 48,
+        maxHeight: 48,
+        maxWidth: 420,
+      ),
+      hintText: ultraCompact ? null : context.l10n.discoverySearchHint,
+      leading: ultraCompact ? null : const Icon(Icons.search_rounded),
+      trailing: <Widget>[
+        if (!ultraCompact && controller.text.isNotEmpty)
+          IconButton(
+            tooltip: context.l10n.discoverySearchClearTooltip,
+            onPressed: onClear,
+            icon: const Icon(Icons.close_rounded),
+          ),
+      ],
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
+    );
+  }
+
+  Widget _navigation(BuildContext context, {required bool showTitle}) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
       IconButton(
@@ -134,15 +129,17 @@ class DiscoveryToolbar extends StatelessWidget {
         onPressed: onHome,
         icon: const Icon(Icons.home_rounded),
       ),
-      const SizedBox(width: 4),
-      Flexible(
-        child: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.titleMedium,
+      if (showTitle) ...[
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
         ),
-      ),
+      ],
     ],
   );
 

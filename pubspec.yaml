@@ -1,7 +1,7 @@
 name: m3uxtream_player
-description: "Lunarr Player, a Material 3 IPTV player for Windows desktop and future iOS builds, backed by Drift, Riverpod, and media_kit."
+description: "Lunarr Player, a Material 3 IPTV, Jellyfin, and discovery player for Windows desktop, backed by Drift, Riverpod, and media_kit."
 publish_to: 'none'
-version: 0.10.0-rc.1+3
+version: 1.0.0+4
 
 environment:
   sdk: '>=3.13.1 <4.0.0'
@@ -22,7 +22,6 @@ dependencies:
 
   # Native OS Binaries — exakte Pins, niemals `any`
   media_kit_libs_windows_video: 1.0.11
-  media_kit_libs_ios_video: 1.1.4
 
   # Local SQLite Database & Path Utilities
   drift: 2.34.3

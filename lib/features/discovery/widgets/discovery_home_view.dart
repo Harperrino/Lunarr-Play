@@ -10,7 +10,6 @@ import 'package:m3uxtream_player/features/discovery/widgets/discovery_category_g
 import 'package:m3uxtream_player/features/discovery/widgets/discovery_details_pane.dart';
 import 'package:m3uxtream_player/features/discovery/widgets/discovery_media_card.dart';
 import 'package:m3uxtream_player/features/discovery/widgets/discovery_shelf.dart';
-import 'package:m3uxtream_player/features/discovery/widgets/discovery_toolbar.dart';
 import 'package:m3uxtream_player/features/discovery/widgets/discovery_ui_text.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/shared/theme/app_shapes.dart';
@@ -28,7 +27,6 @@ class DiscoveryHomeView extends ConsumerStatefulWidget {
 }
 
 class _DiscoveryHomeViewState extends ConsumerState<DiscoveryHomeView> {
-  final TextEditingController _searchController = TextEditingController();
   final ScrollController _homeController = ScrollController();
   final Map<DiscoveryShelfKind, ScrollController> _categoryControllers = {};
 
@@ -46,7 +44,6 @@ class _DiscoveryHomeViewState extends ConsumerState<DiscoveryHomeView> {
     for (final controller in _categoryControllers.values) {
       controller.dispose();
     }
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -78,20 +75,19 @@ class _DiscoveryHomeViewState extends ConsumerState<DiscoveryHomeView> {
   @override
   Widget build(BuildContext context) {
     final search = ref.watch(discoverySearchProvider);
-    final query = search.valueOrNull?.query ?? '';
-    _synchronizeSearchController(query);
-
     final navigation = ref.watch(discoveryNavigationProvider);
+    ref.listen<double>(
+      discoveryNavigationProvider.select((state) => state.homeScrollOffset),
+      (previous, next) {
+        if ((previous ?? 0) <= 0 || next != 0) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _homeController.hasClients) {
+            _homeController.jumpTo(0);
+          }
+        });
+      },
+    );
     final current = navigation.current;
-    final preferences =
-        ref.watch(discoveryPreferencesProvider).valueOrNull ??
-        const DiscoveryPreferences();
-    final secrets =
-        ref.watch(discoverySecretsProvider).valueOrNull ??
-        const DiscoverySecrets();
-    final tmdbConfigured = secrets.hasTmdbToken;
-    final seerrConfigured =
-        secrets.hasSeerrApiKey && preferences.seerrEndpoint.trim().isNotEmpty;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -99,24 +95,6 @@ class _DiscoveryHomeViewState extends ConsumerState<DiscoveryHomeView> {
         final selected = current.type == DiscoveryDestinationType.details
             ? current.item
             : null;
-        final toolbar = DiscoveryToolbar(
-          controller: _searchController,
-          title: _title(context, navigation, query),
-          source: preferences.source,
-          tmdbConfigured: tmdbConfigured,
-          seerrConfigured: seerrConfigured,
-          canGoBack: navigation.canGoBack || query.trim().isNotEmpty,
-          onChanged: (value) =>
-              ref.read(discoverySearchProvider.notifier).setQuery(value),
-          onSubmitted: (value) =>
-              ref.read(discoverySearchProvider.notifier).search(value),
-          onClear: _clearSearch,
-          onBack: _back,
-          onHome: _home,
-          onRefresh: _refresh,
-          onSourceChanged: _switchSource,
-          onOpenSettings: widget.onOpenSettings,
-        );
         final catalog = _catalog(
           navigation: navigation,
           search: search,
@@ -125,44 +103,38 @@ class _DiscoveryHomeViewState extends ConsumerState<DiscoveryHomeView> {
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              toolbar,
-              const SizedBox(height: 16),
-              Expanded(
-                child: selected == null
-                    ? catalog
-                    : wide
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(child: catalog),
-                          const SizedBox(width: 16),
-                          SizedBox(
-                            width: constraints.maxWidth >= 1320 ? 440 : 380,
-                            child: DiscoveryDetailsPane(
-                              key: ValueKey(
-                                'discovery-wide-details-'
-                                '${selected.mediaType.name}-${selected.id}',
-                              ),
-                              item: selected,
-                              onClose: _back,
-                            ),
-                          ),
-                        ],
-                      )
-                    : DiscoveryDetailsPane(
+          child: selected == null
+              ? catalog
+              : wide
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: catalog),
+                    const SizedBox(width: 16),
+                    SizedBox(
+                      width: constraints.maxWidth >= 1320 ? 440 : 380,
+                      child: DiscoveryDetailsPane(
                         key: ValueKey(
-                          'discovery-compact-details-'
+                          'discovery-wide-details-'
                           '${selected.mediaType.name}-${selected.id}',
                         ),
                         item: selected,
-                        onClose: _back,
+                        onClose: () => ref
+                            .read(discoveryNavigationProvider.notifier)
+                            .back(),
                       ),
-              ),
-            ],
-          ),
+                    ),
+                  ],
+                )
+              : DiscoveryDetailsPane(
+                  key: ValueKey(
+                    'discovery-compact-details-'
+                    '${selected.mediaType.name}-${selected.id}',
+                  ),
+                  item: selected,
+                  onClose: () =>
+                      ref.read(discoveryNavigationProvider.notifier).back(),
+                ),
         );
       },
     );
@@ -222,60 +194,6 @@ class _DiscoveryHomeViewState extends ConsumerState<DiscoveryHomeView> {
     );
   }
 
-  String _title(
-    BuildContext context,
-    DiscoveryNavigationState navigation,
-    String query,
-  ) {
-    if (navigation.current.type == DiscoveryDestinationType.details) {
-      return navigation.current.item!.title;
-    }
-    if (query.trim().isNotEmpty) return context.l10n.discoverySearchTitle;
-    if (navigation.current.type == DiscoveryDestinationType.category) {
-      return discoveryShelfTitle(context.l10n, navigation.current.category!);
-    }
-    return context.l10n.shellTabHomeTitle;
-  }
-
-  void _synchronizeSearchController(String query) {
-    if (_searchController.text == query) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _searchController.text == query) return;
-      _searchController.value = TextEditingValue(
-        text: query,
-        selection: TextSelection.collapsed(offset: query.length),
-      );
-      setState(() {});
-    });
-  }
-
-  void _clearSearch() {
-    _searchController.clear();
-    ref.read(discoverySearchProvider.notifier).clear();
-  }
-
-  void _back() {
-    final navigation = ref.read(discoveryNavigationProvider);
-    if (navigation.current.type == DiscoveryDestinationType.details) {
-      ref.read(discoveryNavigationProvider.notifier).back();
-      return;
-    }
-    final query = ref.read(discoverySearchProvider).valueOrNull?.query ?? '';
-    if (query.trim().isNotEmpty) {
-      _clearSearch();
-      return;
-    }
-    ref.read(discoveryNavigationProvider.notifier).back();
-  }
-
-  void _home() {
-    _clearSearch();
-    ref.read(discoveryNavigationProvider.notifier).home();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_homeController.hasClients) _homeController.jumpTo(0);
-    });
-  }
-
   void _refresh() {
     final search = ref.read(discoverySearchProvider).valueOrNull;
     if (search?.query.trim().isNotEmpty ?? false) {
@@ -290,14 +208,6 @@ class _DiscoveryHomeViewState extends ConsumerState<DiscoveryHomeView> {
       return;
     }
     ref.read(discoveryHomeProvider.notifier).refresh();
-  }
-
-  Future<void> _switchSource(DiscoverySource source) async {
-    await ref.read(discoveryPreferencesProvider.notifier).setSource(source);
-    if (!mounted) return;
-    _home();
-    ref.invalidate(discoveryHomeProvider);
-    ref.invalidate(discoveryRequestProvider);
   }
 
   void _openDetails(DiscoveryMediaItem item) {

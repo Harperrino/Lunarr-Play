@@ -36,6 +36,7 @@ import 'package:m3uxtream_player/features/xtream/providers/media_library_provide
 import 'package:m3uxtream_player/core/models/discovery_preferences.dart';
 import 'package:m3uxtream_player/features/discovery/providers/discovery_providers.dart';
 import 'package:m3uxtream_player/features/discovery/providers/discovery_navigation_provider.dart';
+import 'package:m3uxtream_player/features/discovery/widgets/discovery_top_bar_controls.dart';
 import 'package:m3uxtream_player/app/shell/app_ambient_layer.dart';
 import 'package:m3uxtream_player/app/services/app_maintenance_coordinator.dart';
 import 'package:m3uxtream_player/app/providers/tab_transition_probe_provider.dart';
@@ -529,6 +530,8 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
                 immersive ? 0 : CustomAppBar.toolbarHeight,
               ),
               child: _AppBarWrapper(
+                onOpenDiscoverySettings: () =>
+                    _selectSidebar(shellSettingsTabIndex),
                 onCloseRequested: () {
                   unawaited(_requestShutdown(reason: 'titlebar close'));
                 },
@@ -648,9 +651,13 @@ class _DatabaseFatalStatus extends StatelessWidget {
 /// It watches only title-bar state; the close callback preserves the existing
 /// shutdown path.
 class _AppBarWrapper extends ConsumerWidget {
-  const _AppBarWrapper({required this.onCloseRequested});
+  const _AppBarWrapper({
+    required this.onCloseRequested,
+    required this.onOpenDiscoverySettings,
+  });
 
   final VoidCallback onCloseRequested;
+  final VoidCallback onOpenDiscoverySettings;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -681,8 +688,15 @@ class _AppBarWrapper extends ConsumerWidget {
                   ? JellyfinConnectionMenu(availableWidth: constraints.maxWidth)
                   : TopBarPlaylistMenu(availableWidth: constraints.maxWidth),
               leadingCommandWidth: leadingWidth,
-              search: homeActive ? null : const GlobalSearchField(),
+              search: homeActive
+                  ? DiscoveryTopBarControls(
+                      onOpenSettings: onOpenDiscoverySettings,
+                    )
+                  : const GlobalSearchField(),
               searchHeight: GlobalSearchField.fieldHeight,
+              searchMaxWidth: homeActive
+                  ? DiscoveryTopBarControls.preferredWidth
+                  : 520,
             );
           },
         ),

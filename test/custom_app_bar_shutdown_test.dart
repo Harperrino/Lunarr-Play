@@ -60,10 +60,12 @@ void main() {
       final appBarRect = tester.getRect(find.byType(CustomAppBar));
       final searchRect = tester.getRect(find.byType(GlobalSearchField));
       expect(
-        find.byKey(const ValueKey('window-bar-brand-wordmark')),
+        find.byKey(const ValueKey('window-bar-brand-mark')),
         findsOneWidget,
       );
-      expect(find.byKey(AppBrandWordmark.imageKey), findsOneWidget);
+      expect(find.byKey(AppBrandMark.imageKey), findsOneWidget);
+      expect(find.byType(AppBrandWordmark), findsNothing);
+      expect(tester.getSize(find.byType(AppBrandMark)), const Size.square(44));
       expect(searchRect.top, greaterThan(appBarRect.top));
       expect(searchRect.bottom, lessThan(appBarRect.bottom));
       expect(searchRect.height, GlobalSearchField.fieldHeight);

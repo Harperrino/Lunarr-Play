@@ -11,7 +11,9 @@ import 'package:window_manager/window_manager.dart';
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   static const double toolbarHeight = 72.0;
   static const double defaultSearchHeight = 48.0;
-  static const double _brandWidth = 216.0;
+  static const double _logoBrandWidth = 64.0;
+  static const double _titleBrandWidth = 216.0;
+  static const double _brandMarkSize = 44.0;
   static const double _windowButtonExtent = 48.0;
 
   final String title;
@@ -24,6 +26,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final double leadingCommandWidth;
   final Widget? search;
   final double searchHeight;
+  final double searchMaxWidth;
 
   const CustomAppBar({
     super.key,
@@ -33,6 +36,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.leadingCommandWidth = 0,
     this.search,
     this.searchHeight = defaultSearchHeight,
+    this.searchMaxWidth = 520,
   });
 
   @override
@@ -42,10 +46,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
     final colors = Theme.of(context).colorScheme;
-    final titleContent = title == AppIdentity.displayName
-        ? AppBrandWordmark(
-            key: const ValueKey('window-bar-brand-wordmark'),
-            width: 188,
+    final showsProductBrand = title == AppIdentity.displayName;
+    final brandWidth = showsProductBrand ? _logoBrandWidth : _titleBrandWidth;
+    final titleContent = showsProductBrand
+        ? AppBrandMark(
+            key: const ValueKey('window-bar-brand-mark'),
+            size: _brandMarkSize,
             semanticLabel: title,
           )
         : Row(
@@ -71,7 +77,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           );
 
     final titleAreaContent = SizedBox(
-      width: _brandWidth,
+      width: brandWidth,
       height: toolbarHeight,
       child: Align(alignment: Alignment.centerLeft, child: titleContent),
     );
@@ -120,14 +126,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              const sideCorridor = _brandWidth + 16;
+              final trailingWidth = isDesktop ? _windowButtonExtent * 3 : 0.0;
+              final sideCorridor =
+                  (brandWidth > trailingWidth ? brandWidth : trailingWidth) +
+                  16;
               final centerCorridor = (constraints.maxWidth - sideCorridor * 2)
                   .clamp(0.0, double.infinity)
                   .toDouble();
               final centeredSearchWidth = leadingCommand == null
-                  ? centerCorridor.clamp(0.0, 520.0).toDouble()
+                  ? centerCorridor.clamp(0.0, searchMaxWidth).toDouble()
                   : (centerCorridor - leadingCommandWidth - 8)
-                        .clamp(0.0, 520.0)
+                        .clamp(0.0, searchMaxWidth)
                         .toDouble();
 
               return Stack(

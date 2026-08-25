@@ -12,9 +12,10 @@
 .swiftpm/
 migrate_working_dir/
 
-# Not planned platform targets
-/android/
+# Unsupported platform targets
+/ios/
 /linux/
+/macos/
 /web/
 
 # Local AI/editor tooling
