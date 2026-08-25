@@ -3,6 +3,7 @@ import 'package:m3uxtream_player/core/models/series_resume_state.dart';
 import 'package:m3uxtream_player/core/models/channel_sort_mode.dart';
 import 'package:m3uxtream_player/core/models/epg_refresh_interval.dart';
 import 'package:m3uxtream_player/core/models/playback_preferences.dart';
+import 'package:m3uxtream_player/core/models/discovery_preferences.dart';
 import 'package:m3uxtream_player/core/repository/app_state_stores.dart';
 import 'package:m3uxtream_player/core/services/app_lifecycle_gate.dart';
 
@@ -25,6 +26,7 @@ class AppStateRepository {
     _seriesResume = SeriesResumeStateStore(_values);
     _catalogue = CatalogueStateStore(_values);
     _layout = LayoutStateStore(_values);
+    _discovery = DiscoveryStateStore(_values);
   }
 
   final AppStateValueStore _values;
@@ -37,6 +39,7 @@ class AppStateRepository {
   late final SeriesResumeStateStore _seriesResume;
   late final CatalogueStateStore _catalogue;
   late final LayoutStateStore _layout;
+  late final DiscoveryStateStore _discovery;
 
   static String epgReminderDismissedKey(int playlistId) =>
       AppStateKeys.epgReminderDismissed(playlistId);
@@ -109,6 +112,18 @@ class AppStateRepository {
       _playback.setNextEpisodeAutoplayEnabled(enabled);
   Future<void> setJellyfinEndcardCountdownSeconds(int seconds) =>
       _playback.setEndcardCountdownSeconds(seconds);
+  Future<void> setPlayerAmbientBackgroundEnabled(bool enabled) =>
+      _playback.setAmbientBackgroundEnabled(enabled);
+  Future<void> setPlayerAmbientPreset(PlayerAmbientPreset preset) =>
+      _playback.setAmbientPreset(preset);
+  Future<void> setPlayerAmbientCustomHueA(double value) =>
+      _playback.setAmbientCustomHueA(value);
+  Future<void> setPlayerAmbientCustomHueB(double value) =>
+      _playback.setAmbientCustomHueB(value);
+  Future<void> setPlayerAmbientIntensity(double value) =>
+      _playback.setAmbientIntensity(value);
+  Future<void> setPlayerAmbientMotion(PlayerAmbientMotion motion) =>
+      _playback.setAmbientMotion(motion);
 
   Future<bool> getDebugModeEnabled({bool defaultEnabled = false}) =>
       _diagnostics.getDebugModeEnabled(defaultEnabled: defaultEnabled);
@@ -154,6 +169,15 @@ class AppStateRepository {
   Future<Set<String>> getHiddenShellTabs() => _layout.getHiddenShellTabs();
   Future<void> setHiddenShellTabs(Set<String> tabKinds) =>
       _layout.setHiddenShellTabs(tabKinds);
+
+  Future<DiscoveryPreferences> getDiscoveryPreferences() =>
+      _discovery.getPreferences();
+  Future<void> setDiscoverySource(DiscoverySource source) =>
+      _discovery.setSource(source);
+  Future<void> setDiscoverySeerrEndpoint(String endpoint) =>
+      _discovery.setSeerrEndpoint(endpoint);
+  Future<void> setStartupDestination(AppStartupDestination destination) =>
+      _discovery.setStartupDestination(destination);
 
   Future<bool> isEpgReminderDismissed(int playlistId) =>
       _epgReminder.isDismissed(playlistId);

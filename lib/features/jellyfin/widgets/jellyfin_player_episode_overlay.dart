@@ -8,6 +8,8 @@ import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_formatting.d
 import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/shared/widgets/app_overlay_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_dropdown_field.dart';
+import 'package:m3uxtream_player/shared/theme/app_shapes.dart';
+import 'package:m3uxtream_player/shared/theme/player_chrome_tokens.dart';
 
 /// Provider-free player overlay for browsing episodes by season.
 class JellyfinPlayerEpisodeOverlay extends StatelessWidget {
@@ -44,6 +46,9 @@ class JellyfinPlayerEpisodeOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final shapes =
+        Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
+    final chrome = PlayerChromeTokens.of(context);
     final season = catalog.normalizedSeason(selectedSeason);
     final episodes = season == null
         ? const <JellyfinItem>[]
@@ -51,7 +56,11 @@ class JellyfinPlayerEpisodeOverlay extends StatelessWidget {
     return AppOverlaySurface(
       key: const ValueKey('jellyfin-episode-picker'),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(
+          chrome.panelRadius.clamp(shapes.large, shapes.extraLarge),
+        ),
+      ),
       child: Column(
         key: const ValueKey('jellyfin-player-episode-overlay'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -170,6 +179,8 @@ class _OverlayEpisodeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final shapes =
+        Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
     final label = jellyfinSeasonEpisodeLabel(
       context.l10n,
       season: episode.seasonNumber,
@@ -190,18 +201,18 @@ class _OverlayEpisodeRow extends StatelessWidget {
         color: current
             ? colors.secondaryContainer
             : colors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(shapes.large),
         child: InkWell(
           key: ValueKey('jellyfin-player-episode-${episode.id}'),
           onTap: enabled ? onTap : null,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(shapes.large),
           child: Padding(
             padding: const EdgeInsets.all(10),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(shapes.medium),
                   child: SizedBox(
                     width: 112,
                     height: 66,
@@ -249,7 +260,7 @@ class _OverlayEpisodeRow extends StatelessWidget {
                         LinearProgressIndicator(
                           value: episode.resumeFraction,
                           minHeight: 3,
-                          borderRadius: BorderRadius.circular(99),
+                          borderRadius: BorderRadius.circular(shapes.full),
                         ),
                       ],
                     ],

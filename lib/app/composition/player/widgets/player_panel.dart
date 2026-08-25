@@ -14,8 +14,12 @@ import 'package:m3uxtream_player/app/composition/player/widgets/player_transport
 import 'package:m3uxtream_player/features/player/widgets/player_stage_components.dart';
 import 'package:m3uxtream_player/shared/theme/app_status_colors.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
+import 'package:m3uxtream_player/shared/theme/app_shapes.dart';
+import 'package:m3uxtream_player/shared/theme/player_chrome_tokens.dart';
 import 'package:m3uxtream_player/shared/widgets/app_overlay_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
+import 'package:m3uxtream_player/shared/widgets/player_chrome.dart';
+import 'package:m3uxtream_player/shared/shortcuts/global_shortcuts.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// Semantic color tones used by the playback status badge.
@@ -55,8 +59,6 @@ class PlayerPanel extends ConsumerStatefulWidget {
 
 class _PlayerPanelState extends ConsumerState<PlayerPanel> {
   static const _controlsHideDelay = Duration(seconds: 3);
-  static const _controlsAnimDuration = Duration(milliseconds: 280);
-  static const _compactPanelMaxWidth = 440.0;
 
   bool _immersiveControlsVisible = true;
   Timer? _immersiveHideTimer;
@@ -133,10 +135,14 @@ class _PlayerPanelState extends ConsumerState<PlayerPanel> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final chrome = PlayerChromeTokens.of(context);
+        final shapes =
+            Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
         final compact =
             !widget.immersive &&
             (constraints.maxHeight < 600 ||
-                constraints.maxWidth < _compactPanelMaxWidth);
+                playerChromeWidthClassFor(constraints.maxWidth, chrome) ==
+                    PlayerChromeWidthClass.compact);
         final stage = isLoading
             ? PlayerStageFrame(
                 immersive: widget.immersive,
@@ -211,11 +217,9 @@ class _PlayerPanelState extends ConsumerState<PlayerPanel> {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: AnimatedOpacity(
+                child: PlayerChromeTransition(
                   key: const ValueKey('immersive-controls-layer'),
-                  opacity: _immersiveControlsVisible ? 1.0 : 0.0,
-                  duration: _controlsAnimDuration,
-                  curve: Curves.easeOutCubic,
+                  visible: _immersiveControlsVisible,
                   child: IgnorePointer(
                     ignoring: !_immersiveControlsVisible,
                     child: _ImmersiveControlsOverlay(
@@ -248,7 +252,9 @@ class _PlayerPanelState extends ConsumerState<PlayerPanel> {
           level: AppSurfaceLevel.standard,
           elevation: AppElevation.level2,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(
+              chrome.panelRadius.clamp(shapes.large, shapes.extraLarge),
+            ),
           ),
           padding: EdgeInsets.all(compact ? 18.0 : 24.0),
           child: panelBody,
@@ -322,6 +328,7 @@ class _ImmersiveControlsOverlay extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final headerViewModel = ref.watch(playerHeaderViewModelProvider);
+    final chrome = PlayerChromeTokens.of(context);
 
     return ClipRect(
       child: BackdropFilter(
@@ -334,8 +341,8 @@ class _ImmersiveControlsOverlay extends ConsumerWidget {
               end: Alignment.bottomCenter,
               colors: [
                 Colors.transparent,
-                Colors.black.withValues(alpha: 0.55),
-                Colors.black.withValues(alpha: 0.85),
+                Colors.black.withValues(alpha: chrome.softScrimOpacity),
+                Colors.black.withValues(alpha: chrome.strongScrimOpacity),
               ],
             ),
           ),
@@ -552,6 +559,8 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = playerStatusColorFor(context, tone);
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final shapes =
+        Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -560,7 +569,7 @@ class _StatusBadge extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(shapes.full),
         border: Border.all(color: color.withValues(alpha: 0.28)),
       ),
       child: Row(
@@ -623,9 +632,16 @@ class _PlayerVideoArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PlayerStageFrame(
-      immersive: immersive,
-      child: _buildContent(context),
+    return PlayerShortcutFocusRegion(
+      child: PlayerStageFrame(
+        immersive: immersive,
+        videoActive:
+            viewModel.playbackUri != null ||
+            viewModel.isBuffering ||
+            viewModel.isLiveStartupBuffering ||
+            viewModel.streamError != null,
+        child: _buildContent(context),
+      ),
     );
   }
 
@@ -657,7 +673,7 @@ class _PlayerVideoArea extends StatelessWidget {
         subtitle:
             viewModel.streamError ??
             context.l10n.playerVideoInitializationFailed,
-        iconColor: immersive ? Colors.redAccent : colors.error,
+        iconColor: colors.error,
         error: true,
         immersive: immersive,
       );
@@ -678,6 +694,7 @@ class _PlayerVideoArea extends StatelessWidget {
               ),
               controller: controller!,
               fit: BoxFit.contain,
+              fill: Colors.black,
               controls: NoVideoControls,
             ),
           ),
@@ -701,10 +718,13 @@ class _PlayerPreparationOverlayLayer extends ConsumerWidget {
     final viewModel = ref.watch(playerPreparationOverlayProvider);
     if (!viewModel.showOverlay) return const SizedBox.shrink();
     final colors = Theme.of(context).colorScheme;
+    final chrome = PlayerChromeTokens.of(context);
+    final shapes =
+        Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
 
     return IgnorePointer(
       child: ColoredBox(
-        color: colors.scrim.withValues(alpha: 0.55),
+        color: colors.scrim.withValues(alpha: chrome.softScrimOpacity),
         child: Align(
           alignment: Alignment.center,
           child: FittedBox(
@@ -743,7 +763,7 @@ class _PlayerPreparationOverlayLayer extends ConsumerWidget {
                     if (viewModel.showProgress) ...[
                       const SizedBox(height: 12),
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(shapes.full),
                         child: LinearProgressIndicator(
                           value: viewModel.progressValue,
                           minHeight: 6,
@@ -772,10 +792,13 @@ class _StreamErrorBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final shapes =
+        Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
+    final chrome = PlayerChromeTokens.of(context);
     final background = immersive
-        ? Colors.black.withValues(alpha: 0.75)
+        ? Colors.black.withValues(alpha: chrome.scrimOpacity)
         : colors.errorContainer;
-    final iconColor = immersive ? Colors.redAccent : colors.error;
+    final iconColor = colors.error;
     final textColor = immersive ? Colors.white70 : colors.onErrorContainer;
     return Align(
       alignment: Alignment.bottomCenter,
@@ -783,7 +806,9 @@ class _StreamErrorBanner extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Material(
           color: background,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(
+            chrome.panelRadius.clamp(shapes.medium, shapes.large),
+          ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(

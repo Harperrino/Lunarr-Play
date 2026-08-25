@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:collection';
 
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:m3uxtream_player/core/diagnostics/diagnostic_sanitizer.dart';
 
@@ -30,23 +32,26 @@ class AppLogger {
 
   static final Logger _logger = Logger(
     printer: PrettyPrinter(
-      methodCount: 2,
-      errorMethodCount: 8,
+      // Call-site discovery walks the stack synchronously. Structured events
+      // already retain explicitly supplied stacks, so routine console output
+      // stays compact and allocation-light.
+      methodCount: 0,
+      errorMethodCount: 0,
       lineLength: 120,
       colors: true,
-      printEmojis: true,
+      printEmojis: false,
       dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
     ),
   );
 
   static final StreamController<AppLogEntry> _eventController =
       StreamController<AppLogEntry>.broadcast(sync: true);
-  static final List<AppLogEntry> _recentEntries = <AppLogEntry>[];
+  static final ListQueue<AppLogEntry> _recentEntries = ListQueue<AppLogEntry>();
 
   static Stream<AppLogEntry> get events => _eventController.stream;
 
   static List<AppLogEntry> get recentEvents =>
-      List.unmodifiable(_recentEntries);
+      List<AppLogEntry>.unmodifiable(_recentEntries);
 
   static void clearHistory() {
     _recentEntries.clear();
@@ -60,6 +65,16 @@ class AppLogger {
   /// automated tests. Production bootstrap never changes this flag.
   static void setConsoleOutputEnabledForTests(bool enabled) {
     _consoleOutputEnabled = enabled;
+  }
+
+  @visibleForTesting
+  static bool consoleIncludesLevel(
+    AppLogLevel level, {
+    bool debugBuild = kDebugMode,
+  }) {
+    return debugBuild ||
+        level == AppLogLevel.warning ||
+        level == AppLogLevel.error;
   }
 
   /// Log debug messages (general development information)
@@ -105,14 +120,14 @@ class AppLogger {
 
     _recentEntries.add(entry);
     if (_recentEntries.length > _maxRecentEntries) {
-      _recentEntries.removeRange(0, _recentEntries.length - _maxRecentEntries);
+      _recentEntries.removeFirst();
     }
 
     if (!_eventController.isClosed) {
       _eventController.add(entry);
     }
 
-    if (!_consoleOutputEnabled) return;
+    if (!_consoleOutputEnabled || !consoleIncludesLevel(level)) return;
 
     switch (level) {
       case AppLogLevel.debug:

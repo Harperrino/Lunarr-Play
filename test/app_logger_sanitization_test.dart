@@ -76,4 +76,23 @@ void main() {
     expect(entry.error.toString(), contains('StateError'));
     expect(entry.error.toString(), contains('Connection closed'));
   });
+
+  test('release console policy keeps only warnings and errors', () {
+    expect(
+      AppLogger.consoleIncludesLevel(AppLogLevel.debug, debugBuild: false),
+      isFalse,
+    );
+    expect(
+      AppLogger.consoleIncludesLevel(AppLogLevel.info, debugBuild: false),
+      isFalse,
+    );
+    expect(
+      AppLogger.consoleIncludesLevel(AppLogLevel.warning, debugBuild: false),
+      isTrue,
+    );
+    expect(
+      AppLogger.consoleIncludesLevel(AppLogLevel.error, debugBuild: false),
+      isTrue,
+    );
+  });
 }

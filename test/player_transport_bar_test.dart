@@ -131,7 +131,11 @@ void main() {
 
       final colors = AppTheme.highContrastDarkTheme.colorScheme;
       expect(
-        tester.widget<AppSurface>(find.byType(AppSurface)).level,
+        tester
+            .widget<AppSurface>(
+              find.byKey(const ValueKey('player-chrome-tonal-surface')),
+            )
+            .level,
         AppSurfaceLevel.high,
       );
       final playButton = tester.widget<IconButton>(
@@ -146,10 +150,16 @@ void main() {
           matching: find.byType(IconButton),
         ),
       );
-      expect(playButton.style?.shape?.resolve({}), isA<CircleBorder>());
+      expect(
+        playButton.style?.shape?.resolve({}),
+        isA<RoundedRectangleBorder>(),
+      );
       expect(playButton.style?.side?.resolve({}), isNull);
       expect(playButton.style?.backgroundColor?.resolve({}), colors.primary);
-      expect(muteButton.style?.shape?.resolve({}), isA<CircleBorder>());
+      expect(
+        muteButton.style?.shape?.resolve({}),
+        isA<RoundedRectangleBorder>(),
+      );
       expect(muteButton.style?.side?.resolve({}), isNull);
       expect(
         muteButton.style?.backgroundColor?.resolve({}),
@@ -379,7 +389,9 @@ void main() {
     );
     await tester.pump();
 
-    final surface = tester.widget<AppSurface>(find.byType(AppSurface));
+    final surface = tester.widget<AppSurface>(
+      find.byKey(const ValueKey('player-chrome-tonal-surface')),
+    );
     expect(
       surface.surfaceColor,
       AppTheme.darkTheme.colorScheme.surfaceContainerHigh.withValues(
@@ -430,6 +442,7 @@ void main() {
                   width: 720,
                   height: 124,
                   child: PlayerTransportBar(
+                    compact: true,
                     onTogglePlay: _noop,
                     onStop: _noop,
                     onVolumeChangeEnd: _noopVolume,

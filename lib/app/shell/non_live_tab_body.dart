@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 import 'package:m3uxtream_player/app/composition/diagnostics/widgets/diagnostics_screen.dart';
@@ -10,10 +11,12 @@ import 'package:m3uxtream_player/app/composition/xtream/widgets/series_screen.da
 import 'package:m3uxtream_player/app/composition/xtream/widgets/vod_screen.dart';
 import 'package:m3uxtream_player/app/composition/xtream/widgets/media_library_screen.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_screen.dart';
+import 'package:m3uxtream_player/features/discovery/widgets/discovery_home_view.dart';
+import 'package:m3uxtream_player/shared/providers/app_shell_state_providers.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 
 /// Feature body for sidebar indices 1â€“6 (non-live tabs).
-class NonLiveTabBody extends StatelessWidget {
+class NonLiveTabBody extends ConsumerWidget {
   const NonLiveTabBody({
     super.key,
     required this.activeIndex,
@@ -26,7 +29,7 @@ class NonLiveTabBody extends StatelessWidget {
   final Set<ShellTabKind> hiddenTabKinds;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final navigationIndex = shellNavigationIndexFor(activeIndex);
     final effectiveActiveIndex =
         shellTabVisible(
@@ -38,29 +41,43 @@ class NonLiveTabBody extends StatelessWidget {
         : shellFallbackTabIndex();
 
     switch (effectiveActiveIndex) {
+      case shellHomeTabIndex:
+        return DiscoveryHomeView(
+          onOpenSettings: () =>
+              ref.read(activeSidebarIndexProvider.notifier).state =
+                  shellSettingsTabIndex,
+        );
       case shellPlaylistsTabIndex:
-        return const PlaylistHubScreen();
+        return _restorableTab(effectiveActiveIndex, const PlaylistHubScreen());
       case shellFavoritesTabIndex:
-        return const FavoritesScreen();
+        return _restorableTab(effectiveActiveIndex, const FavoritesScreen());
       case shellMediaLibraryTabIndex:
-        return const MediaLibraryScreen();
+        return _restorableTab(effectiveActiveIndex, const MediaLibraryScreen());
       case shellJellyfinTabIndex:
-        return const JellyfinScreen();
+        return _restorableTab(effectiveActiveIndex, const JellyfinScreen());
       case shellEpgTabIndex:
-        return const EpgScreen();
+        return _restorableTab(effectiveActiveIndex, const EpgScreen());
       case shellVodTabIndex:
-        return const VodScreen();
+        return _restorableTab(effectiveActiveIndex, const VodScreen());
       case shellSeriesTabIndex:
-        return const SeriesScreen();
+        return _restorableTab(effectiveActiveIndex, const SeriesScreen());
       case shellSettingsTabIndex:
-        return const SettingsScreen();
+        return _restorableTab(effectiveActiveIndex, const SettingsScreen());
       case shellDiagnosticsTabIndex:
-        return debugModeEnabled
-            ? const DiagnosticsScreen()
-            : const SettingsScreen();
+        return _restorableTab(
+          debugModeEnabled ? shellDiagnosticsTabIndex : shellSettingsTabIndex,
+          debugModeEnabled ? const DiagnosticsScreen() : const SettingsScreen(),
+        );
       default:
         return const _ComingSoonPlaceholder();
     }
+  }
+
+  Widget _restorableTab(int index, Widget child) {
+    return KeyedSubtree(
+      key: PageStorageKey<String>('shell-tab-$index'),
+      child: child,
+    );
   }
 }
 

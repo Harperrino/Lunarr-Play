@@ -38,6 +38,7 @@ dependencies:
   # UI & Material 3 Design System
   material_ui: 1.0.1
   cached_network_image: 3.4.1
+  flutter_svg: 2.3.0
   shimmer: 4.0.0
   google_fonts: 8.2.1
   intl: 0.20.3
@@ -63,3 +64,4 @@ flutter:
   assets:
     - assets/branding/lunarr-player-logo.png
     - assets/branding/lunarr-player-wordmark.png
+    - assets/branding/tmdb-blue-short.svg

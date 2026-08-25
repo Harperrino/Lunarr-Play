@@ -43,10 +43,28 @@ Widget _scene() {
                   child: SizedBox(
                     width: SettingsLayoutMetrics.sectionNavigationWidth,
                     child: SettingsSectionNavigation(
-                      selectedSection: SettingsSection.playlistSetup,
-                      onGeneralSelected: _noop,
-                      onPlaylistSetupSelected: _noop,
-                      onSavedPlaylistsSelected: _noop,
+                      sections: const [
+                        SettingsSectionDescriptor(
+                          id: SettingsSectionId.general,
+                          icon: Icons.tune_rounded,
+                          label: 'General',
+                          child: SizedBox.shrink(),
+                        ),
+                        SettingsSectionDescriptor(
+                          id: SettingsSectionId.playback,
+                          icon: Icons.play_circle_outline_rounded,
+                          label: 'Playback',
+                          child: SizedBox.shrink(),
+                        ),
+                        SettingsSectionDescriptor(
+                          id: SettingsSectionId.appearance,
+                          icon: Icons.palette_outlined,
+                          label: 'Appearance',
+                          child: SizedBox.shrink(),
+                        ),
+                      ],
+                      selectedSection: SettingsSectionId.playback,
+                      onSelected: (_) => _noop(),
                     ),
                   ),
                 ),

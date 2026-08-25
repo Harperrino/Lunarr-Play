@@ -12,9 +12,11 @@ import 'package:m3uxtream_player/app/composition/player/providers/player_ui_prov
 import 'package:m3uxtream_player/features/player/widgets/audio_track_menu_button.dart';
 import 'package:m3uxtream_player/features/player/widgets/player_playback_info_dialog.dart';
 import 'package:m3uxtream_player/shared/theme/app_status_colors.dart';
-import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
+import 'package:m3uxtream_player/shared/theme/app_shapes.dart';
+import 'package:m3uxtream_player/shared/theme/player_chrome_tokens.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_expressive_slider.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_transport_icon_button.dart';
+import 'package:m3uxtream_player/shared/widgets/player_chrome.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 
 /// Player transport - seek scrubber (VOD/series), play/stop, volume, fullscreen.
@@ -81,21 +83,9 @@ class _PlayerTransportBarState extends ConsumerState<PlayerTransportBar> {
             ?.seekIntervalSeconds ??
         const PlaybackPreferences().seekIntervalSeconds;
 
-    final surfaceColor = widget.translucent
-        ? Theme.of(context).colorScheme.surfaceContainerHigh
-              .withValues(alpha: 0.78)
-        : null;
-
-    return AppSurface(
-      level: AppSurfaceLevel.high,
-      surfaceColor: surfaceColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      padding: EdgeInsets.fromLTRB(
-        widget.compact ? 12 : 14,
-        widget.compact ? 10 : 12,
-        widget.compact ? 12 : 14,
-        widget.compact ? 10 : 12,
-      ),
+    return PlayerChromeSurface(
+      compact: widget.compact,
+      translucent: widget.translucent,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -117,101 +107,55 @@ class _PlayerTransportBarState extends ConsumerState<PlayerTransportBar> {
           ),
           if (isSeekable || hasChannel)
             SizedBox(height: widget.compact ? 8 : 10),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final narrow = constraints.maxWidth < 620;
-
-              final primaryControls = _PrimaryTransportControls(
-                compact: widget.compact,
-                isLiveChannel: isLiveChannel,
-                isSeekable: isSeekable,
-                seekIntervalSeconds: seekIntervalSeconds,
-                onTogglePlay: () {
-                  widget.onUserActivity?.call();
-                  widget.onTogglePlay();
-                },
-                onStop: () {
-                  widget.onUserActivity?.call();
-                  widget.onStop();
-                },
-                onZapChannel: (direction) {
-                  widget.onUserActivity?.call();
-                  _zapChannel(direction);
-                },
-                onSeekRelative: (delta) {
-                  widget.onUserActivity?.call();
-                  widget.onSeekRelative?.call(delta);
-                },
-              );
-
-              final trailingControls = _TrailingTransportControls(
-                compact: widget.compact,
-                onToggleFullscreen: widget.onToggleFullscreen == null
-                    ? null
-                    : () {
-                        widget.onUserActivity?.call();
-                        widget.onToggleFullscreen!();
-                      },
-                onUserActivity: widget.onUserActivity,
-              );
-              final volumeControl = _VolumeControl(
-                compact: widget.compact,
-                onToggleMute: () {
-                  widget.onUserActivity?.call();
-                  widget.onToggleMute();
-                },
-                onVolumeChangeEnd: (value) {
-                  widget.onUserActivity?.call();
-                  widget.onVolumeChangeEnd(value);
-                },
-                onVolumeChanged: (value) {
-                  widget.onVolumeChanged?.call(value);
-                },
-                onUserActivity: widget.onUserActivity,
-              );
-
-              if (narrow) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Center(child: primaryControls),
-                    SizedBox(height: widget.compact ? 8 : 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Flexible(child: volumeControl),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: trailingControls,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              }
-
-              return SizedBox(
-                height: widget.compact ? 48 : 56,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: volumeControl,
-                    ),
-                    Center(child: primaryControls),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: trailingControls,
-                    ),
-                  ],
-                ),
-              );
-            },
+          PlayerChromeControlLayout(
+            compactMetrics: widget.compact,
+            primary: _PrimaryTransportControls(
+              compact: widget.compact,
+              isLiveChannel: isLiveChannel,
+              isSeekable: isSeekable,
+              seekIntervalSeconds: seekIntervalSeconds,
+              onTogglePlay: () {
+                widget.onUserActivity?.call();
+                widget.onTogglePlay();
+              },
+              onStop: () {
+                widget.onUserActivity?.call();
+                widget.onStop();
+              },
+              onZapChannel: (direction) {
+                widget.onUserActivity?.call();
+                _zapChannel(direction);
+              },
+              onSeekRelative: (delta) {
+                widget.onUserActivity?.call();
+                widget.onSeekRelative?.call(delta);
+              },
+            ),
+            trailing: _TrailingTransportControls(
+              compact: widget.compact,
+              onToggleFullscreen: widget.onToggleFullscreen == null
+                  ? null
+                  : () {
+                      widget.onUserActivity?.call();
+                      widget.onToggleFullscreen!();
+                    },
+              onUserActivity: widget.onUserActivity,
+            ),
+            leading: _VolumeControl(
+              compact: widget.compact,
+              onToggleMute: () {
+                widget.onUserActivity?.call();
+                widget.onToggleMute();
+              },
+              onVolumeChangeEnd: (value) {
+                widget.onUserActivity?.call();
+                widget.onVolumeChangeEnd(value);
+              },
+              onVolumeChanged: (value) {
+                widget.onVolumeChanged?.call(value);
+              },
+              onUserActivity: widget.onUserActivity,
+            ),
           ),
         ],
       ),
@@ -302,72 +246,70 @@ class _PrimaryTransportControls extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isPlaying = ref.watch(playerIsPlayingProvider);
+    final tokens = PlayerChromeTokens.of(context);
+    final controlSize = compact
+        ? tokens.compactControlExtent
+        : tokens.controlExtent;
+    final iconSize = compact ? tokens.compactIconExtent : tokens.iconExtent;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return PlayerPrimaryControlGroup(
+      compact: compact,
       children: [
-        if (isLiveChannel) ...[
+        if (isLiveChannel)
           M3TransportIconButton(
             icon: Icons.keyboard_arrow_left_rounded,
             tooltip: context.l10n.playerPreviousChannelTooltip,
-            size: compact ? 36 : 40,
-            iconSize: 16,
+            size: controlSize,
+            iconSize: iconSize,
             onPressed: () => onZapChannel(-1),
           ),
-          SizedBox(width: compact ? 6 : 8),
-        ],
-        if (isSeekable) ...[
+        if (isSeekable)
           M3TransportIconButton(
             icon: Icons.replay_rounded,
             tooltip: context.l10n.playerSeekBackwardTooltip(
               seekIntervalSeconds,
             ),
-            size: compact ? 36 : 40,
-            iconSize: compact ? 18 : 20,
+            size: controlSize,
+            iconSize: iconSize,
             onPressed: () =>
                 onSeekRelative(Duration(seconds: -seekIntervalSeconds)),
           ),
-          SizedBox(width: compact ? 6 : 8),
-        ],
         M3TransportIconButton(
           icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
           tooltip: isPlaying
               ? context.l10n.playerPauseTooltip
               : context.l10n.playerPlayTooltip,
-          size: compact ? 48 : 56,
-          iconSize: compact ? 20 : 24,
+          size: compact ? tokens.primaryCompactExtent : tokens.primaryExtent,
+          iconSize: compact
+              ? tokens.primaryCompactIconExtent
+              : tokens.primaryIconExtent,
           emphasized: true,
           onPressed: onTogglePlay,
         ),
-        if (isSeekable) ...[
-          SizedBox(width: compact ? 6 : 8),
+        if (isSeekable)
           M3TransportIconButton(
             icon: Icons.forward_rounded,
             tooltip: context.l10n.playerSeekForwardTooltip(seekIntervalSeconds),
-            size: compact ? 36 : 40,
-            iconSize: compact ? 18 : 20,
+            size: controlSize,
+            iconSize: iconSize,
             onPressed: () =>
                 onSeekRelative(Duration(seconds: seekIntervalSeconds)),
           ),
-        ],
-        SizedBox(width: compact ? 6 : 8),
         M3TransportIconButton(
           icon: Icons.stop_rounded,
           tooltip: context.l10n.playerStopTooltip,
-          size: compact ? 36 : 40,
-          iconSize: compact ? 17 : 19,
+          size: controlSize,
+          iconSize: iconSize,
           onPressed: onStop,
         ),
-        if (isLiveChannel) ...[
-          SizedBox(width: compact ? 6 : 8),
+        if (isLiveChannel)
           M3TransportIconButton(
             icon: Icons.keyboard_arrow_right_rounded,
             tooltip: context.l10n.playerNextChannelTooltip,
-            size: compact ? 36 : 40,
-            iconSize: 16,
+            size: controlSize,
+            iconSize: iconSize,
             onPressed: () => onZapChannel(1),
           ),
-        ],
       ],
     );
   }
@@ -387,6 +329,10 @@ class _TrailingTransportControls extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final audioTracksViewModel = ref.watch(playerAudioTracksViewModelProvider);
+    final tokens = PlayerChromeTokens.of(context);
+    final controlSize = compact
+        ? tokens.compactControlExtent
+        : tokens.controlExtent;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -394,7 +340,7 @@ class _TrailingTransportControls extends ConsumerWidget {
         M3TransportIconButton(
           icon: Icons.info_outline_rounded,
           tooltip: context.l10n.playerPlaybackInfoTooltip,
-          size: compact ? 36 : 40,
+          size: controlSize,
           iconSize: 16,
           onPressed: () {
             onUserActivity?.call();
@@ -419,7 +365,7 @@ class _TrailingTransportControls extends ConsumerWidget {
           M3TransportIconButton(
             icon: Icons.fullscreen_rounded,
             tooltip: context.l10n.playerFullscreenTooltip,
-            size: compact ? 36 : 40,
+            size: controlSize,
             iconSize: 16,
             onPressed: onToggleFullscreen!,
           ),
@@ -627,6 +573,8 @@ class _LiveBufferIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final statusColors = Theme.of(context).extension<AppStatusColors>();
+    final shapes =
+        Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
     final bufferedSeconds = _clampedSeconds(buffered, targetSeconds);
     final fill = targetSeconds <= 0
         ? 0.0
@@ -673,7 +621,7 @@ class _LiveBufferIndicator extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(3),
+          borderRadius: BorderRadius.circular(shapes.full),
           child: LinearProgressIndicator(
             value: progressValue,
             minHeight: 5,
@@ -777,84 +725,80 @@ class _VolumeControlState extends ConsumerState<_VolumeControl> {
   Widget build(BuildContext context) {
     final actualVolume = ref.watch(playerVolumeProvider);
     final displayedVolume = (_localVolume ?? actualVolume).clamp(0.0, 1.0);
+    final tokens = PlayerChromeTokens.of(context);
 
-    return Semantics(
-      container: true,
-      label: context.l10n.playerVolumeSemantics,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final buttonSize = widget.compact ? 34.0 : 36.0;
-          final preferredSliderWidth = widget.compact ? 104.0 : 124.0;
-          final minimumSliderWidth = widget.compact ? 48.0 : 56.0;
-          final percentWidth = widget.compact ? 28.0 : 32.0;
-          final fixedWidth = buttonSize + 6 + 6 + percentWidth;
-          final availableSliderWidth = constraints.maxWidth - fixedWidth;
-          final sliderWidth = !constraints.maxWidth.isFinite
-              ? preferredSliderWidth
-              : availableSliderWidth <= 0
-              ? 0.0
-              : availableSliderWidth.clamp(
-                  minimumSliderWidth,
-                  preferredSliderWidth,
-                );
-          final percentText = '${(displayedVolume * 100).round()}%';
-          final percentStyle = TextStyle(
-            fontSize: widget.compact ? 10 : 11,
-            fontFamily: 'monospace',
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final buttonSize = widget.compact
+            ? tokens.compactControlExtent
+            : tokens.controlExtent;
+        final preferredSliderWidth = widget.compact ? 104.0 : 124.0;
+        final minimumSliderWidth = widget.compact ? 48.0 : 56.0;
+        final percentWidth = widget.compact ? 28.0 : 32.0;
+        final fixedWidth = buttonSize + 6 + 6 + percentWidth;
+        final availableSliderWidth = constraints.maxWidth - fixedWidth;
+        final sliderWidth = !constraints.maxWidth.isFinite
+            ? preferredSliderWidth
+            : availableSliderWidth <= 0
+            ? 0.0
+            : availableSliderWidth.clamp(
+                minimumSliderWidth,
+                preferredSliderWidth,
+              );
+        final percentText = '${(displayedVolume * 100).round()}%';
+        final percentStyle = TextStyle(
+          fontSize: widget.compact ? 10 : 11,
+          fontFamily: 'monospace',
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        );
 
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              M3TransportIconButton(
-                icon: _volumeIcon(displayedVolume),
-                tooltip: displayedVolume <= 0
-                    ? context.l10n.playerUnmuteTooltip
-                    : context.l10n.playerMuteTooltip,
-                size: buttonSize,
-                iconSize: widget.compact ? 15 : 16,
-                onPressed: () {
-                  widget.onUserActivity?.call();
-                  setState(() => _localVolume = null);
-                  widget.onToggleMute();
-                },
-              ),
-              SizedBox(
-                width: sliderWidth,
-                child: M3ExpressiveSlider(
-                  size: widget.compact
-                      ? M3ExpressiveSliderSize.s
-                      : M3ExpressiveSliderSize.m,
-                  value: displayedVolume,
-                  semanticFormatter: (value) => context.l10n
-                      .playerVolumePercentSemantics((value * 100).round()),
-                  onChanged: (value) {
-                    widget.onUserActivity?.call();
-                    setState(() => _localVolume = value);
-                    widget.onVolumeChanged?.call(value);
-                  },
-                  onChangeEnd: (value) {
-                    setState(() => _localVolume = null);
-                    widget.onVolumeChangeEnd(value);
-                  },
-                ),
-              ),
-              const SizedBox(width: 6),
-              SizedBox(
-                width: percentWidth,
-                height: buttonSize,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: Text(percentText, style: percentStyle),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+        return PlayerVolumeCluster(
+          semanticLabel: context.l10n.playerVolumeSemantics,
+          muteButton: M3TransportIconButton(
+            icon: _volumeIcon(displayedVolume),
+            tooltip: displayedVolume <= 0
+                ? context.l10n.playerUnmuteTooltip
+                : context.l10n.playerMuteTooltip,
+            size: buttonSize,
+            iconSize: widget.compact ? 15 : 16,
+            onPressed: () {
+              widget.onUserActivity?.call();
+              setState(() => _localVolume = null);
+              widget.onToggleMute();
+            },
+          ),
+          slider: SizedBox(
+            width: sliderWidth,
+            child: M3ExpressiveSlider(
+              size: widget.compact
+                  ? M3ExpressiveSliderSize.s
+                  : M3ExpressiveSliderSize.m,
+              value: displayedVolume,
+              semanticFormatter: (value) => context.l10n
+                  .playerVolumePercentSemantics((value * 100).round()),
+              onChanged: (value) {
+                widget.onUserActivity?.call();
+                setState(() => _localVolume = value);
+                widget.onVolumeChanged?.call(value);
+              },
+              onChangeEnd: (value) {
+                setState(() => _localVolume = null);
+                widget.onVolumeChangeEnd(value);
+              },
+            ),
+          ),
+          valueLabel: SizedBox(
+            width: percentWidth,
+            height: buttonSize,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(percentText, style: percentStyle),
+            ),
+          ),
+        );
+      },
     );
   }
 }

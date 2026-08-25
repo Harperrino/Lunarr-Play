@@ -20,47 +20,68 @@ class MediaMetadataRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final spacing = theme.extension<AppSpacing>() ?? AppSpacing.standard;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stackBadges =
+            badges.isNotEmpty &&
+            (constraints.maxWidth < 180 ||
+                MediaQuery.textScalerOf(context).scale(1) > 1.4);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Expanded(
-              child: Text(
+            if (stackBadges) ...<Widget>[
+              Text(
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.labelLarge,
               ),
-            ),
-            if (badges.isNotEmpty) ...<Widget>[
-              SizedBox(width: spacing.sm),
-              Flexible(
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Wrap(
-                    alignment: WrapAlignment.end,
-                    spacing: spacing.xs,
-                    runSpacing: spacing.xs,
-                    children: badges,
+              SizedBox(height: spacing.xs),
+              Wrap(
+                spacing: spacing.xs,
+                runSpacing: spacing.xs,
+                children: badges,
+              ),
+            ] else
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelLarge,
+                    ),
                   ),
-                ),
+                  if (badges.isNotEmpty) ...<Widget>[
+                    SizedBox(width: spacing.sm),
+                    Flexible(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Wrap(
+                          alignment: WrapAlignment.end,
+                          spacing: spacing.xs,
+                          runSpacing: spacing.xs,
+                          children: badges,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            if (subtitle != null && subtitle!.isNotEmpty) ...<Widget>[
+              SizedBox(height: spacing.xs),
+              Text(
+                subtitle!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall,
               ),
             ],
           ],
-        ),
-        if (subtitle != null && subtitle!.isNotEmpty) ...<Widget>[
-          SizedBox(height: spacing.xs),
-          Text(
-            subtitle!,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall,
-          ),
-        ],
-      ],
+        );
+      },
     );
   }
 }
@@ -100,12 +121,14 @@ class MediaMetadataBadge extends StatelessWidget {
                 Icon(icon, size: 14, color: colors.onSecondaryContainer),
                 SizedBox(width: spacing.xs),
               ],
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: colors.onSecondaryContainer,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colors.onSecondaryContainer,
+                  ),
                 ),
               ),
             ],

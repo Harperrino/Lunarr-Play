@@ -10,6 +10,7 @@ import 'app_spacing.dart';
 import 'app_status_colors.dart';
 import 'high_contrast_theme_roles.dart';
 import 'appearance_preferences.dart';
+import 'player_chrome_tokens.dart';
 
 class AppTheme {
   @Deprecated('Use Theme.of(context).colorScheme.primary instead.')
@@ -135,6 +136,7 @@ class AppTheme {
         AppSpacing.standard,
         AppShapes.standard,
         AppMotion.standard,
+        PlayerChromeTokens.standard,
       ],
       textTheme: _interTextTheme(baseTheme.textTheme).copyWith(
         titleLarge: GoogleFonts.inter(

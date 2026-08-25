@@ -2,22 +2,14 @@ import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/core/services/settings_layout_geometry.dart';
 import 'package:m3uxtream_player/features/settings/widgets/settings_section_navigation.dart';
 
-/// Presents Settings as one bounded, scrolling column at every viewport size.
+export 'package:m3uxtream_player/features/settings/widgets/settings_section_navigation.dart'
+    show SettingsSectionDescriptor, SettingsSectionId;
+
+/// Presents Settings as a responsive, section-addressable scrolling view.
 class SettingsLayout extends StatefulWidget {
-  const SettingsLayout({
-    required this.topSection,
-    this.playlistForm,
-    this.playlistSection,
-    super.key,
-  });
+  const SettingsLayout({required this.sections, super.key});
 
-  final Widget topSection;
-
-  /// Legacy extension points kept for callers that still render the old
-  /// settings composition. The Settings screen itself no longer supplies
-  /// playlist management content; that responsibility lives in Playlists.
-  final Widget? playlistForm;
-  final Widget? playlistSection;
+  final List<SettingsSectionDescriptor> sections;
 
   @override
   State<SettingsLayout> createState() => _SettingsLayoutState();
@@ -25,12 +17,35 @@ class SettingsLayout extends StatefulWidget {
 
 class _SettingsLayoutState extends State<SettingsLayout> {
   final _scrollController = ScrollController();
-  final _generalKey = GlobalKey();
-  final _playlistFormKey = GlobalKey();
-  final _playlistListKey = GlobalKey();
-  SettingsSection _selectedSection = SettingsSection.general;
+  final Map<SettingsSectionId, GlobalKey> _sectionKeys = {};
+  late SettingsSectionId _selectedSection;
   bool _sectionSyncScheduled = false;
-  SettingsSection? _programmaticSelection;
+  SettingsSectionId? _programmaticSelection;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncSectionKeys();
+    _selectedSection = widget.sections.first.id;
+  }
+
+  @override
+  void didUpdateWidget(SettingsLayout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncSectionKeys();
+    if (!widget.sections.any((section) => section.id == _selectedSection)) {
+      _selectedSection = widget.sections.first.id;
+      _programmaticSelection = null;
+    }
+  }
+
+  void _syncSectionKeys() {
+    final ids = widget.sections.map((section) => section.id).toSet();
+    _sectionKeys.removeWhere((id, _) => !ids.contains(id));
+    for (final id in ids) {
+      _sectionKeys.putIfAbsent(id, GlobalKey.new);
+    }
+  }
 
   @override
   void dispose() {
@@ -46,10 +61,8 @@ class _SettingsLayoutState extends State<SettingsLayout> {
         final usesFullContentWidth = SettingsLayoutMetrics.usesFullContentWidth(
           textScaleFactor,
         );
-        final hasPlaylistManagement =
-            widget.playlistForm != null && widget.playlistSection != null;
-        final hasSectionNavigation =
-            hasPlaylistManagement &&
+        final hasDesktopNavigation =
+            widget.sections.length > 1 &&
             SettingsLayoutMetrics.hasSectionNavigation(
               availableWidth: constraints.maxWidth,
               textScaleFactor: textScaleFactor,
@@ -64,28 +77,29 @@ class _SettingsLayoutState extends State<SettingsLayout> {
           onNotification: _handleScrollNotification,
           child: Scrollbar(
             controller: _scrollController,
-            child: ListView(
-              key: const ValueKey('settings-scroll'),
+            child: SingleChildScrollView(
+              key: const PageStorageKey<String>('settings-scroll'),
               controller: _scrollController,
               padding: EdgeInsets.symmetric(
                 horizontal: horizontalPadding,
                 vertical: verticalPadding,
               ),
-              children: [
-                KeyedSubtree(key: _generalKey, child: widget.topSection),
-                if (hasPlaylistManagement) ...[
-                  const SizedBox(height: 16),
-                  KeyedSubtree(
-                    key: _playlistFormKey,
-                    child: widget.playlistForm!,
-                  ),
-                  const SizedBox(height: 16),
-                  KeyedSubtree(
-                    key: _playlistListKey,
-                    child: widget.playlistSection!,
-                  ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (
+                    var index = 0;
+                    index < widget.sections.length;
+                    index++
+                  ) ...[
+                    if (index > 0) const SizedBox(height: 16),
+                    KeyedSubtree(
+                      key: _sectionKeys[widget.sections[index].id],
+                      child: widget.sections[index].child,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         );
@@ -102,7 +116,34 @@ class _SettingsLayoutState extends State<SettingsLayout> {
           ),
         );
 
-        if (!hasSectionNavigation) return boundedContent;
+        if (!hasDesktopNavigation) {
+          return Column(
+            children: [
+              if (widget.sections.length > 1)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    verticalPadding,
+                    horizontalPadding,
+                    0,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: SettingsLayoutMetrics.contentMaxWidth,
+                    ),
+                    child: SettingsSectionNavigation(
+                      key: const ValueKey('settings-compact-navigation'),
+                      sections: widget.sections,
+                      selectedSection: _selectedSection,
+                      onSelected: _selectSection,
+                      compact: true,
+                    ),
+                  ),
+                ),
+              Expanded(child: boundedContent),
+            ],
+          );
+        }
 
         return Align(
           alignment: Alignment.topLeft,
@@ -122,25 +163,10 @@ class _SettingsLayoutState extends State<SettingsLayout> {
                       padding: EdgeInsets.symmetric(vertical: verticalPadding),
                       child: Align(
                         alignment: Alignment.topCenter,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints.tightFor(
-                            width: SettingsLayoutMetrics.sectionNavigationWidth,
-                          ),
-                          child: SettingsSectionNavigation(
-                            selectedSection: _selectedSection,
-                            onGeneralSelected: () => _selectSection(
-                              SettingsSection.general,
-                              _generalKey,
-                            ),
-                            onPlaylistSetupSelected: () => _selectSection(
-                              SettingsSection.playlistSetup,
-                              _playlistFormKey,
-                            ),
-                            onSavedPlaylistsSelected: () => _selectSection(
-                              SettingsSection.savedPlaylists,
-                              _playlistListKey,
-                            ),
-                          ),
+                        child: SettingsSectionNavigation(
+                          sections: widget.sections,
+                          selectedSection: _selectedSection,
+                          onSelected: _selectSection,
                         ),
                       ),
                     ),
@@ -160,15 +186,14 @@ class _SettingsLayoutState extends State<SettingsLayout> {
 
   bool _handleScrollNotification(ScrollNotification notification) {
     if (notification.depth == 0 && notification.metrics.axis == Axis.vertical) {
-      if (_programmaticSelection != null) {
-        return false;
-      }
-      _scheduleSectionSync();
+      if (_programmaticSelection == null) _scheduleSectionSync();
     }
     return false;
   }
 
-  void _selectSection(SettingsSection section, GlobalKey key) {
+  void _selectSection(SettingsSectionId section) {
+    final key = _sectionKeys[section];
+    if (key == null) return;
     _programmaticSelection = section;
     if (_selectedSection != section && mounted) {
       setState(() => _selectedSection = section);
@@ -176,65 +201,51 @@ class _SettingsLayoutState extends State<SettingsLayout> {
     _scrollTo(key, section);
   }
 
-  void _scrollTo(GlobalKey key, SettingsSection section) {
+  void _scrollTo(GlobalKey key, SettingsSectionId section) {
     final targetContext = key.currentContext;
     if (targetContext == null) {
       if (_programmaticSelection == section) _programmaticSelection = null;
       return;
     }
 
-    final scrollFuture = Scrollable.ensureVisible(
+    Scrollable.ensureVisible(
       targetContext,
       duration: MediaQuery.disableAnimationsOf(context)
           ? Duration.zero
           : const Duration(milliseconds: 200),
       curve: Curves.easeOutCubic,
       alignment: 0.08,
-    );
-    scrollFuture.whenComplete(() {
+    ).whenComplete(() {
       if (mounted && _programmaticSelection == section) {
         _programmaticSelection = null;
+        _scheduleSectionSync();
       }
     });
   }
 
   void _syncSelectedSection() {
-    if (!_scrollController.hasClients) return;
+    if (!_scrollController.hasClients || widget.sections.isEmpty) return;
     final viewport = _scrollController.position.context.storageContext
         .findRenderObject();
     if (viewport is! RenderBox || !viewport.hasSize) return;
 
-    var visibleSection = SettingsSection.general;
     final position = _scrollController.position;
+    var visibleSection = widget.sections.first.id;
     if (position.maxScrollExtent > 0 &&
         position.pixels >= position.maxScrollExtent - 1) {
-      visibleSection = SettingsSection.savedPlaylists;
-    }
-    final threshold =
-        viewport.localToGlobal(Offset.zero).dy + viewport.size.height * 0.2;
-    double? savedPlaylistsTop;
-    for (final entry in [
-      (SettingsSection.general, _generalKey),
-      (SettingsSection.playlistSetup, _playlistFormKey),
-      (SettingsSection.savedPlaylists, _playlistListKey),
-    ]) {
-      final renderObject = entry.$2.currentContext?.findRenderObject();
-      if (renderObject is RenderBox && renderObject.hasSize) {
-        final top = renderObject.localToGlobal(Offset.zero).dy;
-        if (entry.$1 == SettingsSection.savedPlaylists) {
-          savedPlaylistsTop = top;
-        }
-        if (top <= threshold &&
-            position.pixels < position.maxScrollExtent - 1) {
-          visibleSection = entry.$1;
+      visibleSection = widget.sections.last.id;
+    } else {
+      final threshold =
+          viewport.localToGlobal(Offset.zero).dy + viewport.size.height * 0.2;
+      for (final section in widget.sections) {
+        final renderObject = _sectionKeys[section.id]?.currentContext
+            ?.findRenderObject();
+        if (renderObject is RenderBox &&
+            renderObject.hasSize &&
+            renderObject.localToGlobal(Offset.zero).dy <= threshold) {
+          visibleSection = section.id;
         }
       }
-    }
-    if (savedPlaylistsTop != null &&
-        position.pixels > 0 &&
-        savedPlaylistsTop <=
-            viewport.localToGlobal(Offset.zero).dy + viewport.size.height) {
-      visibleSection = SettingsSection.savedPlaylists;
     }
     if (visibleSection != _selectedSection && mounted) {
       setState(() => _selectedSection = visibleSection);

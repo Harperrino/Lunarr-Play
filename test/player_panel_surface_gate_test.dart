@@ -126,6 +126,7 @@ void main() {
                   .decoration
               as BoxDecoration;
       expect(stageDecoration.border, isNull);
+      expect(stageDecoration.color, Colors.transparent);
       await expectLater(
         find.byType(PlayerPanel),
         matchesGoldenFile('goldens/d17_windowed_player_empty.png'),
@@ -209,6 +210,15 @@ void main() {
       await tester.pump();
 
       expect(find.byType(Video), findsOneWidget);
+      expect(tester.widget<Video>(find.byType(Video)).fill, Colors.black);
+      final stage = tester.widget<DecoratedBox>(
+        find.byKey(const ValueKey('windowed-player-stage')),
+      );
+      expect((stage.decoration as BoxDecoration).color, Colors.black);
+      expect(
+        find.byKey(const ValueKey('app-ambient-background')),
+        findsNothing,
+      );
     },
   );
 
@@ -259,6 +269,14 @@ void main() {
       await tester.pump();
 
       expect(find.textContaining('Preparing stream'), findsOneWidget);
+      final stage = tester.widget<DecoratedBox>(
+        find.byKey(const ValueKey('windowed-player-stage')),
+      );
+      expect((stage.decoration as BoxDecoration).color, Colors.black);
+      expect(
+        find.byKey(const ValueKey('app-ambient-background')),
+        findsNothing,
+      );
       expect(find.byType(Video), findsNothing);
     },
   );

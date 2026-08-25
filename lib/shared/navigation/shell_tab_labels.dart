@@ -3,6 +3,7 @@ import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
 
 String shellTabTitle(ShellTabSpec tab, AppLocalizations l10n) =>
     switch (tab.kind) {
+      ShellTabKind.home => l10n.shellTabHomeTitle,
       ShellTabKind.live => l10n.shellTabLiveTitle,
       ShellTabKind.mediaLibrary => l10n.shellTabMediaLibraryTitle,
       ShellTabKind.jellyfin => l10n.shellTabJellyfinTitle,
@@ -17,6 +18,7 @@ String shellTabTitle(ShellTabSpec tab, AppLocalizations l10n) =>
 
 String shellTabSubtitle(ShellTabSpec tab, AppLocalizations l10n) =>
     switch (tab.kind) {
+      ShellTabKind.home => l10n.shellTabHomeSubtitle,
       ShellTabKind.live => l10n.shellTabLiveSubtitle,
       ShellTabKind.mediaLibrary => l10n.shellTabMediaLibrarySubtitle,
       ShellTabKind.jellyfin => l10n.shellTabJellyfinSubtitle,

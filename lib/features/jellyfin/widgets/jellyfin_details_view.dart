@@ -181,7 +181,7 @@ class _JellyfinDetailsViewState extends ConsumerState<JellyfinDetailsView> {
       } else {
         await api.unmarkFavorite(connection, itemId: item.id);
       }
-      if (mounted) ref.invalidate(jellyfinItemDetailProvider(item.id));
+      if (mounted) invalidateJellyfinItemMutation(ref, item);
       if (!_isCurrentAction(generation, identity)) return;
       setState(() => _busyAction = null);
     } catch (error) {
@@ -214,7 +214,7 @@ class _JellyfinDetailsViewState extends ConsumerState<JellyfinDetailsView> {
       } else {
         await api.markUnplayed(connection, itemId: item.id);
       }
-      if (mounted) ref.invalidate(jellyfinItemDetailProvider(item.id));
+      if (mounted) invalidateJellyfinItemMutation(ref, item);
       if (!_isCurrentAction(generation, identity)) return;
       setState(() => _busyAction = null);
     } catch (error) {

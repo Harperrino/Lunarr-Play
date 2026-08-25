@@ -18,21 +18,32 @@ Widget _settingsLayout() {
     width: 1200,
     height: 500,
     child: SettingsLayout(
-      topSection: SizedBox(height: 320, child: Text('General content')),
-      playlistForm: SizedBox(
-        height: 320,
-        child: Text('Playlist setup content'),
-      ),
-      playlistSection: SizedBox(
-        height: 320,
-        child: Text('Saved playlists content'),
-      ),
+      sections: [
+        SettingsSectionDescriptor(
+          id: SettingsSectionId.general,
+          icon: Icons.tune_rounded,
+          label: 'General',
+          child: SizedBox(height: 320, child: Text('General content')),
+        ),
+        SettingsSectionDescriptor(
+          id: SettingsSectionId.playback,
+          icon: Icons.play_circle_outline_rounded,
+          label: 'Playback',
+          child: SizedBox(height: 320, child: Text('Playback content')),
+        ),
+        SettingsSectionDescriptor(
+          id: SettingsSectionId.appearance,
+          icon: Icons.palette_outlined,
+          label: 'Appearance',
+          child: SizedBox(height: 320, child: Text('Appearance content')),
+        ),
+      ],
     ),
   );
 }
 
 Finder _settingsScrollable() => find.descendant(
-  of: find.byKey(const ValueKey('settings-scroll')),
+  of: find.byKey(const PageStorageKey<String>('settings-scroll')),
   matching: find.byType(Scrollable),
 );
 
@@ -55,7 +66,7 @@ void main() {
       final position = tester
           .state<ScrollableState>(_settingsScrollable())
           .position;
-      await tester.tap(find.text('Saved playlists'));
+      await tester.tap(find.text('Appearance'));
       await tester.pump();
 
       expect(position.pixels, closeTo(position.maxScrollExtent, 0.1));
@@ -77,7 +88,7 @@ void main() {
     final position = tester
         .state<ScrollableState>(_settingsScrollable())
         .position;
-    await tester.tap(find.text('Saved playlists'));
+    await tester.tap(find.text('Appearance'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 

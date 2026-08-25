@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
+import 'package:m3uxtream_player/shared/theme/app_shapes.dart';
+import 'package:m3uxtream_player/shared/theme/player_chrome_tokens.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
 
@@ -26,7 +28,10 @@ class PlayerStageError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final textColor = immersive ? Colors.redAccent : colors.onErrorContainer;
+    final shapes =
+        Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
+    final tokens = PlayerChromeTokens.of(context);
+    final textColor = immersive ? colors.error : colors.onErrorContainer;
     final background = immersive ? Colors.transparent : colors.errorContainer;
     return Center(
       child: Padding(
@@ -36,8 +41,10 @@ class PlayerStageError extends StatelessWidget {
           child: DecoratedBox(
             decoration: ShapeDecoration(
               color: background,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  tokens.panelRadius.clamp(shapes.large, shapes.extraLarge),
+                ),
               ),
             ),
             child: Padding(
@@ -62,23 +69,25 @@ class PlayerStageFrame extends StatelessWidget {
     super.key,
     required this.child,
     required this.immersive,
+    this.videoActive = true,
   });
 
   final Widget child;
   final bool immersive;
+  final bool videoActive;
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final tokens = PlayerChromeTokens.of(context);
     final borderRadius = immersive
         ? BorderRadius.zero
-        : BorderRadius.circular(18);
+        : BorderRadius.circular(tokens.videoRadius);
     return ClipRRect(
       borderRadius: borderRadius,
       child: DecoratedBox(
         key: const ValueKey<String>('windowed-player-stage'),
         decoration: BoxDecoration(
-          color: immersive ? Colors.black : colors.surfaceContainerLowest,
+          color: videoActive ? Colors.black : Colors.transparent,
           borderRadius: borderRadius,
         ),
         child: child,
@@ -99,7 +108,10 @@ class WindowedPlayerEmptyState extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [colors.surfaceContainerLow, colors.surfaceContainerLowest],
+          colors: [
+            colors.surfaceContainerLow.withValues(alpha: 0.62),
+            colors.surfaceContainerLowest.withValues(alpha: 0.30),
+          ],
         ),
       ),
       child: Center(

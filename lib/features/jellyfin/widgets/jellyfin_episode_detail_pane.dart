@@ -235,7 +235,7 @@ class _JellyfinEpisodeDetailPaneState
       } else {
         await api.unmarkFavorite(connection, itemId: item.id);
       }
-      if (mounted) ref.invalidate(jellyfinItemDetailProvider(item.id));
+      if (mounted) invalidateJellyfinItemMutation(ref, item);
       if (_isCurrent(generation, identity)) {
         setState(() => _busyAction = null);
       }
@@ -269,7 +269,7 @@ class _JellyfinEpisodeDetailPaneState
       } else {
         await api.markUnplayed(connection, itemId: item.id);
       }
-      if (mounted) ref.invalidate(jellyfinItemDetailProvider(item.id));
+      if (mounted) invalidateJellyfinItemMutation(ref, item);
       if (_isCurrent(generation, identity)) {
         setState(() => _busyAction = null);
       }

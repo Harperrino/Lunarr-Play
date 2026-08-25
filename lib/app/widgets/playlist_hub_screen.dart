@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
@@ -31,13 +30,14 @@ class PlaylistHubScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    _ensureActiveSelection(ref);
     final colors = Theme.of(context).colorScheme;
 
     final playlistsAsync = ref.watch(playlistsStreamProvider);
     final selectedId = ref.watch(selectedPlaylistIdProvider);
     final inactiveIds =
         ref.watch(inactivePlaylistIdsProvider).valueOrNull ?? const <int>{};
+    final epgJobs =
+        ref.watch(epgSyncJobsProvider).valueOrNull ?? const <int, EpgSyncJob>{};
     final databaseUnavailable = ref.watch(databaseHealthProvider).isFatal;
     return playlistsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -172,23 +172,11 @@ class PlaylistHubScreen extends ConsumerWidget {
                               final isInactive = inactiveIds.contains(
                                 playlist.id,
                               );
-                              final epgJobs =
-                                  ref.watch(epgSyncJobsProvider).valueOrNull ??
-                                  const <int, EpgSyncJob>{};
-                              final syncState = ref.watch(
-                                playlistSyncStatusProvider(playlist.id),
-                              );
-                              final epgInterval = ref.watch(
-                                epgRefreshIntervalProvider(playlist.id),
-                              );
-                              return _PlaylistTile(
+                              return _PlaylistProviderTile(
                                 playlist: playlist,
                                 isSelected: isSelected,
                                 isInactive: isInactive,
-                                syncState: syncState,
                                 epgJob: epgJobs[playlist.id],
-                                hasEpgUrl: playlist.effectiveEpgUrl != null,
-                                epgInterval: epgInterval,
                                 databaseUnavailable: databaseUnavailable,
                                 onTap: () => unawaited(
                                   ref
@@ -409,19 +397,6 @@ class PlaylistHubScreen extends ConsumerWidget {
     );
   }
 
-  void _ensureActiveSelection(WidgetRef ref) {
-    void syncSelection() {
-      final playlists = ref.read(playlistsStreamProvider).valueOrNull;
-      final inactiveIds = ref.read(inactivePlaylistIdsProvider).valueOrNull;
-      if (playlists == null || inactiveIds == null) return;
-      normalizeSelectedPlaylist(ref, playlists, inactiveIds);
-    }
-
-    ref.listen(playlistsStreamProvider, (_, _) => syncSelection());
-    ref.listen(inactivePlaylistIdsProvider, (_, _) => syncSelection());
-    SchedulerBinding.instance.addPostFrameCallback((_) => syncSelection());
-  }
-
   Future<void> _setManagedHiddenGroups(
     WidgetRef ref,
     int playlistId,
@@ -624,6 +599,62 @@ class _ContentTypeFilterChip extends StatelessWidget {
       side: BorderSide(
         color: selected ? colors.secondary : colors.outlineVariant,
       ),
+    );
+  }
+}
+
+class _PlaylistProviderTile extends ConsumerWidget {
+  const _PlaylistProviderTile({
+    required this.playlist,
+    required this.isSelected,
+    required this.isInactive,
+    required this.epgJob,
+    required this.databaseUnavailable,
+    required this.onTap,
+    required this.onActiveChanged,
+    required this.onSync,
+    required this.onEpgSync,
+    required this.onEpgIntervalChanged,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onManage,
+  });
+
+  final Playlist playlist;
+  final bool isSelected;
+  final bool isInactive;
+  final EpgSyncJob? epgJob;
+  final bool databaseUnavailable;
+  final VoidCallback onTap;
+  final ValueChanged<bool> onActiveChanged;
+  final VoidCallback onSync;
+  final VoidCallback onEpgSync;
+  final ValueChanged<EpgRefreshInterval> onEpgIntervalChanged;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onManage;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final syncState = ref.watch(playlistSyncStatusProvider(playlist.id));
+    final epgInterval = ref.watch(epgRefreshIntervalProvider(playlist.id));
+    return _PlaylistTile(
+      playlist: playlist,
+      isSelected: isSelected,
+      isInactive: isInactive,
+      syncState: syncState,
+      epgJob: epgJob,
+      hasEpgUrl: playlist.effectiveEpgUrl != null,
+      epgInterval: epgInterval,
+      databaseUnavailable: databaseUnavailable,
+      onTap: onTap,
+      onActiveChanged: onActiveChanged,
+      onSync: onSync,
+      onEpgSync: onEpgSync,
+      onEpgIntervalChanged: onEpgIntervalChanged,
+      onEdit: onEdit,
+      onDelete: onDelete,
+      onManage: onManage,
     );
   }
 }

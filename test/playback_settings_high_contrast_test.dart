@@ -113,6 +113,7 @@ void _expectRoles(WidgetTester tester, ColorScheme colors) {
 
   final switches = tester.widgetList<Switch>(find.byType(Switch));
   expect(switches, hasLength(3));
+  expect(find.text('App background'), findsNothing);
   for (final switchWidget in switches) {
     expect(switchWidget.activeThumbColor, isNull);
     expect(switchWidget.inactiveThumbColor, isNull);

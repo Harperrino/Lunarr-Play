@@ -12,6 +12,7 @@ import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_controller.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_player_controls.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_player_view.dart';
+import 'package:m3uxtream_player/shared/widgets/player_chrome.dart';
 
 import 'jellyfin_test_helpers.dart';
 
@@ -54,6 +55,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(JellyfinPlayerControls), findsOneWidget);
+    expect(find.byKey(const ValueKey('jellyfin-video-canvas')), findsOneWidget);
+    expect(
+      tester
+          .widget<ColoredBox>(
+            find.byKey(const ValueKey('jellyfin-video-canvas')),
+          )
+          .color,
+      Colors.black,
+    );
+    expect(find.byKey(const ValueKey('app-ambient-background')), findsNothing);
     expect(find.byIcon(Icons.play_arrow_rounded), findsWidgets);
     expect(find.byIcon(Icons.stop_rounded), findsWidgets);
     expect(find.byIcon(Icons.volume_up_rounded), findsOneWidget);
@@ -188,7 +199,15 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
+    controller.state.value = controller.state.value.copyWith(
+      initialized: true,
+      error: false,
+    );
+    await tester.pump();
 
+    expect(find.byType(Video), findsOneWidget);
+    expect(tester.widget<Video>(find.byType(Video)).fill, Colors.black);
+    expect(find.byKey(const ValueKey('app-ambient-background')), findsNothing);
     expect(find.byTooltip('Previous episode'), findsOneWidget);
     expect(find.byTooltip('Next episode'), findsOneWidget);
     expect(
@@ -287,18 +306,27 @@ void main() {
     final headerLayer = find.byKey(
       const ValueKey('jellyfin-fullscreen-header-layer'),
     );
-    expect(tester.widget<AnimatedOpacity>(controlsLayer).opacity, 1);
-    expect(tester.widget<AnimatedOpacity>(headerLayer).opacity, 1);
+    expect(
+      tester.widget<PlayerChromeTransition>(controlsLayer).visible,
+      isTrue,
+    );
+    expect(tester.widget<PlayerChromeTransition>(headerLayer).visible, isTrue);
 
     await tester.pump(const Duration(seconds: 3));
     await tester.pump(const Duration(milliseconds: 300));
-    expect(tester.widget<AnimatedOpacity>(controlsLayer).opacity, 0);
-    expect(tester.widget<AnimatedOpacity>(headerLayer).opacity, 0);
+    expect(
+      tester.widget<PlayerChromeTransition>(controlsLayer).visible,
+      isFalse,
+    );
+    expect(tester.widget<PlayerChromeTransition>(headerLayer).visible, isFalse);
 
     await tester.tapAt(const Offset(640, 360));
     await tester.pump();
-    expect(tester.widget<AnimatedOpacity>(controlsLayer).opacity, 1);
-    expect(tester.widget<AnimatedOpacity>(headerLayer).opacity, 1);
+    expect(
+      tester.widget<PlayerChromeTransition>(controlsLayer).visible,
+      isTrue,
+    );
+    expect(tester.widget<PlayerChromeTransition>(headerLayer).visible, isTrue);
   });
 
   testWidgets('local shortcuts control the jellyfin player instance', (

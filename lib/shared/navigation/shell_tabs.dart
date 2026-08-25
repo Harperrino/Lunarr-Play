@@ -11,6 +11,7 @@ const shellDiagnosticsTabIndex = 6;
 const shellFavoritesTabIndex = 7;
 const shellMediaLibraryTabIndex = 8;
 const shellJellyfinTabIndex = 9;
+const shellHomeTabIndex = 10;
 
 /// Central layout tokens shared by every windowed shell.
 const double shellSidebarCollapsedWidth =
@@ -38,6 +39,7 @@ class ShellTabSpec {
 }
 
 enum ShellTabKind {
+  home,
   live,
   mediaLibrary,
   jellyfin,
@@ -51,6 +53,11 @@ enum ShellTabKind {
 }
 
 const List<ShellTabSpec> shellTabSpecs = [
+  ShellTabSpec(
+    index: shellHomeTabIndex,
+    icon: Icons.home_rounded,
+    kind: ShellTabKind.home,
+  ),
   ShellTabSpec(
     index: shellLiveTabIndex,
     icon: Icons.live_tv_rounded,
@@ -152,6 +159,29 @@ bool shellTabVisible(
 }
 
 int shellFallbackTabIndex() {
+  return shellSettingsTabIndex;
+}
+
+int shellStartupTabIndex({
+  required bool preferHome,
+  required bool debugModeEnabled,
+  Set<ShellTabKind> hiddenKinds = const {},
+}) {
+  final preferred = preferHome ? shellHomeTabIndex : shellLiveTabIndex;
+  if (shellTabVisible(
+    preferred,
+    debugModeEnabled: debugModeEnabled,
+    hiddenKinds: hiddenKinds,
+  )) {
+    return preferred;
+  }
+  if (shellTabVisible(
+    shellLiveTabIndex,
+    debugModeEnabled: debugModeEnabled,
+    hiddenKinds: hiddenKinds,
+  )) {
+    return shellLiveTabIndex;
+  }
   return shellSettingsTabIndex;
 }
 

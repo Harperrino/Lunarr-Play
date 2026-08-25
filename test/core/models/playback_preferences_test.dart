@@ -9,6 +9,12 @@ void main() {
     expect(preferences.mediaSegmentSkipMode, MediaSegmentSkipMode.button);
     expect(preferences.nextEpisodeAutoplayEnabled, isTrue);
     expect(preferences.endcardCountdownSeconds, 10);
+    expect(preferences.ambientBackgroundEnabled, isTrue);
+    expect(preferences.ambientPreset, PlayerAmbientPreset.lunarr);
+    expect(preferences.ambientCustomHueA, 215);
+    expect(preferences.ambientCustomHueB, 285);
+    expect(preferences.ambientIntensity, 0.55);
+    expect(preferences.ambientMotion, PlayerAmbientMotion.slow);
   });
 
   test('invalid persisted values normalize to product defaults', () {
@@ -18,5 +24,12 @@ void main() {
       MediaSegmentSkipMode.fromStorage('legacy'),
       MediaSegmentSkipMode.button,
     );
+    expect(
+      PlayerAmbientPreset.fromStorage('legacy'),
+      PlayerAmbientPreset.lunarr,
+    );
+    expect(PlayerAmbientMotion.fromStorage('legacy'), PlayerAmbientMotion.slow);
+    expect(normalizeAmbientHue(double.nan), 215);
+    expect(normalizeAmbientIntensity(4), 1);
   });
 }

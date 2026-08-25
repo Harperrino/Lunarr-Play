@@ -1,6 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:m3uxtream_player/core/models/playback_preferences.dart';
+import 'package:m3uxtream_player/core/providers/playback_preferences_providers.dart';
 import 'package:m3uxtream_player/features/settings/providers/appearance_providers.dart';
+import 'package:m3uxtream_player/features/settings/widgets/app_ambient_settings_section.dart';
 import 'package:m3uxtream_player/shared/theme/appearance_preferences.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_expressive_slider.dart';
@@ -17,6 +20,9 @@ class AppearanceSettingsCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appearance = ref.watch(appearancePreferencesProvider);
     final controller = ref.read(appearancePreferencesProvider.notifier);
+    final ambientPreferences =
+        ref.watch(playbackPreferencesProvider).valueOrNull ??
+        const PlaybackPreferences();
     final colors = Theme.of(context).colorScheme;
 
     return AppSurface(
@@ -82,6 +88,10 @@ class AppearanceSettingsCard extends ConsumerWidget {
                 ],
               );
             },
+          ),
+          AppAmbientSettingsSection(
+            preferences: ambientPreferences,
+            compact: compact,
           ),
         ],
       ),

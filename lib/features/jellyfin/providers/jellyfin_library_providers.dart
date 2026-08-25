@@ -5,6 +5,7 @@ import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_library.dart'
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_connection_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/services/jellyfin_image_service.dart';
 import 'package:m3uxtream_player/features/jellyfin/services/jellyfin_library_service.dart';
+import 'package:m3uxtream_player/features/jellyfin/services/jellyfin_request_cache.dart';
 
 /// Injectable image URL builder.
 final jellyfinImageServiceProvider = Provider<JellyfinImageService>(
@@ -22,6 +23,83 @@ JellyfinConnection? _currentConnection(Ref ref) {
   final session = ref.watch(jellyfinSessionControllerProvider);
   return session is JellyfinAuthenticated ? session.connection : null;
 }
+
+class JellyfinLibraryRequestCaches {
+  JellyfinLibraryRequestCaches({DateTime Function()? now})
+    : libraryItems = JellyfinRequestCache<List<JellyfinItem>>(
+        maxEntries: 8,
+        ttl: const Duration(minutes: 5),
+        now: now,
+      ),
+      itemDetails = JellyfinRequestCache<JellyfinItem>(
+        maxEntries: 32,
+        ttl: const Duration(minutes: 5),
+        now: now,
+      ),
+      seriesEpisodes = JellyfinRequestCache<List<JellyfinItem>>(
+        maxEntries: 8,
+        ttl: const Duration(minutes: 5),
+        now: now,
+      );
+
+  final JellyfinRequestCache<List<JellyfinItem>> libraryItems;
+  final JellyfinRequestCache<JellyfinItem> itemDetails;
+  final JellyfinRequestCache<List<JellyfinItem>> seriesEpisodes;
+
+  void invalidateCredential(String credentialId) {
+    libraryItems.invalidateCredential(credentialId);
+    itemDetails.invalidateCredential(credentialId);
+    seriesEpisodes.invalidateCredential(credentialId);
+  }
+
+  /// Invalidates every list projection that can carry mutable user data for
+  /// [itemId], while leaving caches for other authenticated accounts intact.
+  void invalidateItemMutation({
+    required String credentialId,
+    required String itemId,
+  }) {
+    itemDetails.invalidate(
+      JellyfinResourceCacheKey(credentialId: credentialId, resourceId: itemId),
+    );
+    libraryItems.invalidateCredential(credentialId);
+    seriesEpisodes.invalidateCredential(credentialId);
+  }
+
+  void clear() {
+    libraryItems.clear();
+    itemDetails.clear();
+    seriesEpisodes.clear();
+  }
+}
+
+final jellyfinLibraryRequestCachesProvider =
+    Provider<JellyfinLibraryRequestCaches>((ref) {
+      final caches = JellyfinLibraryRequestCaches();
+      ref.listen(jellyfinSessionControllerProvider, (previous, next) {
+        final previousCredentialId = previous is JellyfinAuthenticated
+            ? previous.connection.credentialId
+            : null;
+        final nextCredentialId = next is JellyfinAuthenticated
+            ? next.connection.credentialId
+            : null;
+        if (nextCredentialId == null) {
+          caches.clear();
+        } else if (previousCredentialId != null &&
+            previousCredentialId != nextCredentialId) {
+          caches.invalidateCredential(previousCredentialId);
+        }
+      });
+      ref.onDispose(caches.clear);
+      return caches;
+    });
+
+JellyfinResourceCacheKey _requestKey(
+  JellyfinConnection connection,
+  String resourceId,
+) => JellyfinResourceCacheKey(
+  credentialId: connection.credentialId,
+  resourceId: resourceId,
+);
 
 /// Home screen aggregate (Continue Watching, Next Up, Latest, Libraries).
 class JellyfinHomeDataNotifier extends AsyncNotifier<JellyfinHomeData> {
@@ -47,35 +125,46 @@ final jellyfinHomeDataProvider =
 
 /// Items of one library folder.
 class JellyfinLibraryItemsNotifier
-    extends FamilyAsyncNotifier<List<JellyfinItem>, String> {
+    extends AutoDisposeFamilyAsyncNotifier<List<JellyfinItem>, String> {
   @override
   Future<List<JellyfinItem>> build(String libraryId) async {
     final connection = _currentConnection(ref);
     if (connection == null) {
       throw StateError('Jellyfin session is not authenticated.');
     }
-    final library = JellyfinLibrary(id: libraryId, name: libraryId);
+    final key = _requestKey(connection, libraryId);
     return ref
-        .read(jellyfinLibraryServiceProvider)
-        .fetchLibraryItems(connection, library);
+        .read(jellyfinLibraryRequestCachesProvider)
+        .libraryItems
+        .getOrLoad(key, () {
+          final library = JellyfinLibrary(id: libraryId, name: libraryId);
+          return ref
+              .read(jellyfinLibraryServiceProvider)
+              .fetchLibraryItems(connection, library);
+        });
   }
 
   Future<void> refresh() async {
+    final connection = _currentConnection(ref);
+    if (connection != null) {
+      ref
+          .read(jellyfinLibraryRequestCachesProvider)
+          .libraryItems
+          .invalidate(_requestKey(connection, arg));
+    }
     ref.invalidateSelf();
     await future;
   }
 }
 
-final jellyfinLibraryItemsProvider =
-    AsyncNotifierProvider.family<
-      JellyfinLibraryItemsNotifier,
-      List<JellyfinItem>,
-      String
-    >(JellyfinLibraryItemsNotifier.new);
+final jellyfinLibraryItemsProvider = AsyncNotifierProvider.autoDispose
+    .family<JellyfinLibraryItemsNotifier, List<JellyfinItem>, String>(
+      JellyfinLibraryItemsNotifier.new,
+    );
 
 /// Full detail of a single item.
 class JellyfinItemDetailNotifier
-    extends FamilyAsyncNotifier<JellyfinItem, String> {
+    extends AutoDisposeFamilyAsyncNotifier<JellyfinItem, String> {
   @override
   Future<JellyfinItem> build(String itemId) async {
     final connection = _currentConnection(ref);
@@ -83,26 +172,37 @@ class JellyfinItemDetailNotifier
       throw StateError('Jellyfin session is not authenticated.');
     }
     return ref
-        .read(jellyfinLibraryServiceProvider)
-        .fetchItemDetail(connection, itemId);
+        .read(jellyfinLibraryRequestCachesProvider)
+        .itemDetails
+        .getOrLoad(
+          _requestKey(connection, itemId),
+          () => ref
+              .read(jellyfinLibraryServiceProvider)
+              .fetchItemDetail(connection, itemId),
+        );
   }
 
   Future<void> refresh() async {
+    final connection = _currentConnection(ref);
+    if (connection != null) {
+      ref
+          .read(jellyfinLibraryRequestCachesProvider)
+          .itemDetails
+          .invalidate(_requestKey(connection, arg));
+    }
     ref.invalidateSelf();
     await future;
   }
 }
 
-final jellyfinItemDetailProvider =
-    AsyncNotifierProvider.family<
-      JellyfinItemDetailNotifier,
-      JellyfinItem,
-      String
-    >(JellyfinItemDetailNotifier.new);
+final jellyfinItemDetailProvider = AsyncNotifierProvider.autoDispose
+    .family<JellyfinItemDetailNotifier, JellyfinItem, String>(
+      JellyfinItemDetailNotifier.new,
+    );
 
 /// Episodes of a series.
 class JellyfinSeriesEpisodesNotifier
-    extends FamilyAsyncNotifier<List<JellyfinItem>, String> {
+    extends AutoDisposeFamilyAsyncNotifier<List<JellyfinItem>, String> {
   @override
   Future<List<JellyfinItem>> build(String seriesId) async {
     final connection = _currentConnection(ref);
@@ -110,22 +210,54 @@ class JellyfinSeriesEpisodesNotifier
       throw StateError('Jellyfin session is not authenticated.');
     }
     return ref
-        .read(jellyfinLibraryServiceProvider)
-        .fetchSeriesEpisodes(connection, seriesId);
+        .read(jellyfinLibraryRequestCachesProvider)
+        .seriesEpisodes
+        .getOrLoad(
+          _requestKey(connection, seriesId),
+          () => ref
+              .read(jellyfinLibraryServiceProvider)
+              .fetchSeriesEpisodes(connection, seriesId),
+        );
   }
 
   Future<void> refresh() async {
+    final connection = _currentConnection(ref);
+    if (connection != null) {
+      ref
+          .read(jellyfinLibraryRequestCachesProvider)
+          .seriesEpisodes
+          .invalidate(_requestKey(connection, arg));
+    }
     ref.invalidateSelf();
     await future;
   }
 }
 
-final jellyfinSeriesEpisodesProvider =
-    AsyncNotifierProvider.family<
-      JellyfinSeriesEpisodesNotifier,
-      List<JellyfinItem>,
-      String
-    >(JellyfinSeriesEpisodesNotifier.new);
+final jellyfinSeriesEpisodesProvider = AsyncNotifierProvider.autoDispose
+    .family<JellyfinSeriesEpisodesNotifier, List<JellyfinItem>, String>(
+      JellyfinSeriesEpisodesNotifier.new,
+    );
+
+void invalidateJellyfinItemMutation(WidgetRef ref, JellyfinItem item) {
+  final session = ref.read(jellyfinSessionControllerProvider);
+  final connection = session is JellyfinAuthenticated
+      ? session.connection
+      : null;
+  if (connection != null) {
+    ref
+        .read(jellyfinLibraryRequestCachesProvider)
+        .invalidateItemMutation(
+          credentialId: connection.credentialId,
+          itemId: item.id,
+        );
+  }
+  ref.invalidate(jellyfinItemDetailProvider(item.id));
+  final seriesId = item.seriesId;
+  if (seriesId != null && seriesId.isNotEmpty) {
+    ref.invalidate(jellyfinSeriesEpisodesProvider(seriesId));
+  }
+  ref.invalidate(jellyfinHomeDataProvider);
+}
 
 /// Internal Jellyfin navigation stack. Home is the root; libraries and
 /// details push onto it. Never touches global Lunarr navigation.

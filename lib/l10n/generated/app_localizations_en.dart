@@ -679,10 +679,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSectionGeneral => 'General';
 
   @override
-  String get settingsSectionPlaylistSetup => 'Playlist setup';
+  String get settingsSectionPlayback => 'Playback';
 
   @override
-  String get settingsSectionSavedPlaylists => 'Saved playlists';
+  String get settingsSectionDiscovery => 'Discovery';
+
+  @override
+  String get settingsSectionNavigation => 'Tabs and navigation';
+
+  @override
+  String get settingsSectionAppearance => 'Appearance';
 
   @override
   String get favoriteSaveFailed => 'Could not save favorite.';
@@ -2018,4 +2024,403 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get shellTabVisibilitySettingsAlwaysVisible =>
       'Settings always remains visible so you can restore tabs.';
+
+  @override
+  String get shellTabHomeTitle => 'Home';
+
+  @override
+  String get shellTabHomeSubtitle => 'Discover movies and series';
+
+  @override
+  String get discoveryGeneralRecommendations => 'General discovery';
+
+  @override
+  String get discoverySearchHint => 'Search movies and series…';
+
+  @override
+  String get discoverySearchSemantics => 'Search discovery catalog';
+
+  @override
+  String get discoverySearchClearTooltip => 'Clear discovery search';
+
+  @override
+  String get discoverySearchTitle => 'Search';
+
+  @override
+  String get discoveryBackTooltip => 'Back';
+
+  @override
+  String get discoveryHomeTooltip => 'Discovery home';
+
+  @override
+  String get discoveryShowAll => 'Show all';
+
+  @override
+  String get discoveryShelfPrevious => 'Scroll shelf backward';
+
+  @override
+  String get discoveryShelfNext => 'Scroll shelf forward';
+
+  @override
+  String discoveryShelfSemantics(String title) {
+    return 'Horizontal shelf: $title';
+  }
+
+  @override
+  String discoverySwitchSource(String source) {
+    return 'Switch to $source';
+  }
+
+  @override
+  String get discoveryOpenTrailer => 'Open trailer';
+
+  @override
+  String get discoveryMoreTrailers => 'More videos';
+
+  @override
+  String get discoveryTrailerOpenFailed =>
+      'The trailer could not be opened in your browser.';
+
+  @override
+  String get appearanceAmbientTitle => 'App background';
+
+  @override
+  String get appearanceAmbientDescription =>
+      'Add a soft, animated Lunarr glow behind the entire app. Player video stays on a neutral black canvas. Reduced Motion freezes the effect.';
+
+  @override
+  String get appearanceAmbientEnabled => 'Lunarr background';
+
+  @override
+  String get appearanceAmbientPreset => 'Color preset';
+
+  @override
+  String get appearanceAmbientPresetLunarr => 'Lunarr';
+
+  @override
+  String get appearanceAmbientPresetAurora => 'Aurora';
+
+  @override
+  String get appearanceAmbientPresetEmber => 'Ember';
+
+  @override
+  String get appearanceAmbientPresetCustom => 'Custom';
+
+  @override
+  String get appearanceAmbientHueA => 'First custom hue';
+
+  @override
+  String get appearanceAmbientHueB => 'Second custom hue';
+
+  @override
+  String get appearanceAmbientIntensity => 'Intensity';
+
+  @override
+  String appearanceAmbientPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get appearanceAmbientMotion => 'Movement';
+
+  @override
+  String get appearanceAmbientMotionSlow => 'Slow';
+
+  @override
+  String get appearanceAmbientMotionNormal => 'Normal';
+
+  @override
+  String get appearanceAmbientMotionFast => 'Fast';
+
+  @override
+  String get appearanceAmbientReset => 'Reset app background';
+
+  @override
+  String get discoveryTrendingToday => 'Trending today';
+
+  @override
+  String discoveryTrendingItemSemantics(String title) {
+    return 'Trending today: $title';
+  }
+
+  @override
+  String get discoveryPopularMovies => 'Popular movies';
+
+  @override
+  String get discoveryPopularSeries => 'Popular series';
+
+  @override
+  String get discoveryUpcomingMovies => 'Coming to cinemas';
+
+  @override
+  String get discoveryOnTheAir => 'Series on the air';
+
+  @override
+  String get discoveryTopRated => 'Top rated';
+
+  @override
+  String get discoveryAdultBadge => 'Adult';
+
+  @override
+  String get discoveryStaleData => 'Offline copy · may be out of date';
+
+  @override
+  String get discoveryRefreshTooltip => 'Refresh discovery';
+
+  @override
+  String get discoveryRetry => 'Retry';
+
+  @override
+  String get discoverySetupTitle => 'Set up discovery';
+
+  @override
+  String get discoverySetupTmdbDescription =>
+      'Add a TMDB Read Access Token in Settings to load public movie and series data.';
+
+  @override
+  String get discoverySetupSeerrDescription =>
+      'Add a Seerr endpoint and administrator API key in Settings to use this source.';
+
+  @override
+  String get discoveryOpenSettings => 'Open Settings';
+
+  @override
+  String get discoveryNoResults => 'No movies or series found.';
+
+  @override
+  String get discoveryLoadMore => 'Load more';
+
+  @override
+  String get discoveryMovie => 'Movie';
+
+  @override
+  String get discoverySeries => 'Series';
+
+  @override
+  String discoveryRating(String rating) {
+    return 'Rating $rating';
+  }
+
+  @override
+  String discoveryRuntimeMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String discoveryReleaseYear(int year) {
+    return 'Released $year';
+  }
+
+  @override
+  String get discoveryDetailsCloseTooltip => 'Close details';
+
+  @override
+  String get discoveryOverviewUnavailable => 'No description is available.';
+
+  @override
+  String get discoveryRequest => 'Request';
+
+  @override
+  String get discoveryRequestTitle => 'Request title';
+
+  @override
+  String discoveryRequestMessage(String title) {
+    return 'Request “$title” from Seerr?';
+  }
+
+  @override
+  String get discoveryRequestAllSeasons => 'All seasons';
+
+  @override
+  String get discoveryRequestSelectSeasons => 'Choose seasons';
+
+  @override
+  String discoveryRequestSeason(int number) {
+    return 'Season $number';
+  }
+
+  @override
+  String get discoveryRequestCancel => 'Cancel';
+
+  @override
+  String get discoveryRequestConfirm => 'Send request';
+
+  @override
+  String get discoveryRequestSuccess => 'Request sent to Seerr.';
+
+  @override
+  String get discoveryAvailabilityAvailable => 'Available';
+
+  @override
+  String get discoveryAvailabilityPending => 'Pending availability';
+
+  @override
+  String get discoveryAvailabilityProcessing => 'Processing';
+
+  @override
+  String get discoveryAvailabilityPartiallyAvailable => 'Partially available';
+
+  @override
+  String get discoveryAvailabilityDeleted => 'Removed from library';
+
+  @override
+  String get discoveryRequestPending => 'Request pending';
+
+  @override
+  String get discoveryRequestApproved => 'Request approved';
+
+  @override
+  String get discoveryRequestDeclined => 'Request declined';
+
+  @override
+  String get discoveryFailureMissingConfiguration =>
+      'Discovery is not configured yet.';
+
+  @override
+  String get discoveryFailureInvalidEndpoint =>
+      'The Seerr endpoint is invalid or redirected to another origin.';
+
+  @override
+  String get discoveryFailureUnauthorized =>
+      'The supplied token or API key was rejected.';
+
+  @override
+  String get discoveryFailureForbidden => 'The server denied this action.';
+
+  @override
+  String get discoveryFailureConflict =>
+      'This title already has a request or cannot be requested again.';
+
+  @override
+  String get discoveryFailureUnsupportedVersion =>
+      'Seerr 3.1.0 or newer is required.';
+
+  @override
+  String get discoveryFailureTimeout =>
+      'The discovery service did not respond in time.';
+
+  @override
+  String get discoveryFailureResponseTooLarge =>
+      'The discovery response exceeded the safety limit.';
+
+  @override
+  String get discoveryFailureInvalidResponse =>
+      'The discovery service returned an invalid response.';
+
+  @override
+  String get discoveryFailureNetwork =>
+      'The discovery service could not be reached.';
+
+  @override
+  String get discoverySourceTmdb => 'TMDB';
+
+  @override
+  String get discoverySourceSeerr => 'Seerr';
+
+  @override
+  String get discoverySettingsTitle => 'Discovery';
+
+  @override
+  String get discoverySettingsDescription =>
+      'Choose the Home source, startup destination and securely stored access credentials.';
+
+  @override
+  String get discoverySettingsSource => 'Home source';
+
+  @override
+  String get discoverySettingsStartupDestination => 'Start the app on';
+
+  @override
+  String get discoverySettingsStartupHome => 'Home';
+
+  @override
+  String get discoverySettingsStartupLive => 'Live TV';
+
+  @override
+  String get discoverySettingsTmdbToken => 'TMDB Read Access Token';
+
+  @override
+  String get discoverySettingsTmdbTokenHint =>
+      'Bearer token from your TMDB API settings';
+
+  @override
+  String get discoverySettingsSeerrEndpoint => 'Seerr endpoint';
+
+  @override
+  String get discoverySettingsSeerrEndpointHint =>
+      'https://seerr.example.com or a local address';
+
+  @override
+  String get discoverySettingsSeerrApiKey => 'Seerr administrator API key';
+
+  @override
+  String get discoverySettingsSeerrApiKeyHint =>
+      'X-Api-Key from Seerr General Settings';
+
+  @override
+  String get discoverySettingsSecretStored =>
+      'A secret is stored. Leave this field empty to keep it.';
+
+  @override
+  String get discoverySettingsSave => 'Save';
+
+  @override
+  String get discoverySettingsTestConnection => 'Test connection';
+
+  @override
+  String get discoverySettingsConnected => 'Connection successful';
+
+  @override
+  String discoverySettingsConnectedVersion(String version) {
+    return 'Connected to Seerr $version';
+  }
+
+  @override
+  String get discoverySettingsAdminKeyWarning =>
+      'This API key grants administrator access to Seerr. LUNARR uses it only for discovery and new media requests.';
+
+  @override
+  String get discoverySettingsHttpWarning =>
+      'This endpoint uses unencrypted HTTP. Continue only for a trusted local network.';
+
+  @override
+  String get discoverySettingsSecretsInfo =>
+      'Secrets are DPAPI-encrypted on Windows and are never written to logs or the app database.';
+
+  @override
+  String get discoverySettingsMinimumVersion =>
+      'Seerr 3.1.0 or newer is required.';
+
+  @override
+  String get discoverySettingsSaved => 'Discovery settings saved.';
+
+  @override
+  String get discoverySettingsShowSecretTooltip => 'Show secret';
+
+  @override
+  String get discoverySettingsHideSecretTooltip => 'Hide secret';
+
+  @override
+  String get discoverySettingsClearSecretTooltip => 'Remove stored secret';
+
+  @override
+  String discoveryEpisodeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count episodes',
+      one: '1 episode',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get discoveryCreditsTitle => 'Data source credits';
+
+  @override
+  String get discoveryTmdbLogoSemantics => 'The Movie Database logo';
+
+  @override
+  String get discoveryTmdbAttribution =>
+      'This product uses the TMDB API but is not endorsed or certified by TMDB.';
 }

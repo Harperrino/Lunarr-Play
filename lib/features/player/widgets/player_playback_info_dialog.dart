@@ -7,6 +7,8 @@ import 'package:m3uxtream_player/features/player/providers/player_providers.dart
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/l10n/generated/app_localizations.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
+import 'package:m3uxtream_player/shared/theme/app_shapes.dart';
+import 'package:m3uxtream_player/shared/theme/player_chrome_tokens.dart';
 
 /// Stream / playback details (bitrate, resolution, codecs).
 String audioTrackExposureStatusLabel(
@@ -67,6 +69,9 @@ class _PlayerPlaybackInfoDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final shapes =
+        Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
+    final chrome = PlayerChromeTokens.of(context);
     final info = playerState.mediaInfo;
     final audioTrackLabel = _audioTrackLabel(context, playerState);
     final audioCompatibilityHint = decodedAudioCompatibilityHint(info);
@@ -88,7 +93,9 @@ class _PlayerPlaybackInfoDialog extends StatelessWidget {
             child: AppSurface(
               level: AppSurfaceLevel.high,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(
+                  chrome.panelRadius.clamp(shapes.large, shapes.extraLarge),
+                ),
               ),
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
               child: Column(

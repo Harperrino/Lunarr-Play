@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:m3uxtream_player/core/cache/bounded_async_cache.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/playlist_epg_channel_key.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
@@ -190,6 +191,7 @@ class EpgGridSnapshotKey {
     required this.windowStart,
     required this.windowEnd,
     required this.completionRevision,
+    required this.resolvedChannelIdsFingerprint,
   }) : playlistIds = List<int>.unmodifiable(playlistIds);
 
   final PlaylistCatalogScope scope;
@@ -197,6 +199,7 @@ class EpgGridSnapshotKey {
   final DateTime windowStart;
   final DateTime windowEnd;
   final int completionRevision;
+  final int resolvedChannelIdsFingerprint;
 
   @override
   bool operator ==(Object other) {
@@ -205,7 +208,8 @@ class EpgGridSnapshotKey {
         listEquals(other.playlistIds, playlistIds) &&
         other.windowStart == windowStart &&
         other.windowEnd == windowEnd &&
-        other.completionRevision == completionRevision;
+        other.completionRevision == completionRevision &&
+        other.resolvedChannelIdsFingerprint == resolvedChannelIdsFingerprint;
   }
 
   @override
@@ -215,8 +219,29 @@ class EpgGridSnapshotKey {
     windowStart,
     windowEnd,
     completionRevision,
+    resolvedChannelIdsFingerprint,
   );
 }
+
+int epgResolvedChannelIdsFingerprint(Map<int, Set<String>> resolvedIds) {
+  final playlistIds = resolvedIds.keys.toList()..sort();
+  return Object.hashAll([
+    for (final playlistId in playlistIds) ...[
+      playlistId,
+      ...((resolvedIds[playlistId] ?? const <String>{}).toList()..sort()),
+    ],
+  ]);
+}
+
+final epgGridSnapshotCacheProvider =
+    Provider<BoundedAsyncCache<EpgGridSnapshotKey, List<EpgEntry>>>((ref) {
+      final cache = BoundedAsyncCache<EpgGridSnapshotKey, List<EpgEntry>>(
+        maxEntries: 3,
+        ttl: const Duration(minutes: 2),
+      );
+      ref.onDispose(cache.clear);
+      return cache;
+    });
 
 /// One non-reactive SQLite snapshot per exact scope/window/revision key.
 final epgGridSnapshotProvider = FutureProvider.autoDispose
@@ -224,11 +249,16 @@ final epgGridSnapshotProvider = FutureProvider.autoDispose
       final resolvedIds = ref.watch(epgGridResolvedChannelIdsProvider);
       if (resolvedIds.values.every((ids) => ids.isEmpty)) return const [];
       return ref
-          .read(epgRepositoryProvider)
-          .getEntriesSnapshotForPlaylistChannelIds(
-            resolvedIds,
-            key.windowStart,
-            key.windowEnd,
+          .read(epgGridSnapshotCacheProvider)
+          .getOrLoad(
+            key,
+            () => ref
+                .read(epgRepositoryProvider)
+                .getEntriesSnapshotForPlaylistChannelIds(
+                  resolvedIds,
+                  key.windowStart,
+                  key.windowEnd,
+                ),
           );
     });
 
@@ -236,12 +266,16 @@ final epgGridSnapshotKeyProvider = Provider.autoDispose<EpgGridSnapshotKey>((
   ref,
 ) {
   final scope = ref.watch(effectivePlaylistCatalogScopeProvider);
+  final resolvedIds = ref.watch(epgGridResolvedChannelIdsProvider);
   return EpgGridSnapshotKey(
     scope: scope,
     playlistIds: ref.watch(playlistCatalogPlaylistIdsProvider(scope)),
     windowStart: ref.watch(epgWindowStartProvider),
     windowEnd: ref.watch(epgWindowEndProvider),
     completionRevision: ref.watch(epgCompletionRevisionProvider),
+    resolvedChannelIdsFingerprint: epgResolvedChannelIdsFingerprint(
+      resolvedIds,
+    ),
   );
 });
 

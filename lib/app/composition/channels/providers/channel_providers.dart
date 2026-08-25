@@ -98,8 +98,11 @@ final filteredChannelsProvider = Provider.autoDispose<List<Channel>>((ref) {
   };
   final groupFilter = ref.watch(selectedGroupFilterProvider);
   final search = ref.watch(debouncedGlobalSearchQueryProvider);
-  return filterPlaylistCatalogChannels(
+  return cachedPlaylistCatalogProjection(
+    cache: ref.read(playlistCatalogProjectionCacheProvider),
     channels: channels,
+    scope: scope,
+    mediaType: PlaylistCatalogMediaType.live,
     groupFilter: groupFilter,
     hiddenGroupsByPlaylist: hiddenByPlaylist,
     searchQuery: search,

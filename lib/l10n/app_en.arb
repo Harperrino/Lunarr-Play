@@ -308,8 +308,10 @@
   "debugModeDisabled": "Disabled",
   "settingsSectionsTitle": "Sections",
   "settingsSectionGeneral": "General",
-  "settingsSectionPlaylistSetup": "Playlist setup",
-  "settingsSectionSavedPlaylists": "Saved playlists",
+  "settingsSectionPlayback": "Playback",
+  "settingsSectionDiscovery": "Discovery",
+  "settingsSectionNavigation": "Tabs and navigation",
+  "settingsSectionAppearance": "Appearance",
   "favoriteSaveFailed": "Could not save favorite.",
   "favoritesLoadFailed": "Could not load favorites",
   "favoritesNoPlaylistTitle": "No playlist selected",
@@ -973,5 +975,176 @@
   "shellTabVisibilityTitle": "Navigation tabs",
   "shellTabVisibilityDescription": "Choose which main tabs appear in the sidebar.",
   "shellTabVisibilityReset": "Show all",
-  "shellTabVisibilitySettingsAlwaysVisible": "Settings always remains visible so you can restore tabs."
+  "shellTabVisibilitySettingsAlwaysVisible": "Settings always remains visible so you can restore tabs.",
+  "shellTabHomeTitle": "Home",
+  "shellTabHomeSubtitle": "Discover movies and series",
+  "discoveryGeneralRecommendations": "General discovery",
+  "discoverySearchHint": "Search movies and series…",
+  "discoverySearchSemantics": "Search discovery catalog",
+  "discoverySearchClearTooltip": "Clear discovery search",
+  "discoverySearchTitle": "Search",
+  "discoveryBackTooltip": "Back",
+  "discoveryHomeTooltip": "Discovery home",
+  "discoveryShowAll": "Show all",
+  "discoveryShelfPrevious": "Scroll shelf backward",
+  "discoveryShelfNext": "Scroll shelf forward",
+  "discoveryShelfSemantics": "Horizontal shelf: {title}",
+  "@discoveryShelfSemantics": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "discoverySwitchSource": "Switch to {source}",
+  "@discoverySwitchSource": {
+    "placeholders": {
+      "source": {"type": "String"}
+    }
+  },
+  "discoveryOpenTrailer": "Open trailer",
+  "discoveryMoreTrailers": "More videos",
+  "discoveryTrailerOpenFailed": "The trailer could not be opened in your browser.",
+  "appearanceAmbientTitle": "App background",
+  "appearanceAmbientDescription": "Add a soft, animated Lunarr glow behind the entire app. Player video stays on a neutral black canvas. Reduced Motion freezes the effect.",
+  "appearanceAmbientEnabled": "Lunarr background",
+  "appearanceAmbientPreset": "Color preset",
+  "appearanceAmbientPresetLunarr": "Lunarr",
+  "appearanceAmbientPresetAurora": "Aurora",
+  "appearanceAmbientPresetEmber": "Ember",
+  "appearanceAmbientPresetCustom": "Custom",
+  "appearanceAmbientHueA": "First custom hue",
+  "appearanceAmbientHueB": "Second custom hue",
+  "appearanceAmbientIntensity": "Intensity",
+  "appearanceAmbientPercent": "{percent}%",
+  "@appearanceAmbientPercent": {
+    "placeholders": {
+      "percent": {"type": "int"}
+    }
+  },
+  "appearanceAmbientMotion": "Movement",
+  "appearanceAmbientMotionSlow": "Slow",
+  "appearanceAmbientMotionNormal": "Normal",
+  "appearanceAmbientMotionFast": "Fast",
+  "appearanceAmbientReset": "Reset app background",
+  "discoveryTrendingToday": "Trending today",
+  "discoveryTrendingItemSemantics": "Trending today: {title}",
+  "@discoveryTrendingItemSemantics": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "discoveryPopularMovies": "Popular movies",
+  "discoveryPopularSeries": "Popular series",
+  "discoveryUpcomingMovies": "Coming to cinemas",
+  "discoveryOnTheAir": "Series on the air",
+  "discoveryTopRated": "Top rated",
+  "discoveryAdultBadge": "Adult",
+  "discoveryStaleData": "Offline copy · may be out of date",
+  "discoveryRefreshTooltip": "Refresh discovery",
+  "discoveryRetry": "Retry",
+  "discoverySetupTitle": "Set up discovery",
+  "discoverySetupTmdbDescription": "Add a TMDB Read Access Token in Settings to load public movie and series data.",
+  "discoverySetupSeerrDescription": "Add a Seerr endpoint and administrator API key in Settings to use this source.",
+  "discoveryOpenSettings": "Open Settings",
+  "discoveryNoResults": "No movies or series found.",
+  "discoveryLoadMore": "Load more",
+  "discoveryMovie": "Movie",
+  "discoverySeries": "Series",
+  "discoveryRating": "Rating {rating}",
+  "@discoveryRating": {
+    "placeholders": {
+      "rating": {"type": "String"}
+    }
+  },
+  "discoveryRuntimeMinutes": "{minutes} min",
+  "@discoveryRuntimeMinutes": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "discoveryReleaseYear": "Released {year}",
+  "@discoveryReleaseYear": {
+    "placeholders": {
+      "year": {"type": "int"}
+    }
+  },
+  "discoveryDetailsCloseTooltip": "Close details",
+  "discoveryOverviewUnavailable": "No description is available.",
+  "discoveryRequest": "Request",
+  "discoveryRequestTitle": "Request title",
+  "discoveryRequestMessage": "Request “{title}” from Seerr?",
+  "@discoveryRequestMessage": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "discoveryRequestAllSeasons": "All seasons",
+  "discoveryRequestSelectSeasons": "Choose seasons",
+  "discoveryRequestSeason": "Season {number}",
+  "@discoveryRequestSeason": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "discoveryRequestCancel": "Cancel",
+  "discoveryRequestConfirm": "Send request",
+  "discoveryRequestSuccess": "Request sent to Seerr.",
+  "discoveryAvailabilityAvailable": "Available",
+  "discoveryAvailabilityPending": "Pending availability",
+  "discoveryAvailabilityProcessing": "Processing",
+  "discoveryAvailabilityPartiallyAvailable": "Partially available",
+  "discoveryAvailabilityDeleted": "Removed from library",
+  "discoveryRequestPending": "Request pending",
+  "discoveryRequestApproved": "Request approved",
+  "discoveryRequestDeclined": "Request declined",
+  "discoveryFailureMissingConfiguration": "Discovery is not configured yet.",
+  "discoveryFailureInvalidEndpoint": "The Seerr endpoint is invalid or redirected to another origin.",
+  "discoveryFailureUnauthorized": "The supplied token or API key was rejected.",
+  "discoveryFailureForbidden": "The server denied this action.",
+  "discoveryFailureConflict": "This title already has a request or cannot be requested again.",
+  "discoveryFailureUnsupportedVersion": "Seerr 3.1.0 or newer is required.",
+  "discoveryFailureTimeout": "The discovery service did not respond in time.",
+  "discoveryFailureResponseTooLarge": "The discovery response exceeded the safety limit.",
+  "discoveryFailureInvalidResponse": "The discovery service returned an invalid response.",
+  "discoveryFailureNetwork": "The discovery service could not be reached.",
+  "discoverySourceTmdb": "TMDB",
+  "discoverySourceSeerr": "Seerr",
+  "discoverySettingsTitle": "Discovery",
+  "discoverySettingsDescription": "Choose the Home source, startup destination and securely stored access credentials.",
+  "discoverySettingsSource": "Home source",
+  "discoverySettingsStartupDestination": "Start the app on",
+  "discoverySettingsStartupHome": "Home",
+  "discoverySettingsStartupLive": "Live TV",
+  "discoverySettingsTmdbToken": "TMDB Read Access Token",
+  "discoverySettingsTmdbTokenHint": "Bearer token from your TMDB API settings",
+  "discoverySettingsSeerrEndpoint": "Seerr endpoint",
+  "discoverySettingsSeerrEndpointHint": "https://seerr.example.com or a local address",
+  "discoverySettingsSeerrApiKey": "Seerr administrator API key",
+  "discoverySettingsSeerrApiKeyHint": "X-Api-Key from Seerr General Settings",
+  "discoverySettingsSecretStored": "A secret is stored. Leave this field empty to keep it.",
+  "discoverySettingsSave": "Save",
+  "discoverySettingsTestConnection": "Test connection",
+  "discoverySettingsConnected": "Connection successful",
+  "discoverySettingsConnectedVersion": "Connected to Seerr {version}",
+  "@discoverySettingsConnectedVersion": {
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  },
+  "discoverySettingsAdminKeyWarning": "This API key grants administrator access to Seerr. LUNARR uses it only for discovery and new media requests.",
+  "discoverySettingsHttpWarning": "This endpoint uses unencrypted HTTP. Continue only for a trusted local network.",
+  "discoverySettingsSecretsInfo": "Secrets are DPAPI-encrypted on Windows and are never written to logs or the app database.",
+  "discoverySettingsMinimumVersion": "Seerr 3.1.0 or newer is required.",
+  "discoverySettingsSaved": "Discovery settings saved.",
+  "discoverySettingsShowSecretTooltip": "Show secret",
+  "discoverySettingsHideSecretTooltip": "Hide secret",
+  "discoverySettingsClearSecretTooltip": "Remove stored secret",
+  "discoveryEpisodeCount": "{count, plural, =1{1 episode} other{{count} episodes}}",
+  "@discoveryEpisodeCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "discoveryCreditsTitle": "Data source credits",
+  "discoveryTmdbLogoSemantics": "The Movie Database logo",
+  "discoveryTmdbAttribution": "This product uses the TMDB API but is not endorsed or certified by TMDB."
 }

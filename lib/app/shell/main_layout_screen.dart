@@ -33,9 +33,28 @@ import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_connection_m
 import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/features/settings/providers/debug_mode_providers.dart';
 import 'package:m3uxtream_player/features/xtream/providers/media_library_providers.dart';
+import 'package:m3uxtream_player/core/models/discovery_preferences.dart';
+import 'package:m3uxtream_player/features/discovery/providers/discovery_providers.dart';
+import 'package:m3uxtream_player/features/discovery/providers/discovery_navigation_provider.dart';
+import 'package:m3uxtream_player/app/shell/app_ambient_layer.dart';
+import 'package:m3uxtream_player/app/services/app_maintenance_coordinator.dart';
+import 'package:m3uxtream_player/app/providers/tab_transition_probe_provider.dart';
 import 'package:m3uxtream_player/shared/widgets/custom_app_bar.dart';
-import 'package:m3uxtream_player/shared/widgets/neural_background.dart';
 import 'package:window_manager/window_manager.dart';
+
+typedef PlayerShortcutScopePolicy = ({
+  bool enabled,
+  bool channelNavigationEnabled,
+});
+
+@visibleForTesting
+PlayerShortcutScopePolicy playerShortcutScopePolicy({
+  required bool playerSurfaceVisible,
+  required bool seekablePlayback,
+}) => (
+  enabled: playerSurfaceVisible,
+  channelNavigationEnabled: playerSurfaceVisible && !seekablePlayback,
+);
 
 /// Root layout: shortcuts, fullscreen, live vs. standard shell, VOD video overlay.
 class MainLayoutScreen extends ConsumerStatefulWidget {
@@ -51,6 +70,10 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
   late final DesktopWindowPlacementController _windowPlacementController;
   bool _fullscreenBusy = false;
   bool _sidebarExpanded = false;
+  bool _startupDestinationApplied = false;
+  int _navigationGeneration = 0;
+  final AppMaintenanceCoordinator _maintenanceCoordinator =
+      AppMaintenanceCoordinator();
 
   @override
   void initState() {
@@ -65,9 +88,66 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncFullscreenState());
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_startSearchIndexBootstrap());
-      ref.read(epgAutoRefreshCoordinatorProvider).start();
+      unawaited(_applyStartupDestination());
+      _maintenanceCoordinator.deferFor(const Duration(milliseconds: 350));
+      unawaited(
+        _maintenanceCoordinator.schedule(
+          _startSearchIndexBootstrap,
+          key: 'search-index-bootstrap',
+        ),
+      );
+      unawaited(_scheduleEpgMaintenance());
     });
+  }
+
+  Future<void> _applyStartupDestination() async {
+    if (_startupDestinationApplied) return;
+    final generation = _navigationGeneration;
+    final initialIndex = ref.read(activeSidebarIndexProvider);
+    try {
+      final values = await Future.wait<Object>(<Future<Object>>[
+        ref.read(discoveryPreferencesProvider.future),
+        ref.read(hiddenShellTabKindsProvider.future),
+        ref.read(debugModeProvider.future),
+      ]);
+      if (!mounted ||
+          generation != _navigationGeneration ||
+          ref.read(activeSidebarIndexProvider) != initialIndex) {
+        return;
+      }
+      final preferences = values[0] as DiscoveryPreferences;
+      final hidden = values[1] as Set<ShellTabKind>;
+      final debugEnabled = values[2] as bool;
+      final target = shellStartupTabIndex(
+        preferHome:
+            preferences.startupDestination == AppStartupDestination.home,
+        debugModeEnabled: debugEnabled,
+        hiddenKinds: hidden,
+      );
+      ref.read(activeSidebarIndexProvider.notifier).state = target;
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'MainLayout: Failed to resolve startup destination.',
+        error,
+        stackTrace,
+      );
+    } finally {
+      _startupDestinationApplied = true;
+    }
+  }
+
+  void _selectSidebar(int index) {
+    _navigationGeneration++;
+    _maintenanceCoordinator.deferFor(const Duration(milliseconds: 250));
+    ref
+        .read(tabTransitionProbeProvider)
+        .begin(
+          fromIndex: shellNavigationIndexFor(
+            ref.read(activeSidebarIndexProvider),
+          ),
+          toIndex: shellNavigationIndexFor(index),
+        );
+    ref.read(activeSidebarIndexProvider.notifier).state = index;
   }
 
   @override
@@ -77,14 +157,22 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
       windowManager.removeListener(this);
     }
     _windowPlacementController.dispose();
+    _maintenanceCoordinator.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(ref.read(epgAutoRefreshCoordinatorProvider).onResume());
+      unawaited(_scheduleEpgMaintenance());
     }
+  }
+
+  Future<void> _scheduleEpgMaintenance() {
+    return _maintenanceCoordinator.schedule(
+      () => ref.read(epgAutoRefreshCoordinatorProvider).refreshNow(),
+      key: 'epg-refresh',
+    );
   }
 
   Future<void> _syncFullscreenState() async {
@@ -109,7 +197,11 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
 
   Future<void> _startSearchIndexBootstrap() async {
     try {
-      await ref.read(searchIndexRepositoryProvider).ensureExistingIndexes();
+      await ref
+          .read(searchIndexRepositoryProvider)
+          .ensureExistingIndexes(
+            betweenPlaylists: _maintenanceCoordinator.waitUntilIdle,
+          );
     } catch (e, stackTrace) {
       AppLogger.error(
         'MainLayout: Search index bootstrap failed.',
@@ -279,7 +371,29 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
   @override
   Widget build(BuildContext context) {
     ref.listen<int>(activeSidebarIndexProvider, (previous, next) {
+      if (previous != next) {
+        _maintenanceCoordinator.deferFor(const Duration(milliseconds: 250));
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ref
+                .read(tabTransitionProbeProvider)
+                .markContentMounted(shellNavigationIndexFor(next));
+          }
+        });
+      }
       final navigationIndex = shellNavigationIndexFor(next);
+      final previousNavigation = previous == null
+          ? null
+          : shellNavigationIndexFor(previous);
+      if (previousNavigation == shellHomeTabIndex &&
+          navigationIndex != shellHomeTabIndex) {
+        ref.read(discoverySearchProvider.notifier).clear();
+        ref.read(discoveryNavigationProvider.notifier).resetSession();
+        ref.invalidate(discoveryHomeProvider);
+        ref.invalidate(discoveryCategoryProvider);
+        ref.invalidate(discoveryDetailsProvider);
+        ref.invalidate(discoveryRequestProvider);
+      }
       if (navigationIndex != next) {
         ref.read(mediaLibraryTabProvider.notifier).state =
             shellLibrarySubtabFor(next);
@@ -290,6 +404,15 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
           next != shellLiveTabIndex &&
           ref.read(isFullscreenProvider)) {
         _exitFullscreen();
+      }
+    });
+
+    ref.listen<int?>(selectedChannelProvider.select((channel) => channel?.id), (
+      previous,
+      next,
+    ) {
+      if (previous != next) {
+        _maintenanceCoordinator.deferFor(const Duration(milliseconds: 600));
       }
     });
 
@@ -330,11 +453,11 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
 
     ref.listen<AsyncValue<List<Playlist>>>(playlistsStreamProvider, (_, _) {
       _syncSelectedPlaylist();
-      unawaited(ref.read(epgAutoRefreshCoordinatorProvider).refreshNow());
+      unawaited(_scheduleEpgMaintenance());
     });
     ref.listen<AsyncValue<Set<int>>>(inactivePlaylistIdsProvider, (_, _) {
       _syncSelectedPlaylist();
-      unawaited(ref.read(epgAutoRefreshCoordinatorProvider).refreshNow());
+      unawaited(_scheduleEpgMaintenance());
     });
 
     final debugModeEnabled = ref.watch(debugModeProvider).valueOrNull ?? false;
@@ -342,15 +465,27 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
         ref.watch(hiddenShellTabKindsProvider).valueOrNull ??
         const <ShellTabKind>{};
     final databaseHealth = ref.watch(databaseHealthProvider);
+    final windowFullscreen = ref.watch(isFullscreenProvider);
     final immersive = ref.watch(immersiveLayoutProvider);
     final activeIndex = shellNavigationIndexFor(
       ref.watch(activeSidebarIndexProvider),
     );
     final onLiveTab = activeIndex == shellLiveTabIndex;
+    final seekablePlayback = ref.watch(
+      selectedChannelProvider.select(isSeekableChannel),
+    );
+    // Player A is mounted only in the Live shell. VOD and series catalogue
+    // tabs must leave keyboard input to their controls; starting playback
+    // navigates back to this shell before the video surface opens.
+    final shortcutPolicy = playerShortcutScopePolicy(
+      playerSurfaceVisible: onLiveTab,
+      seekablePlayback: seekablePlayback,
+    );
 
     return GlobalShortcutsWrapper(
+      enabled: shortcutPolicy.enabled,
       requestFocusTrigger: immersive,
-      channelNavigationEnabled: onLiveTab,
+      channelNavigationEnabled: shortcutPolicy.channelNavigationEnabled,
       onPlayPause: () {
         unawaited(
           ref
@@ -382,75 +517,72 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
       },
       onNextChannel: () => _switchChannel(1),
       onPrevChannel: () => _switchChannel(-1),
-      child: Scaffold(
-        extendBodyBehindAppBar: false,
-        appBar: PreferredSize(
-          preferredSize: Size.fromHeight(
-            immersive ? 0 : CustomAppBar.toolbarHeight,
-          ),
-          child: _AppBarWrapper(
-            onCloseRequested: () {
-              unawaited(_requestShutdown(reason: 'titlebar close'));
-            },
-          ),
-        ),
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            NeuralBackground(
-              child: SafeArea(
-                bottom: false,
-                child: onLiveTab
-                    ? LiveTabShell(
-                        immersive: immersive,
-                        playerPanelKey: _playerPanelKey,
-                        activeSidebarIndex: activeIndex,
-                        debugModeEnabled: debugModeEnabled,
-                        hiddenTabKinds: hiddenTabKinds,
-                        sidebarExpanded: _sidebarExpanded,
-                        onSidebarTap: (index) =>
-                            ref
-                                    .read(activeSidebarIndexProvider.notifier)
-                                    .state =
-                                index,
-                        onSidebarToggle: _toggleSidebarExpanded,
-                        headerTitle: shellHeaderTitle(
-                          activeIndex,
-                          debugModeEnabled: debugModeEnabled,
-                          l10n: context.l10n,
-                        ),
-                        headerSubtitle: shellHeaderSubtitle(
-                          activeIndex,
-                          debugModeEnabled: debugModeEnabled,
-                          l10n: context.l10n,
-                        ),
-                        headerExtras: null,
-                        onToggleFullscreen: _toggleFullscreen,
-                      )
-                    : StandardAppShell(
-                        activeIndex: activeIndex,
-                        debugModeEnabled: debugModeEnabled,
-                        hiddenTabKinds: hiddenTabKinds,
-                        sidebarExpanded: _sidebarExpanded,
-                        onSidebarToggle: _toggleSidebarExpanded,
-                        onSidebarTap: (index) =>
-                            ref
-                                    .read(activeSidebarIndexProvider.notifier)
-                                    .state =
-                                index,
-                      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          AppAmbientLayer(animationEnabled: !windowFullscreen),
+          Scaffold(
+            backgroundColor: Colors.transparent,
+            extendBodyBehindAppBar: false,
+            appBar: PreferredSize(
+              preferredSize: Size.fromHeight(
+                immersive ? 0 : CustomAppBar.toolbarHeight,
+              ),
+              child: _AppBarWrapper(
+                onCloseRequested: () {
+                  unawaited(_requestShutdown(reason: 'titlebar close'));
+                },
               ),
             ),
-            const VodPlaybackVideoOverlay(),
-            if (databaseHealth.isFatal)
-              const Positioned(
-                left: 16,
-                right: 16,
-                top: 12,
-                child: _DatabaseFatalStatus(),
-              ),
-          ],
-        ),
+            body: Stack(
+              fit: StackFit.expand,
+              children: [
+                SafeArea(
+                  bottom: false,
+                  child: onLiveTab
+                      ? LiveTabShell(
+                          immersive: immersive,
+                          playerPanelKey: _playerPanelKey,
+                          activeSidebarIndex: activeIndex,
+                          debugModeEnabled: debugModeEnabled,
+                          hiddenTabKinds: hiddenTabKinds,
+                          sidebarExpanded: _sidebarExpanded,
+                          onSidebarTap: _selectSidebar,
+                          onSidebarToggle: _toggleSidebarExpanded,
+                          headerTitle: shellHeaderTitle(
+                            activeIndex,
+                            debugModeEnabled: debugModeEnabled,
+                            l10n: context.l10n,
+                          ),
+                          headerSubtitle: shellHeaderSubtitle(
+                            activeIndex,
+                            debugModeEnabled: debugModeEnabled,
+                            l10n: context.l10n,
+                          ),
+                          headerExtras: null,
+                          onToggleFullscreen: _toggleFullscreen,
+                        )
+                      : StandardAppShell(
+                          activeIndex: activeIndex,
+                          debugModeEnabled: debugModeEnabled,
+                          hiddenTabKinds: hiddenTabKinds,
+                          sidebarExpanded: _sidebarExpanded,
+                          onSidebarToggle: _toggleSidebarExpanded,
+                          onSidebarTap: _selectSidebar,
+                        ),
+                ),
+                const VodPlaybackVideoOverlay(),
+                if (databaseHealth.isFatal)
+                  const Positioned(
+                    left: 16,
+                    right: 16,
+                    top: 12,
+                    child: _DatabaseFatalStatus(),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -535,16 +667,21 @@ class _AppBarWrapper extends ConsumerWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final jellyfinActive = activeIndex == shellJellyfinTabIndex;
-            final leadingWidth = jellyfinActive
+            final homeActive = activeIndex == shellHomeTabIndex;
+            final leadingWidth = homeActive
+                ? 0.0
+                : jellyfinActive
                 ? JellyfinConnectionMenu.widthFor(constraints.maxWidth)
                 : TopBarPlaylistMenu.widthFor(constraints.maxWidth);
             return CustomAppBar(
               onCloseRequested: onCloseRequested,
-              leadingCommand: jellyfinActive
+              leadingCommand: homeActive
+                  ? null
+                  : jellyfinActive
                   ? JellyfinConnectionMenu(availableWidth: constraints.maxWidth)
                   : TopBarPlaylistMenu(availableWidth: constraints.maxWidth),
               leadingCommandWidth: leadingWidth,
-              search: const GlobalSearchField(),
+              search: homeActive ? null : const GlobalSearchField(),
               searchHeight: GlobalSearchField.fieldHeight,
             );
           },

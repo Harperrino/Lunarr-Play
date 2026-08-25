@@ -1,8 +1,11 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:m3uxtream_player/app/bootstrap/desktop_window_bootstrap.dart';
 import 'package:m3uxtream_player/app/composition/jellyfin/jellyfin_playback_host_bridge.dart';
+import 'package:m3uxtream_player/app/performance/tab_transition_probe.dart';
+import 'package:m3uxtream_player/app/performance/tab_transition_provider_observer.dart';
 import 'package:m3uxtream_player/app/shell/main_layout_screen.dart';
 import 'package:m3uxtream_player/app/services/app_error_handlers.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
@@ -22,6 +25,10 @@ void main() async {
 
   runApp(
     ProviderScope(
+      observers: const [
+        if (kProfileMode || tabTransitionProbeOptIn)
+          TabTransitionProviderObserver(),
+      ],
       overrides: [
         jellyfinExistingPlaybackStopperProvider.overrideWith(
           (ref) =>

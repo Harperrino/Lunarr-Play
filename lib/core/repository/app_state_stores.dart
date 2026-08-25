@@ -8,6 +8,7 @@ import 'package:m3uxtream_player/core/models/series_resume_state.dart';
 import 'package:m3uxtream_player/core/models/channel_sort_mode.dart';
 import 'package:m3uxtream_player/core/models/epg_refresh_interval.dart';
 import 'package:m3uxtream_player/core/models/playback_preferences.dart';
+import 'package:m3uxtream_player/core/models/discovery_preferences.dart';
 import 'package:m3uxtream_player/core/services/app_lifecycle_gate.dart';
 
 class AppStateKeys {
@@ -38,6 +39,13 @@ class AppStateKeys {
       'jellyfin_next_episode_autoplay_enabled';
   static const jellyfinEndcardCountdownSeconds =
       'jellyfin_endcard_countdown_seconds';
+  static const playerAmbientBackgroundEnabled =
+      'player_ambient_background_enabled';
+  static const playerAmbientPreset = 'player_ambient_preset';
+  static const playerAmbientCustomHueA = 'player_ambient_custom_hue_a';
+  static const playerAmbientCustomHueB = 'player_ambient_custom_hue_b';
+  static const playerAmbientIntensity = 'player_ambient_intensity';
+  static const playerAmbientMotion = 'player_ambient_motion';
   static const debugModeEnabled = 'debug_mode_enabled';
   static const streamingAutoFallbackEnabled = 'streaming_auto_fallback_enabled';
   static const streamingShowDiagnosisOnError =
@@ -47,6 +55,10 @@ class AppStateKeys {
   static const appearanceSurfaceTone = 'appearanceSurfaceTone';
   static const categoryPaneWidth = 'category_pane_width';
   static const hiddenShellTabs = 'hidden_shell_tabs';
+  static const discoverySource = 'discovery_source';
+  static const discoverySeerrEndpoint = 'discovery_seerr_endpoint';
+  static const startupDestination = 'startup_destination';
+  static const startupPreferenceInitialized = 'startup_preference_initialized';
 }
 
 /// Shared key-value adapter for the feature-specific app-state stores.
@@ -79,6 +91,70 @@ class AppStateValueStore {
       _db.appStates,
     )..where((table) => table.key.equals(key))).go();
     await (lifecycleGate?.track(operation) ?? operation);
+  }
+
+  Future<bool> get hasAnyValue async {
+    final row = await (_db.select(_db.appStates)..limit(1)).getSingleOrNull();
+    return row != null;
+  }
+
+  Future<bool> get hasEstablishedData async {
+    if (await hasAnyValue) return true;
+    final playlist = await (_db.select(
+      _db.playlists,
+    )..limit(1)).getSingleOrNull();
+    if (playlist != null) return true;
+    final channel = await (_db.select(
+      _db.channels,
+    )..limit(1)).getSingleOrNull();
+    return channel != null;
+  }
+}
+
+class DiscoveryStateStore {
+  DiscoveryStateStore(this._values);
+
+  final AppStateValueStore _values;
+
+  Future<DiscoveryPreferences> getPreferences() async {
+    final source = DiscoverySource.fromStorage(
+      await _values.read(AppStateKeys.discoverySource),
+    );
+    final endpoint =
+        (await _values.read(AppStateKeys.discoverySeerrEndpoint) ?? '').trim();
+    final storedStartup = await _values.read(AppStateKeys.startupDestination);
+    final initialized =
+        await _values.read(AppStateKeys.startupPreferenceInitialized) == 'true';
+
+    AppStartupDestination startup;
+    if (initialized || storedStartup != null) {
+      startup = AppStartupDestination.fromStorage(storedStartup);
+    } else {
+      // Before this feature existed, established installations already had at
+      // least one AppState value. Preserve their historical Live start.
+      startup = await _values.hasEstablishedData
+          ? AppStartupDestination.live
+          : AppStartupDestination.home;
+      await _values.write(AppStateKeys.startupDestination, startup.name);
+      await _values.write(AppStateKeys.startupPreferenceInitialized, 'true');
+    }
+
+    return DiscoveryPreferences(
+      source: source,
+      seerrEndpoint: endpoint,
+      startupDestination: startup,
+    );
+  }
+
+  Future<void> setSource(DiscoverySource source) =>
+      _values.write(AppStateKeys.discoverySource, source.name);
+
+  Future<void> setSeerrEndpoint(String endpoint) =>
+      _values.write(AppStateKeys.discoverySeerrEndpoint, endpoint.trim());
+
+  Future<void> setStartupDestination(AppStartupDestination destination) async {
+    await _values.write(AppStateKeys.startupDestination, destination.name);
+    await _values.write(AppStateKeys.startupPreferenceInitialized, 'true');
   }
 }
 
@@ -234,39 +310,92 @@ class PlaybackStateStore {
     );
   }
 
-  Future<PlaybackPreferences> getPreferences() async => PlaybackPreferences(
-    seekIntervalSeconds: normalizePlaybackSeekInterval(
-      await _readInt(
-        AppStateKeys.playbackSeekIntervalSeconds,
-        defaultValue: 15,
-        min: 5,
-        max: 60,
-        label: 'playback seek interval',
+  Future<PlaybackPreferences> getPreferences() async {
+    final rawAmbientPreset = await _values.read(
+      AppStateKeys.playerAmbientPreset,
+    );
+    final ambientPreset = PlayerAmbientPreset.fromStorage(rawAmbientPreset);
+    if (rawAmbientPreset != null && rawAmbientPreset != ambientPreset.name) {
+      try {
+        await _write(
+          AppStateKeys.playerAmbientPreset,
+          ambientPreset.name,
+          'normalized player ambient preset',
+        );
+      } catch (_) {
+        // A failed canonical write must not prevent preferences from loading.
+      }
+    }
+    return PlaybackPreferences(
+      seekIntervalSeconds: normalizePlaybackSeekInterval(
+        await _readInt(
+          AppStateKeys.playbackSeekIntervalSeconds,
+          defaultValue: 15,
+          min: 5,
+          max: 60,
+          label: 'playback seek interval',
+        ),
       ),
-    ),
-    trickplayEnabled: await _readBool(
-      AppStateKeys.jellyfinTrickplayEnabled,
-      defaultValue: true,
-      label: 'Jellyfin trickplay flag',
-    ),
-    mediaSegmentSkipMode: MediaSegmentSkipMode.fromStorage(
-      await _values.read(AppStateKeys.jellyfinMediaSegmentSkipMode),
-    ),
-    nextEpisodeAutoplayEnabled: await _readBool(
-      AppStateKeys.jellyfinNextEpisodeAutoplayEnabled,
-      defaultValue: true,
-      label: 'Jellyfin next episode autoplay flag',
-    ),
-    endcardCountdownSeconds: normalizeEndcardCountdown(
-      await _readInt(
-        AppStateKeys.jellyfinEndcardCountdownSeconds,
-        defaultValue: 10,
-        min: 5,
-        max: 30,
-        label: 'Jellyfin endcard countdown',
+      trickplayEnabled: await _readBool(
+        AppStateKeys.jellyfinTrickplayEnabled,
+        defaultValue: true,
+        label: 'Jellyfin trickplay flag',
       ),
-    ),
-  );
+      mediaSegmentSkipMode: MediaSegmentSkipMode.fromStorage(
+        await _values.read(AppStateKeys.jellyfinMediaSegmentSkipMode),
+      ),
+      nextEpisodeAutoplayEnabled: await _readBool(
+        AppStateKeys.jellyfinNextEpisodeAutoplayEnabled,
+        defaultValue: true,
+        label: 'Jellyfin next episode autoplay flag',
+      ),
+      endcardCountdownSeconds: normalizeEndcardCountdown(
+        await _readInt(
+          AppStateKeys.jellyfinEndcardCountdownSeconds,
+          defaultValue: 10,
+          min: 5,
+          max: 30,
+          label: 'Jellyfin endcard countdown',
+        ),
+      ),
+      ambientBackgroundEnabled: await _readBool(
+        AppStateKeys.playerAmbientBackgroundEnabled,
+        defaultValue: true,
+        label: 'player ambient background flag',
+      ),
+      ambientPreset: ambientPreset,
+      ambientCustomHueA: normalizeAmbientHue(
+        await _readDouble(
+          AppStateKeys.playerAmbientCustomHueA,
+          defaultValue: 215,
+          min: 0,
+          max: 360,
+          label: 'player ambient first hue',
+        ),
+      ),
+      ambientCustomHueB: normalizeAmbientHue(
+        await _readDouble(
+          AppStateKeys.playerAmbientCustomHueB,
+          defaultValue: 285,
+          min: 0,
+          max: 360,
+          label: 'player ambient second hue',
+        ),
+      ),
+      ambientIntensity: normalizeAmbientIntensity(
+        await _readDouble(
+          AppStateKeys.playerAmbientIntensity,
+          defaultValue: 0.55,
+          min: 0,
+          max: 1,
+          label: 'player ambient intensity',
+        ),
+      ),
+      ambientMotion: PlayerAmbientMotion.fromStorage(
+        await _values.read(AppStateKeys.playerAmbientMotion),
+      ),
+    );
+  }
 
   Future<void> setSeekIntervalSeconds(int seconds) => _write(
     AppStateKeys.playbackSeekIntervalSeconds,
@@ -298,6 +427,42 @@ class PlaybackStateStore {
     'Jellyfin endcard countdown',
   );
 
+  Future<void> setAmbientBackgroundEnabled(bool enabled) => _writeBool(
+    AppStateKeys.playerAmbientBackgroundEnabled,
+    enabled,
+    'player ambient background flag',
+  );
+
+  Future<void> setAmbientPreset(PlayerAmbientPreset preset) => _write(
+    AppStateKeys.playerAmbientPreset,
+    preset.name,
+    'player ambient preset',
+  );
+
+  Future<void> setAmbientCustomHueA(double value) => _write(
+    AppStateKeys.playerAmbientCustomHueA,
+    '${normalizeAmbientHue(value)}',
+    'player ambient first hue',
+  );
+
+  Future<void> setAmbientCustomHueB(double value) => _write(
+    AppStateKeys.playerAmbientCustomHueB,
+    '${normalizeAmbientHue(value)}',
+    'player ambient second hue',
+  );
+
+  Future<void> setAmbientIntensity(double value) => _write(
+    AppStateKeys.playerAmbientIntensity,
+    '${normalizeAmbientIntensity(value)}',
+    'player ambient intensity',
+  );
+
+  Future<void> setAmbientMotion(PlayerAmbientMotion motion) => _write(
+    AppStateKeys.playerAmbientMotion,
+    motion.name,
+    'player ambient motion',
+  );
+
   Future<int> _readInt(
     String key, {
     required int defaultValue,
@@ -326,6 +491,22 @@ class PlaybackStateStore {
         'false' => false,
         _ => defaultValue,
       };
+    } catch (error, stackTrace) {
+      AppLogger.error('Failed reading $label', error, stackTrace);
+      return defaultValue;
+    }
+  }
+
+  Future<double> _readDouble(
+    String key, {
+    required double defaultValue,
+    required double min,
+    required double max,
+    required String label,
+  }) async {
+    try {
+      final parsed = double.tryParse(await _values.read(key) ?? '');
+      return parsed?.clamp(min, max).toDouble() ?? defaultValue;
     } catch (error, stackTrace) {
       AppLogger.error('Failed reading $label', error, stackTrace);
       return defaultValue;

@@ -25,6 +25,9 @@ import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_formatting.d
 import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/shared/providers/app_shell_state_providers.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
+import 'package:m3uxtream_player/shared/theme/app_shapes.dart';
+import 'package:m3uxtream_player/shared/theme/player_chrome_tokens.dart';
+import 'package:m3uxtream_player/shared/widgets/player_chrome.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// Full-screen Jellyfin playback surface with its own media_kit instance.
@@ -49,7 +52,6 @@ class JellyfinPlayerView extends ConsumerStatefulWidget {
 
 class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
   static const _fullscreenControlsHideDelay = Duration(seconds: 3);
-  static const _fullscreenControlsAnimDuration = Duration(milliseconds: 280);
 
   late JellyfinItem _currentItem;
   late final OverlayPortalController _fullscreenOverlayController;
@@ -494,11 +496,9 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
                 left: 12,
                 right: 12,
                 top: 8,
-                child: AnimatedOpacity(
+                child: PlayerChromeTransition(
                   key: const ValueKey('jellyfin-fullscreen-header-layer'),
-                  opacity: _fullscreenControlsVisible ? 1 : 0,
-                  duration: _fullscreenControlsAnimDuration,
-                  curve: Curves.easeOutCubic,
+                  visible: _fullscreenControlsVisible,
                   child: IgnorePointer(
                     ignoring: !_fullscreenControlsVisible,
                     child: SafeArea(
@@ -515,11 +515,9 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
                 left: 12,
                 right: 12,
                 bottom: 8,
-                child: AnimatedOpacity(
+                child: PlayerChromeTransition(
                   key: const ValueKey('jellyfin-fullscreen-controls-layer'),
-                  opacity: _fullscreenControlsVisible ? 1 : 0,
-                  duration: _fullscreenControlsAnimDuration,
-                  curve: Curves.easeOutCubic,
+                  visible: _fullscreenControlsVisible,
                   child: IgnorePointer(
                     ignoring: !_fullscreenControlsVisible,
                     child: SafeArea(top: false, child: controls),
@@ -634,9 +632,13 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
     JellyfinPlayerController controller, {
     required bool fullscreen,
   }) {
+    final chrome = PlayerChromeTokens.of(context);
     return ClipRRect(
-      borderRadius: fullscreen ? BorderRadius.zero : BorderRadius.circular(18),
+      borderRadius: fullscreen
+          ? BorderRadius.zero
+          : BorderRadius.circular(chrome.videoRadius),
       child: ColoredBox(
+        key: const ValueKey('jellyfin-video-canvas'),
         color: Colors.black,
         child: ValueListenableBuilder<JellyfinPlayerState>(
           valueListenable: controller.state,
@@ -650,6 +652,7 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
                     controller: controller.videoController,
                     controls: NoVideoControls,
                     fit: BoxFit.contain,
+                    fill: Colors.black,
                   )
                 else
                   const SizedBox.expand(),
@@ -718,6 +721,9 @@ class _JellyfinEndcard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final shapes =
+        Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
+    final chrome = PlayerChromeTokens.of(context);
     final imageUrl = const JellyfinImageService().posterUrl(
       connection,
       itemId: episode.id,
@@ -726,7 +732,7 @@ class _JellyfinEndcard extends StatelessWidget {
     );
     return Positioned.fill(
       child: ColoredBox(
-        color: Colors.black.withValues(alpha: 0.78),
+        color: Colors.black.withValues(alpha: chrome.scrimOpacity),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 720),
@@ -734,12 +740,17 @@ class _JellyfinEndcard extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               child: AppSurface(
                 level: AppSurfaceLevel.high,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    chrome.panelRadius.clamp(shapes.large, shapes.extraLarge),
+                  ),
+                ),
                 padding: const EdgeInsets.all(18),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final narrow = constraints.maxWidth < 520;
                     final artwork = ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(shapes.large),
                       child: SizedBox(
                         width: narrow ? double.infinity : 260,
                         height: narrow ? 150 : 146,
@@ -858,6 +869,8 @@ class _PlayerHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final shapes =
+        Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
 
     return ValueListenableBuilder<JellyfinPlayerState>(
       valueListenable: controller.state,
@@ -889,7 +902,7 @@ class _PlayerHeader extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(shapes.full),
                   ),
                   child: Text(
                     switch (state.method!) {

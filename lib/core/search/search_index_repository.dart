@@ -266,9 +266,13 @@ WHERE playlist_id = ?
   /// Builds missing or stale playlist indexes one at a time. A failed
   /// playlist is isolated so another playlist can still become searchable;
   /// its non-ready state makes it eligible for retry on the next startup.
-  Future<void> ensureExistingIndexes() {
+  Future<void> ensureExistingIndexes({
+    Future<void> Function()? betweenPlaylists,
+  }) {
     _ensureWritable();
-    return _ensureFuture ??= _runTracked(_ensureExistingIndexes);
+    return _ensureFuture ??= _runTracked(
+      () => _ensureExistingIndexes(betweenPlaylists: betweenPlaylists),
+    );
   }
 
   /// Retries every playlist that is not ready without changing the cached
@@ -333,7 +337,9 @@ WHERE playlist_id = ?
     });
   }
 
-  Future<void> _ensureExistingIndexes() async {
+  Future<void> _ensureExistingIndexes({
+    Future<void> Function()? betweenPlaylists,
+  }) async {
     _ensureWritable();
     final playlists = await _db
         .customSelect('SELECT id FROM playlists ORDER BY id')
@@ -347,6 +353,10 @@ WHERE playlist_id = ?
       } catch (_) {
         // The status was persisted as failed. Continue with the next playlist.
       }
+      // Give pending reads and the next Flutter frame a chance to progress
+      // before another potentially large playlist transaction starts.
+      await Future<void>.delayed(Duration.zero);
+      await betweenPlaylists?.call();
     }
   }
 

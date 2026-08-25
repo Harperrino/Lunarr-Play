@@ -18,7 +18,9 @@ void main() {
       expect(shellFavoritesTabIndex, 7);
       expect(shellMediaLibraryTabIndex, 8);
       expect(shellJellyfinTabIndex, 9);
+      expect(shellHomeTabIndex, 10);
       expect(shellTabSpecs.map((tab) => tab.index), [
+        10,
         0,
         8,
         9,

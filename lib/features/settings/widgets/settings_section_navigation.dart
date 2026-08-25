@@ -1,28 +1,72 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:m3uxtream_player/l10n/l10n.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
 import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
+import 'package:m3uxtream_player/shared/widgets/m3_dropdown_field.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_navigation_item.dart';
-import 'package:m3uxtream_player/l10n/l10n.dart';
 
-enum SettingsSection { general, playlistSetup, savedPlaylists }
+enum SettingsSectionId { general, playback, discovery, navigation, appearance }
 
-/// Local, presentation-only navigation for the wide Settings layout.
+@immutable
+class SettingsSectionDescriptor {
+  const SettingsSectionDescriptor({
+    required this.id,
+    required this.icon,
+    required this.label,
+    required this.child,
+  });
+
+  final SettingsSectionId id;
+  final IconData icon;
+  final String label;
+  final Widget child;
+}
+
+/// Provider-free navigation shared by the desktop rail and compact menu.
 class SettingsSectionNavigation extends StatelessWidget {
   const SettingsSectionNavigation({
-    required this.onGeneralSelected,
-    required this.onPlaylistSetupSelected,
-    required this.onSavedPlaylistsSelected,
+    required this.sections,
     required this.selectedSection,
+    required this.onSelected,
+    this.compact = false,
     super.key,
   });
 
-  final VoidCallback onGeneralSelected;
-  final VoidCallback onPlaylistSetupSelected;
-  final VoidCallback onSavedPlaylistsSelected;
-  final SettingsSection selectedSection;
+  final List<SettingsSectionDescriptor> sections;
+  final SettingsSectionId selectedSection;
+  final ValueChanged<SettingsSectionId> onSelected;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
+    if (compact) {
+      final selected = sections.firstWhere(
+        (section) => section.id == selectedSection,
+        orElse: () => sections.first,
+      );
+      return LayoutBuilder(
+        builder: (context, constraints) => M3DropdownField<SettingsSectionId>(
+          key: ValueKey('settings-section-menu-${selected.id.name}'),
+          value: selected.id,
+          width: constraints.maxWidth,
+          compact: true,
+          label: Text(context.l10n.settingsSectionsTitle),
+          leadingIcon: Icon(selected.icon),
+          entries: [
+            for (final section in sections)
+              DropdownMenuEntry<SettingsSectionId>(
+                value: section.id,
+                label: section.label,
+                leadingIcon: Icon(section.icon),
+              ),
+          ],
+          onSelected: (value) {
+            if (value != null) onSelected(value);
+          },
+        ),
+      );
+    }
+
     return AppSurface(
       level: AppSurfaceLevel.low,
       elevation: AppElevation.level1,
@@ -32,27 +76,15 @@ class SettingsSectionNavigation extends StatelessWidget {
         padding: EdgeInsets.zero,
         mainAxisSize: MainAxisSize.min,
         children: [
-          M3NavigationItem(
-            label: context.l10n.settingsSectionGeneral,
-            icon: Icons.tune_rounded,
-            selected: selectedSection == SettingsSection.general,
-            visualRole: M3NavigationItemVisualRole.settingsNavigation,
-            onPressed: onGeneralSelected,
-          ),
-          M3NavigationItem(
-            label: context.l10n.settingsSectionPlaylistSetup,
-            icon: Icons.add_circle_outline_rounded,
-            selected: selectedSection == SettingsSection.playlistSetup,
-            visualRole: M3NavigationItemVisualRole.settingsNavigation,
-            onPressed: onPlaylistSetupSelected,
-          ),
-          M3NavigationItem(
-            label: context.l10n.settingsSectionSavedPlaylists,
-            icon: Icons.playlist_play_rounded,
-            selected: selectedSection == SettingsSection.savedPlaylists,
-            visualRole: M3NavigationItemVisualRole.settingsNavigation,
-            onPressed: onSavedPlaylistsSelected,
-          ),
+          for (final section in sections)
+            M3NavigationItem(
+              key: ValueKey('settings-section-${section.id.name}'),
+              label: section.label,
+              icon: section.icon,
+              selected: selectedSection == section.id,
+              visualRole: M3NavigationItemVisualRole.settingsNavigation,
+              onPressed: () => onSelected(section.id),
+            ),
         ],
       ),
     );

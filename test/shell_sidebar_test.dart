@@ -307,7 +307,9 @@ void main() {
       ),
     );
 
-    for (var tab = 0; tab < 3; tab++) {
+    final libraryPosition = shellVisibleTabs(debugModeEnabled: false)
+        .indexWhere((tab) => tab.index == shellMediaLibraryTabIndex);
+    for (var tab = 0; tab < libraryPosition + 2; tab++) {
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.pump();
     }

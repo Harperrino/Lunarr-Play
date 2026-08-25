@@ -9,9 +9,10 @@ import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_assi
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_trickplay_preview.dart';
 import 'package:m3uxtream_player/features/jellyfin/widgets/jellyfin_formatting.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
-import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_expressive_slider.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_transport_icon_button.dart';
+import 'package:m3uxtream_player/shared/widgets/player_chrome.dart';
+import 'package:m3uxtream_player/shared/theme/player_chrome_tokens.dart';
 
 /// Jellyfin transport chrome deliberately shares LiveTV's M3 surface,
 /// timeline, control geometry and canonical icon buttons.
@@ -56,12 +57,7 @@ class JellyfinPlayerControls extends StatelessWidget {
       builder: (context, state, _) {
         final controlsEnabled =
             state.initialized && !state.error && !state.switchingTrack;
-        return AppSurface(
-          level: AppSurfaceLevel.high,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        return PlayerChromeSurface(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -78,71 +74,43 @@ class JellyfinPlayerControls extends StatelessWidget {
               const SizedBox(height: 10),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 620;
-                  final primary = _PrimaryControls(
-                    state: state,
-                    enabled: controlsEnabled,
-                    onTogglePlay: () => unawaited(controller.togglePlayPause()),
-                    onStop: onStop,
-                    onPreviousEpisode: onPreviousEpisode,
-                    onNextEpisode: onNextEpisode,
-                    showEpisodeNavigation: onToggleEpisodeOverlay != null,
-                    seekIntervalSeconds: seekIntervalSeconds,
-                    onSeekRelative: (delta) =>
-                        unawaited(controller.seekRelative(delta)),
-                  );
-                  final volume = _JellyfinVolumeControl(
-                    controller: controller,
-                    state: state,
-                    enabled: controlsEnabled,
-                    compact: compact,
-                  );
-                  final trailing = _TrackAndFullscreenControls(
-                    controller: controller,
-                    state: state,
-                    enabled: controlsEnabled,
-                    compact: compact,
-                    isFullscreen: isFullscreen,
-                    episodeOverlayVisible: episodeOverlayVisible,
-                    episodeOverlayButtonFocusNode:
-                        episodeOverlayButtonFocusNode,
-                    onToggleEpisodeOverlay: onToggleEpisodeOverlay,
-                    onToggleFullscreen: onToggleFullscreen,
-                  );
-                  if (compact) {
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Center(child: primary),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(child: volume),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: trailing,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    );
-                  }
-                  return SizedBox(
-                    height: 56,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Align(alignment: Alignment.centerLeft, child: volume),
-                        Center(child: primary),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: trailing,
-                        ),
-                      ],
+                  final tokens = PlayerChromeTokens.of(context);
+                  final compact =
+                      playerChromeWidthClassFor(constraints.maxWidth, tokens) ==
+                      PlayerChromeWidthClass.compact;
+                  return PlayerChromeControlLayout(
+                    compactMetrics: compact,
+                    primary: _PrimaryControls(
+                      compact: compact,
+                      state: state,
+                      enabled: controlsEnabled,
+                      onTogglePlay: () =>
+                          unawaited(controller.togglePlayPause()),
+                      onStop: onStop,
+                      onPreviousEpisode: onPreviousEpisode,
+                      onNextEpisode: onNextEpisode,
+                      showEpisodeNavigation: onToggleEpisodeOverlay != null,
+                      seekIntervalSeconds: seekIntervalSeconds,
+                      onSeekRelative: (delta) =>
+                          unawaited(controller.seekRelative(delta)),
+                    ),
+                    leading: _JellyfinVolumeControl(
+                      controller: controller,
+                      state: state,
+                      enabled: controlsEnabled,
+                      compact: compact,
+                    ),
+                    trailing: _TrackAndFullscreenControls(
+                      controller: controller,
+                      state: state,
+                      enabled: controlsEnabled,
+                      compact: compact,
+                      isFullscreen: isFullscreen,
+                      episodeOverlayVisible: episodeOverlayVisible,
+                      episodeOverlayButtonFocusNode:
+                          episodeOverlayButtonFocusNode,
+                      onToggleEpisodeOverlay: onToggleEpisodeOverlay,
+                      onToggleFullscreen: onToggleFullscreen,
                     ),
                   );
                 },
@@ -256,6 +224,7 @@ class _JellyfinTimelineState extends State<_JellyfinTimeline> {
 
 class _PrimaryControls extends StatelessWidget {
   const _PrimaryControls({
+    required this.compact,
     required this.state,
     required this.enabled,
     required this.onTogglePlay,
@@ -267,6 +236,7 @@ class _PrimaryControls extends StatelessWidget {
     required this.onSeekRelative,
   });
 
+  final bool compact;
   final JellyfinPlayerState state;
   final bool enabled;
   final VoidCallback onTogglePlay;
@@ -280,65 +250,65 @@ class _PrimaryControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    final tokens = PlayerChromeTokens.of(context);
+    final controlSize = compact
+        ? tokens.compactControlExtent
+        : tokens.controlExtent;
+    final iconSize = compact ? tokens.compactIconExtent : tokens.iconExtent;
+    return PlayerPrimaryControlGroup(
+      compact: compact,
       children: [
-        if (showEpisodeNavigation) ...[
+        if (showEpisodeNavigation)
           M3TransportIconButton(
             icon: Icons.skip_previous_rounded,
             tooltip: l10n.jellyfinPreviousEpisodeTooltip,
-            size: 40,
-            iconSize: 20,
+            size: controlSize,
+            iconSize: iconSize,
             onPressed: onPreviousEpisode,
           ),
-          const SizedBox(width: 8),
-        ],
         M3TransportIconButton(
           icon: Icons.replay_rounded,
           tooltip: l10n.playerSeekBackwardTooltip(seekIntervalSeconds),
-          size: 40,
-          iconSize: 20,
+          size: controlSize,
+          iconSize: iconSize,
           onPressed: enabled
               ? () => onSeekRelative(Duration(seconds: -seekIntervalSeconds))
               : null,
         ),
-        const SizedBox(width: 8),
         M3TransportIconButton(
           icon: state.playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
           tooltip: state.playing
               ? l10n.playerPauseTooltip
               : l10n.playerPlayTooltip,
-          size: 56,
-          iconSize: 24,
+          size: compact ? tokens.primaryCompactExtent : tokens.primaryExtent,
+          iconSize: compact
+              ? tokens.primaryCompactIconExtent
+              : tokens.primaryIconExtent,
           emphasized: true,
           onPressed: enabled ? onTogglePlay : null,
         ),
-        const SizedBox(width: 8),
         M3TransportIconButton(
           icon: Icons.forward_rounded,
           tooltip: l10n.playerSeekForwardTooltip(seekIntervalSeconds),
-          size: 40,
-          iconSize: 20,
+          size: controlSize,
+          iconSize: iconSize,
           onPressed: enabled
               ? () => onSeekRelative(Duration(seconds: seekIntervalSeconds))
               : null,
         ),
-        if (showEpisodeNavigation) ...[
-          const SizedBox(width: 8),
+        if (showEpisodeNavigation)
           M3TransportIconButton(
             icon: Icons.skip_next_rounded,
             tooltip: l10n.jellyfinNextEpisodeTooltip,
-            size: 40,
-            iconSize: 20,
+            size: controlSize,
+            iconSize: iconSize,
             onPressed: onNextEpisode,
           ),
-        ],
-        const SizedBox(width: 8),
         M3TransportIconButton(
           icon: Icons.stop_rounded,
           tooltip: l10n.playerStopTooltip,
-          size: 40,
-          iconSize: 19,
+          size: controlSize,
+          iconSize: iconSize,
           onPressed: onStop,
         ),
       ],
@@ -372,7 +342,8 @@ class _TrackAndFullscreenControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final size = compact ? 36.0 : 40.0;
+    final tokens = PlayerChromeTokens.of(context);
+    final size = compact ? tokens.compactControlExtent : tokens.controlExtent;
     final iconSize = compact ? 15.0 : 16.0;
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -486,7 +457,10 @@ class _JellyfinVolumeControlState extends State<_JellyfinVolumeControl> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final value = (_localVolume ?? widget.state.volume).clamp(0.0, 1.0);
-    final buttonSize = widget.compact ? 34.0 : 36.0;
+    final tokens = PlayerChromeTokens.of(context);
+    final buttonSize = widget.compact
+        ? tokens.compactControlExtent
+        : tokens.controlExtent;
     final sliderWidth = widget.compact ? 104.0 : 124.0;
     final percentWidth = widget.compact ? 28.0 : 32.0;
     final icon = value <= 0
@@ -494,68 +468,59 @@ class _JellyfinVolumeControlState extends State<_JellyfinVolumeControl> {
         : value < 0.35
         ? Icons.volume_down_rounded
         : Icons.volume_up_rounded;
-    return Semantics(
-      container: true,
-      label: l10n.playerVolumeSemantics,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          M3TransportIconButton(
-            key: const ValueKey('jellyfin-mute-button'),
-            icon: icon,
-            tooltip: value <= 0
-                ? l10n.playerUnmuteTooltip
-                : l10n.playerMuteTooltip,
-            size: buttonSize,
-            iconSize: widget.compact ? 15 : 16,
-            onPressed: widget.enabled
-                ? () {
-                    setState(() => _localVolume = null);
-                    unawaited(widget.controller.toggleMute());
-                  }
-                : null,
-          ),
-          SizedBox(
-            width: sliderWidth,
-            child: M3ExpressiveSlider(
-              key: const ValueKey('jellyfin-volume-slider'),
-              size: widget.compact
-                  ? M3ExpressiveSliderSize.s
-                  : M3ExpressiveSliderSize.m,
-              value: value,
-              enabled: widget.enabled,
-              semanticFormatter: (next) =>
-                  l10n.playerVolumePercentSemantics((next * 100).round()),
-              onChanged: (next) {
-                setState(() => _localVolume = next);
-                unawaited(widget.controller.setVolume(next));
-              },
-              onChangeEnd: (next) {
+    return PlayerVolumeCluster(
+      semanticLabel: l10n.playerVolumeSemantics,
+      muteButton: M3TransportIconButton(
+        key: const ValueKey('jellyfin-mute-button'),
+        icon: icon,
+        tooltip: value <= 0 ? l10n.playerUnmuteTooltip : l10n.playerMuteTooltip,
+        size: buttonSize,
+        iconSize: widget.compact ? 15 : 16,
+        onPressed: widget.enabled
+            ? () {
                 setState(() => _localVolume = null);
-                unawaited(widget.controller.setVolume(next));
-              },
+                unawaited(widget.controller.toggleMute());
+              }
+            : null,
+      ),
+      slider: SizedBox(
+        width: sliderWidth,
+        child: M3ExpressiveSlider(
+          key: const ValueKey('jellyfin-volume-slider'),
+          size: widget.compact
+              ? M3ExpressiveSliderSize.s
+              : M3ExpressiveSliderSize.m,
+          value: value,
+          enabled: widget.enabled,
+          semanticFormatter: (next) =>
+              l10n.playerVolumePercentSemantics((next * 100).round()),
+          onChanged: (next) {
+            setState(() => _localVolume = next);
+            unawaited(widget.controller.setVolume(next));
+          },
+          onChangeEnd: (next) {
+            setState(() => _localVolume = null);
+            unawaited(widget.controller.setVolume(next));
+          },
+        ),
+      ),
+      valueLabel: SizedBox(
+        width: percentWidth,
+        height: buttonSize,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerRight,
+          child: Text(
+            context.l10n.jellyfinVolumePercent((value * 100).round()),
+            key: const ValueKey('jellyfin-volume-percent'),
+            style: TextStyle(
+              fontSize: widget.compact ? 10 : 11,
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(width: 6),
-          SizedBox(
-            width: percentWidth,
-            height: buttonSize,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Text(
-                context.l10n.jellyfinVolumePercent((value * 100).round()),
-                key: const ValueKey('jellyfin-volume-percent'),
-                style: TextStyle(
-                  fontSize: widget.compact ? 10 : 11,
-                  fontFamily: 'monospace',
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -61,8 +61,11 @@ final filteredVodChannelsProvider = Provider.autoDispose<List<Channel>>((ref) {
   };
   final groupFilter = ref.watch(selectedVodGroupFilterProvider);
   final search = ref.watch(debouncedGlobalSearchQueryProvider);
-  return filterPlaylistCatalogChannels(
+  return cachedPlaylistCatalogProjection(
+    cache: ref.read(playlistCatalogProjectionCacheProvider),
     channels: channels,
+    scope: scope,
+    mediaType: PlaylistCatalogMediaType.vod,
     groupFilter: groupFilter,
     hiddenGroupsByPlaylist: hiddenByPlaylist,
     searchQuery: search,

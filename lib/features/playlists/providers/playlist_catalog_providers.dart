@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:m3uxtream_player/core/cache/bounded_value_cache.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/channel_sort_mode.dart';
 import 'package:m3uxtream_player/core/models/playlist_catalog_scope.dart';
@@ -62,6 +63,143 @@ final playlistCatalogPlaylistOrderProvider =
 final playlistCatalogWarmCacheProvider = Provider<PlaylistCatalogWarmCache>(
   (ref) => PlaylistCatalogWarmCache(),
 );
+
+final playlistCatalogProjectionCacheProvider =
+    Provider<BoundedValueCache<PlaylistCatalogProjectionKey, List<Channel>>>(
+      (ref) => BoundedValueCache(maxEntries: 24),
+    );
+
+final playlistCatalogCategoryProjectionCacheProvider =
+    Provider<
+      BoundedValueCache<
+        PlaylistCatalogCategoryProjectionKey,
+        List<PlaylistCatalogCategory>
+      >
+    >((ref) => BoundedValueCache(maxEntries: 24));
+
+class PlaylistCatalogProjectionKey {
+  const PlaylistCatalogProjectionKey({
+    required this.catalog,
+    required this.scope,
+    required this.mediaType,
+    required this.groupFilter,
+    required this.searchQuery,
+    required this.hiddenFingerprint,
+  });
+
+  final List<Channel> catalog;
+  final PlaylistCatalogScope scope;
+  final PlaylistCatalogMediaType mediaType;
+  final String groupFilter;
+  final String searchQuery;
+  final int hiddenFingerprint;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PlaylistCatalogProjectionKey &&
+      identical(other.catalog, catalog) &&
+      other.scope == scope &&
+      other.mediaType == mediaType &&
+      other.groupFilter == groupFilter &&
+      other.searchQuery == searchQuery &&
+      other.hiddenFingerprint == hiddenFingerprint;
+
+  @override
+  int get hashCode => Object.hash(
+    identityHashCode(catalog),
+    scope,
+    mediaType,
+    groupFilter,
+    searchQuery,
+    hiddenFingerprint,
+  );
+}
+
+class PlaylistCatalogCategoryProjectionKey {
+  const PlaylistCatalogCategoryProjectionKey({
+    required this.catalog,
+    required this.scope,
+    required this.hiddenFingerprint,
+    required this.pinnedFingerprint,
+    required this.namesFingerprint,
+  });
+
+  final List<Channel> catalog;
+  final PlaylistCatalogScope scope;
+  final int hiddenFingerprint;
+  final int pinnedFingerprint;
+  final int namesFingerprint;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PlaylistCatalogCategoryProjectionKey &&
+      identical(other.catalog, catalog) &&
+      other.scope == scope &&
+      other.hiddenFingerprint == hiddenFingerprint &&
+      other.pinnedFingerprint == pinnedFingerprint &&
+      other.namesFingerprint == namesFingerprint;
+
+  @override
+  int get hashCode => Object.hash(
+    identityHashCode(catalog),
+    scope,
+    hiddenFingerprint,
+    pinnedFingerprint,
+    namesFingerprint,
+  );
+}
+
+int playlistCatalogSetMapFingerprint(Map<int, Set<String>> values) {
+  final ids = values.keys.toList()..sort();
+  return Object.hashAll([
+    for (final id in ids) ...[
+      id,
+      ...((values[id] ?? const <String>{}).toList()..sort()),
+    ],
+  ]);
+}
+
+int playlistCatalogListMapFingerprint(Map<int, List<String>> values) {
+  final ids = values.keys.toList()..sort();
+  return Object.hashAll([
+    for (final id in ids) ...[id, ...(values[id] ?? const <String>[])],
+  ]);
+}
+
+int playlistCatalogNamesFingerprint(Map<int, String> values) {
+  final ids = values.keys.toList()..sort();
+  return Object.hashAll([
+    for (final id in ids) ...[id, values[id]],
+  ]);
+}
+
+List<Channel> cachedPlaylistCatalogProjection({
+  required BoundedValueCache<PlaylistCatalogProjectionKey, List<Channel>> cache,
+  required List<Channel> channels,
+  required PlaylistCatalogScope scope,
+  required PlaylistCatalogMediaType mediaType,
+  required String groupFilter,
+  required Map<int, Set<String>> hiddenGroupsByPlaylist,
+  required String searchQuery,
+}) {
+  final key = PlaylistCatalogProjectionKey(
+    catalog: channels,
+    scope: scope,
+    mediaType: mediaType,
+    groupFilter: groupFilter,
+    searchQuery: searchQuery,
+    hiddenFingerprint: playlistCatalogSetMapFingerprint(hiddenGroupsByPlaylist),
+  );
+  return cache.getOrCompute(
+    key,
+    () => filterPlaylistCatalogChannels(
+      channels: channels,
+      groupFilter: groupFilter,
+      hiddenGroupsByPlaylist: hiddenGroupsByPlaylist,
+      searchQuery: searchQuery,
+    ),
+  );
+}
 
 class PlaylistCatalogWarmCache {
   /// Keeps a modest working set across Live, movie and series catalogues.
@@ -228,13 +366,26 @@ final playlistCatalogCategoryProvider =
                   .valueOrNull ??
               const <String>[],
       };
-      return buildPlaylistCatalogCategories(
-        channels: channels,
+      final names = ref.watch(playlistNamesByIdProvider);
+      final key = PlaylistCatalogCategoryProjectionKey(
+        catalog: channels,
         scope: query.scope,
-        playlistNamesById: ref.watch(playlistNamesByIdProvider),
-        hiddenGroupsByPlaylist: hidden,
-        pinnedGroupsByPlaylist: pinned,
+        hiddenFingerprint: playlistCatalogSetMapFingerprint(hidden),
+        pinnedFingerprint: playlistCatalogListMapFingerprint(pinned),
+        namesFingerprint: playlistCatalogNamesFingerprint(names),
       );
+      return ref
+          .read(playlistCatalogCategoryProjectionCacheProvider)
+          .getOrCompute(
+            key,
+            () => buildPlaylistCatalogCategories(
+              channels: channels,
+              scope: query.scope,
+              playlistNamesById: names,
+              hiddenGroupsByPlaylist: hidden,
+              pinnedGroupsByPlaylist: pinned,
+            ),
+          );
     });
 
 ChannelSortMode defaultCatalogSortModeFor(PlaylistCatalogScope scope) =>

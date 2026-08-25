@@ -1300,17 +1300,29 @@ abstract class AppLocalizations {
   /// **'General'**
   String get settingsSectionGeneral;
 
-  /// No description provided for @settingsSectionPlaylistSetup.
+  /// No description provided for @settingsSectionPlayback.
   ///
   /// In en, this message translates to:
-  /// **'Playlist setup'**
-  String get settingsSectionPlaylistSetup;
+  /// **'Playback'**
+  String get settingsSectionPlayback;
 
-  /// No description provided for @settingsSectionSavedPlaylists.
+  /// No description provided for @settingsSectionDiscovery.
   ///
   /// In en, this message translates to:
-  /// **'Saved playlists'**
-  String get settingsSectionSavedPlaylists;
+  /// **'Discovery'**
+  String get settingsSectionDiscovery;
+
+  /// No description provided for @settingsSectionNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Tabs and navigation'**
+  String get settingsSectionNavigation;
+
+  /// No description provided for @settingsSectionAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsSectionAppearance;
 
   /// No description provided for @favoriteSaveFailed.
   ///
@@ -3565,6 +3577,702 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings always remains visible so you can restore tabs.'**
   String get shellTabVisibilitySettingsAlwaysVisible;
+
+  /// No description provided for @shellTabHomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get shellTabHomeTitle;
+
+  /// No description provided for @shellTabHomeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover movies and series'**
+  String get shellTabHomeSubtitle;
+
+  /// No description provided for @discoveryGeneralRecommendations.
+  ///
+  /// In en, this message translates to:
+  /// **'General discovery'**
+  String get discoveryGeneralRecommendations;
+
+  /// No description provided for @discoverySearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search movies and series…'**
+  String get discoverySearchHint;
+
+  /// No description provided for @discoverySearchSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Search discovery catalog'**
+  String get discoverySearchSemantics;
+
+  /// No description provided for @discoverySearchClearTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear discovery search'**
+  String get discoverySearchClearTooltip;
+
+  /// No description provided for @discoverySearchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get discoverySearchTitle;
+
+  /// No description provided for @discoveryBackTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get discoveryBackTooltip;
+
+  /// No description provided for @discoveryHomeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovery home'**
+  String get discoveryHomeTooltip;
+
+  /// No description provided for @discoveryShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get discoveryShowAll;
+
+  /// No description provided for @discoveryShelfPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll shelf backward'**
+  String get discoveryShelfPrevious;
+
+  /// No description provided for @discoveryShelfNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll shelf forward'**
+  String get discoveryShelfNext;
+
+  /// No description provided for @discoveryShelfSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Horizontal shelf: {title}'**
+  String discoveryShelfSemantics(String title);
+
+  /// No description provided for @discoverySwitchSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to {source}'**
+  String discoverySwitchSource(String source);
+
+  /// No description provided for @discoveryOpenTrailer.
+  ///
+  /// In en, this message translates to:
+  /// **'Open trailer'**
+  String get discoveryOpenTrailer;
+
+  /// No description provided for @discoveryMoreTrailers.
+  ///
+  /// In en, this message translates to:
+  /// **'More videos'**
+  String get discoveryMoreTrailers;
+
+  /// No description provided for @discoveryTrailerOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The trailer could not be opened in your browser.'**
+  String get discoveryTrailerOpenFailed;
+
+  /// No description provided for @appearanceAmbientTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App background'**
+  String get appearanceAmbientTitle;
+
+  /// No description provided for @appearanceAmbientDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a soft, animated Lunarr glow behind the entire app. Player video stays on a neutral black canvas. Reduced Motion freezes the effect.'**
+  String get appearanceAmbientDescription;
+
+  /// No description provided for @appearanceAmbientEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Lunarr background'**
+  String get appearanceAmbientEnabled;
+
+  /// No description provided for @appearanceAmbientPreset.
+  ///
+  /// In en, this message translates to:
+  /// **'Color preset'**
+  String get appearanceAmbientPreset;
+
+  /// No description provided for @appearanceAmbientPresetLunarr.
+  ///
+  /// In en, this message translates to:
+  /// **'Lunarr'**
+  String get appearanceAmbientPresetLunarr;
+
+  /// No description provided for @appearanceAmbientPresetAurora.
+  ///
+  /// In en, this message translates to:
+  /// **'Aurora'**
+  String get appearanceAmbientPresetAurora;
+
+  /// No description provided for @appearanceAmbientPresetEmber.
+  ///
+  /// In en, this message translates to:
+  /// **'Ember'**
+  String get appearanceAmbientPresetEmber;
+
+  /// No description provided for @appearanceAmbientPresetCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get appearanceAmbientPresetCustom;
+
+  /// No description provided for @appearanceAmbientHueA.
+  ///
+  /// In en, this message translates to:
+  /// **'First custom hue'**
+  String get appearanceAmbientHueA;
+
+  /// No description provided for @appearanceAmbientHueB.
+  ///
+  /// In en, this message translates to:
+  /// **'Second custom hue'**
+  String get appearanceAmbientHueB;
+
+  /// No description provided for @appearanceAmbientIntensity.
+  ///
+  /// In en, this message translates to:
+  /// **'Intensity'**
+  String get appearanceAmbientIntensity;
+
+  /// No description provided for @appearanceAmbientPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String appearanceAmbientPercent(int percent);
+
+  /// No description provided for @appearanceAmbientMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Movement'**
+  String get appearanceAmbientMotion;
+
+  /// No description provided for @appearanceAmbientMotionSlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow'**
+  String get appearanceAmbientMotionSlow;
+
+  /// No description provided for @appearanceAmbientMotionNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get appearanceAmbientMotionNormal;
+
+  /// No description provided for @appearanceAmbientMotionFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get appearanceAmbientMotionFast;
+
+  /// No description provided for @appearanceAmbientReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset app background'**
+  String get appearanceAmbientReset;
+
+  /// No description provided for @discoveryTrendingToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending today'**
+  String get discoveryTrendingToday;
+
+  /// No description provided for @discoveryTrendingItemSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending today: {title}'**
+  String discoveryTrendingItemSemantics(String title);
+
+  /// No description provided for @discoveryPopularMovies.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular movies'**
+  String get discoveryPopularMovies;
+
+  /// No description provided for @discoveryPopularSeries.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular series'**
+  String get discoveryPopularSeries;
+
+  /// No description provided for @discoveryUpcomingMovies.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming to cinemas'**
+  String get discoveryUpcomingMovies;
+
+  /// No description provided for @discoveryOnTheAir.
+  ///
+  /// In en, this message translates to:
+  /// **'Series on the air'**
+  String get discoveryOnTheAir;
+
+  /// No description provided for @discoveryTopRated.
+  ///
+  /// In en, this message translates to:
+  /// **'Top rated'**
+  String get discoveryTopRated;
+
+  /// No description provided for @discoveryAdultBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Adult'**
+  String get discoveryAdultBadge;
+
+  /// No description provided for @discoveryStaleData.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline copy · may be out of date'**
+  String get discoveryStaleData;
+
+  /// No description provided for @discoveryRefreshTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh discovery'**
+  String get discoveryRefreshTooltip;
+
+  /// No description provided for @discoveryRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get discoveryRetry;
+
+  /// No description provided for @discoverySetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up discovery'**
+  String get discoverySetupTitle;
+
+  /// No description provided for @discoverySetupTmdbDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a TMDB Read Access Token in Settings to load public movie and series data.'**
+  String get discoverySetupTmdbDescription;
+
+  /// No description provided for @discoverySetupSeerrDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a Seerr endpoint and administrator API key in Settings to use this source.'**
+  String get discoverySetupSeerrDescription;
+
+  /// No description provided for @discoveryOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get discoveryOpenSettings;
+
+  /// No description provided for @discoveryNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No movies or series found.'**
+  String get discoveryNoResults;
+
+  /// No description provided for @discoveryLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get discoveryLoadMore;
+
+  /// No description provided for @discoveryMovie.
+  ///
+  /// In en, this message translates to:
+  /// **'Movie'**
+  String get discoveryMovie;
+
+  /// No description provided for @discoverySeries.
+  ///
+  /// In en, this message translates to:
+  /// **'Series'**
+  String get discoverySeries;
+
+  /// No description provided for @discoveryRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating {rating}'**
+  String discoveryRating(String rating);
+
+  /// No description provided for @discoveryRuntimeMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String discoveryRuntimeMinutes(int minutes);
+
+  /// No description provided for @discoveryReleaseYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Released {year}'**
+  String discoveryReleaseYear(int year);
+
+  /// No description provided for @discoveryDetailsCloseTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Close details'**
+  String get discoveryDetailsCloseTooltip;
+
+  /// No description provided for @discoveryOverviewUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No description is available.'**
+  String get discoveryOverviewUnavailable;
+
+  /// No description provided for @discoveryRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Request'**
+  String get discoveryRequest;
+
+  /// No description provided for @discoveryRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Request title'**
+  String get discoveryRequestTitle;
+
+  /// No description provided for @discoveryRequestMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Request “{title}” from Seerr?'**
+  String discoveryRequestMessage(String title);
+
+  /// No description provided for @discoveryRequestAllSeasons.
+  ///
+  /// In en, this message translates to:
+  /// **'All seasons'**
+  String get discoveryRequestAllSeasons;
+
+  /// No description provided for @discoveryRequestSelectSeasons.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose seasons'**
+  String get discoveryRequestSelectSeasons;
+
+  /// No description provided for @discoveryRequestSeason.
+  ///
+  /// In en, this message translates to:
+  /// **'Season {number}'**
+  String discoveryRequestSeason(int number);
+
+  /// No description provided for @discoveryRequestCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get discoveryRequestCancel;
+
+  /// No description provided for @discoveryRequestConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Send request'**
+  String get discoveryRequestConfirm;
+
+  /// No description provided for @discoveryRequestSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent to Seerr.'**
+  String get discoveryRequestSuccess;
+
+  /// No description provided for @discoveryAvailabilityAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get discoveryAvailabilityAvailable;
+
+  /// No description provided for @discoveryAvailabilityPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending availability'**
+  String get discoveryAvailabilityPending;
+
+  /// No description provided for @discoveryAvailabilityProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing'**
+  String get discoveryAvailabilityProcessing;
+
+  /// No description provided for @discoveryAvailabilityPartiallyAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Partially available'**
+  String get discoveryAvailabilityPartiallyAvailable;
+
+  /// No description provided for @discoveryAvailabilityDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from library'**
+  String get discoveryAvailabilityDeleted;
+
+  /// No description provided for @discoveryRequestPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Request pending'**
+  String get discoveryRequestPending;
+
+  /// No description provided for @discoveryRequestApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Request approved'**
+  String get discoveryRequestApproved;
+
+  /// No description provided for @discoveryRequestDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Request declined'**
+  String get discoveryRequestDeclined;
+
+  /// No description provided for @discoveryFailureMissingConfiguration.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovery is not configured yet.'**
+  String get discoveryFailureMissingConfiguration;
+
+  /// No description provided for @discoveryFailureInvalidEndpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'The Seerr endpoint is invalid or redirected to another origin.'**
+  String get discoveryFailureInvalidEndpoint;
+
+  /// No description provided for @discoveryFailureUnauthorized.
+  ///
+  /// In en, this message translates to:
+  /// **'The supplied token or API key was rejected.'**
+  String get discoveryFailureUnauthorized;
+
+  /// No description provided for @discoveryFailureForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'The server denied this action.'**
+  String get discoveryFailureForbidden;
+
+  /// No description provided for @discoveryFailureConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This title already has a request or cannot be requested again.'**
+  String get discoveryFailureConflict;
+
+  /// No description provided for @discoveryFailureUnsupportedVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Seerr 3.1.0 or newer is required.'**
+  String get discoveryFailureUnsupportedVersion;
+
+  /// No description provided for @discoveryFailureTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The discovery service did not respond in time.'**
+  String get discoveryFailureTimeout;
+
+  /// No description provided for @discoveryFailureResponseTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'The discovery response exceeded the safety limit.'**
+  String get discoveryFailureResponseTooLarge;
+
+  /// No description provided for @discoveryFailureInvalidResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'The discovery service returned an invalid response.'**
+  String get discoveryFailureInvalidResponse;
+
+  /// No description provided for @discoveryFailureNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'The discovery service could not be reached.'**
+  String get discoveryFailureNetwork;
+
+  /// No description provided for @discoverySourceTmdb.
+  ///
+  /// In en, this message translates to:
+  /// **'TMDB'**
+  String get discoverySourceTmdb;
+
+  /// No description provided for @discoverySourceSeerr.
+  ///
+  /// In en, this message translates to:
+  /// **'Seerr'**
+  String get discoverySourceSeerr;
+
+  /// No description provided for @discoverySettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovery'**
+  String get discoverySettingsTitle;
+
+  /// No description provided for @discoverySettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the Home source, startup destination and securely stored access credentials.'**
+  String get discoverySettingsDescription;
+
+  /// No description provided for @discoverySettingsSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Home source'**
+  String get discoverySettingsSource;
+
+  /// No description provided for @discoverySettingsStartupDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the app on'**
+  String get discoverySettingsStartupDestination;
+
+  /// No description provided for @discoverySettingsStartupHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get discoverySettingsStartupHome;
+
+  /// No description provided for @discoverySettingsStartupLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live TV'**
+  String get discoverySettingsStartupLive;
+
+  /// No description provided for @discoverySettingsTmdbToken.
+  ///
+  /// In en, this message translates to:
+  /// **'TMDB Read Access Token'**
+  String get discoverySettingsTmdbToken;
+
+  /// No description provided for @discoverySettingsTmdbTokenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Bearer token from your TMDB API settings'**
+  String get discoverySettingsTmdbTokenHint;
+
+  /// No description provided for @discoverySettingsSeerrEndpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Seerr endpoint'**
+  String get discoverySettingsSeerrEndpoint;
+
+  /// No description provided for @discoverySettingsSeerrEndpointHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://seerr.example.com or a local address'**
+  String get discoverySettingsSeerrEndpointHint;
+
+  /// No description provided for @discoverySettingsSeerrApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Seerr administrator API key'**
+  String get discoverySettingsSeerrApiKey;
+
+  /// No description provided for @discoverySettingsSeerrApiKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'X-Api-Key from Seerr General Settings'**
+  String get discoverySettingsSeerrApiKeyHint;
+
+  /// No description provided for @discoverySettingsSecretStored.
+  ///
+  /// In en, this message translates to:
+  /// **'A secret is stored. Leave this field empty to keep it.'**
+  String get discoverySettingsSecretStored;
+
+  /// No description provided for @discoverySettingsSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get discoverySettingsSave;
+
+  /// No description provided for @discoverySettingsTestConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get discoverySettingsTestConnection;
+
+  /// No description provided for @discoverySettingsConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection successful'**
+  String get discoverySettingsConnected;
+
+  /// No description provided for @discoverySettingsConnectedVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected to Seerr {version}'**
+  String discoverySettingsConnectedVersion(String version);
+
+  /// No description provided for @discoverySettingsAdminKeyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This API key grants administrator access to Seerr. LUNARR uses it only for discovery and new media requests.'**
+  String get discoverySettingsAdminKeyWarning;
+
+  /// No description provided for @discoverySettingsHttpWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This endpoint uses unencrypted HTTP. Continue only for a trusted local network.'**
+  String get discoverySettingsHttpWarning;
+
+  /// No description provided for @discoverySettingsSecretsInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Secrets are DPAPI-encrypted on Windows and are never written to logs or the app database.'**
+  String get discoverySettingsSecretsInfo;
+
+  /// No description provided for @discoverySettingsMinimumVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Seerr 3.1.0 or newer is required.'**
+  String get discoverySettingsMinimumVersion;
+
+  /// No description provided for @discoverySettingsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovery settings saved.'**
+  String get discoverySettingsSaved;
+
+  /// No description provided for @discoverySettingsShowSecretTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Show secret'**
+  String get discoverySettingsShowSecretTooltip;
+
+  /// No description provided for @discoverySettingsHideSecretTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide secret'**
+  String get discoverySettingsHideSecretTooltip;
+
+  /// No description provided for @discoverySettingsClearSecretTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove stored secret'**
+  String get discoverySettingsClearSecretTooltip;
+
+  /// No description provided for @discoveryEpisodeCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 episode} other{{count} episodes}}'**
+  String discoveryEpisodeCount(int count);
+
+  /// No description provided for @discoveryCreditsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data source credits'**
+  String get discoveryCreditsTitle;
+
+  /// No description provided for @discoveryTmdbLogoSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'The Movie Database logo'**
+  String get discoveryTmdbLogoSemantics;
+
+  /// No description provided for @discoveryTmdbAttribution.
+  ///
+  /// In en, this message translates to:
+  /// **'This product uses the TMDB API but is not endorsed or certified by TMDB.'**
+  String get discoveryTmdbAttribution;
 }
 
 class _AppLocalizationsDelegate

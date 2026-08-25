@@ -4,6 +4,8 @@ import 'package:media_kit/media_kit.dart' hide PlayerState;
 import 'package:m3uxtream_player/core/services/live_audio_track_service.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
 import 'package:m3uxtream_player/l10n/l10n.dart';
+import 'package:m3uxtream_player/shared/theme/app_shapes.dart';
+import 'package:m3uxtream_player/shared/theme/player_chrome_tokens.dart';
 
 class AudioTrackMenuButton extends ConsumerWidget {
   const AudioTrackMenuButton({
@@ -25,6 +27,8 @@ class AudioTrackMenuButton extends ConsumerWidget {
     final hasTracks = tracks.isNotEmpty;
     final selectedTrackId = selectedAudioTrackId;
     final colors = Theme.of(context).colorScheme;
+    final shapes =
+        Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
 
     return PopupMenuButton<String>(
       tooltip: hasTracks
@@ -34,7 +38,9 @@ class AudioTrackMenuButton extends ConsumerWidget {
       offset: const Offset(0, 12),
       color: colors.surfaceContainerHigh,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(shapes.large),
+      ),
       padding: EdgeInsets.zero,
       onSelected: (trackId) {
         onUserActivity?.call();
@@ -107,7 +113,8 @@ class _AudioTrackButtonVisual extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = compact ? 36.0 : 40.0;
+    final tokens = PlayerChromeTokens.of(context);
+    final size = compact ? tokens.compactControlExtent : tokens.controlExtent;
     final colors = Theme.of(context).colorScheme;
     const shape = CircleBorder();
 

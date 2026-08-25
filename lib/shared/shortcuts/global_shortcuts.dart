@@ -1,6 +1,5 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
-import 'package:m3uxtream_player/core/logger/app_logger.dart';
 
 // ----------------------------------------------------
 // GLOBAL HOTKEY INTENTS
@@ -37,6 +36,10 @@ class ChannelPrevIntent extends Intent {
   const ChannelPrevIntent();
 }
 
+class RequestPlayerShortcutFocusIntent extends Intent {
+  const RequestPlayerShortcutFocusIntent();
+}
+
 /// True while the user is typing in a text field — player hotkeys must not fire.
 @visibleForTesting
 bool isTextInputFocused() {
@@ -69,12 +72,35 @@ bool isPointerOnPrimaryTextInput(Offset globalPosition) {
 
 /// Skips player shortcut matching while a text field has keyboard focus.
 class PlayerShortcutManager extends ShortcutManager {
-  PlayerShortcutManager({required super.shortcuts});
+  PlayerShortcutManager({required super.shortcuts, this.shouldHandle});
+
+  final bool Function()? shouldHandle;
 
   @override
   KeyEventResult handleKeypress(BuildContext context, KeyEvent event) {
-    if (isTextInputFocused()) return KeyEventResult.ignored;
+    if (isTextInputFocused() || shouldHandle?.call() == false) {
+      return KeyEventResult.ignored;
+    }
     return super.handleKeypress(context, event);
+  }
+}
+
+/// Requests the surrounding player shortcut scope only when its video canvas
+/// is clicked. Transport controls and all other interactive widgets keep focus.
+class PlayerShortcutFocusRegion extends StatelessWidget {
+  const PlayerShortcutFocusRegion({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) {
+        Actions.maybeInvoke(context, const RequestPlayerShortcutFocusIntent());
+      },
+      child: child,
+    );
   }
 }
 
@@ -111,6 +137,9 @@ class GlobalShortcutsWrapper extends StatefulWidget {
   /// widgets can handle directional keys themselves.
   final bool channelNavigationEnabled;
 
+  /// Global playback actions are active only for Player A's visible tabs.
+  final bool enabled;
+
   /// When this value changes to `true`, keyboard focus is re-requested (e.g. entering immersive mode).
   final bool requestFocusTrigger;
 
@@ -126,6 +155,7 @@ class GlobalShortcutsWrapper extends StatefulWidget {
     super.key,
     required this.child,
     required this.channelNavigationEnabled,
+    this.enabled = true,
     this.requestFocusTrigger = false,
     this.onPlayPause,
     this.onToggleFullscreen,
@@ -144,6 +174,10 @@ class _GlobalShortcutsWrapperState extends State<GlobalShortcutsWrapper> {
   final FocusScopeNode _focusScopeNode = FocusScopeNode(
     debugLabel: 'GlobalShortcutsFocusScope',
   );
+  final FocusNode _shortcutFocusNode = FocusNode(
+    debugLabel: 'GlobalShortcutsFocusTarget',
+    skipTraversal: true,
+  );
   late final PlayerShortcutManager _shortcutManager;
 
   @override
@@ -153,10 +187,13 @@ class _GlobalShortcutsWrapperState extends State<GlobalShortcutsWrapper> {
       shortcuts: playerShortcutMap(
         channelNavigationEnabled: widget.channelNavigationEnabled,
       ),
+      shouldHandle: () =>
+          widget.enabled &&
+          FocusManager.instance.primaryFocus == _shortcutFocusNode,
     );
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _requestShortcutsFocus(),
-    );
+    if (widget.enabled) {
+      _requestShortcutsFocusAfterFrame();
+    }
   }
 
   @override
@@ -167,34 +204,31 @@ class _GlobalShortcutsWrapperState extends State<GlobalShortcutsWrapper> {
         channelNavigationEnabled: widget.channelNavigationEnabled,
       );
     }
-    if (widget.requestFocusTrigger && !oldWidget.requestFocusTrigger) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _requestShortcutsFocus(),
-      );
+    if (widget.enabled && !oldWidget.enabled) {
+      _requestShortcutsFocusAfterFrame();
     }
+    if (widget.requestFocusTrigger && !oldWidget.requestFocusTrigger) {
+      _requestShortcutsFocusAfterFrame();
+    }
+  }
+
+  void _requestShortcutsFocusAfterFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Descendant autofocus registrations are applied in post-frame callbacks
+      // too. The microtask lets those interactive controls win before the
+      // otherwise empty player canvas claims keyboard shortcuts.
+      Future<void>.microtask(_requestShortcutsFocus);
+    });
   }
 
   void _requestShortcutsFocus() {
-    if (!mounted || isTextInputFocused()) return;
-    _focusScopeNode.requestFocus();
-    AppLogger.info('GlobalShortcuts: Focus re-requested for hotkey scope.');
-  }
-
-  void _handlePointerDown(PointerDownEvent event) {
-    if (isPointerOnPrimaryTextInput(event.position)) return;
-
-    final primary = FocusManager.instance.primaryFocus;
-    if (primary != null && isTextInputFocused()) {
-      primary.unfocus();
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _requestShortcutsFocus(),
-    );
+    if (!mounted || !widget.enabled || isTextInputFocused()) return;
+    _shortcutFocusNode.requestFocus();
   }
 
   @override
   void dispose() {
+    _shortcutFocusNode.dispose();
     _focusScopeNode.dispose();
     super.dispose();
   }
@@ -207,74 +241,64 @@ class _GlobalShortcutsWrapperState extends State<GlobalShortcutsWrapper> {
         actions: <Type, Action<Intent>>{
           PlayPauseIntent: CallbackAction<PlayPauseIntent>(
             onInvoke: (_) {
-              AppLogger.info('Hotkey: SPACE (Play/Pause) triggered.');
               widget.onPlayPause?.call();
               return null;
             },
           ),
           ToggleFullscreenIntent: CallbackAction<ToggleFullscreenIntent>(
             onInvoke: (_) {
-              AppLogger.info('Hotkey: F (Fullscreen Toggle) triggered.');
               widget.onToggleFullscreen?.call();
               return null;
             },
           ),
           ExitFullscreenIntent: CallbackAction<ExitFullscreenIntent>(
             onInvoke: (_) {
-              AppLogger.info('Hotkey: ESC (Exit Fullscreen) triggered.');
               widget.onExitFullscreen?.call();
               return null;
             },
           ),
           MuteIntent: CallbackAction<MuteIntent>(
             onInvoke: (_) {
-              AppLogger.info('Hotkey: M (Mute Toggle) triggered.');
               widget.onToggleMute?.call();
               return null;
             },
           ),
           VolumeUpIntent: CallbackAction<VolumeUpIntent>(
             onInvoke: (_) {
-              AppLogger.info('Hotkey: + (Volume Up) triggered.');
               widget.onVolumeAdjust?.call(0.05);
               return null;
             },
           ),
           VolumeDownIntent: CallbackAction<VolumeDownIntent>(
             onInvoke: (_) {
-              AppLogger.info('Hotkey: - (Volume Down) triggered.');
               widget.onVolumeAdjust?.call(-0.05);
               return null;
             },
           ),
           ChannelNextIntent: CallbackAction<ChannelNextIntent>(
             onInvoke: (_) {
-              AppLogger.info(
-                'Hotkey: ARROW DOWN/RIGHT (Next Channel) triggered.',
-              );
               widget.onNextChannel?.call();
               return null;
             },
           ),
           ChannelPrevIntent: CallbackAction<ChannelPrevIntent>(
             onInvoke: (_) {
-              AppLogger.info(
-                'Hotkey: ARROW UP/LEFT (Previous Channel) triggered.',
-              );
               widget.onPrevChannel?.call();
               return null;
             },
           ),
+          RequestPlayerShortcutFocusIntent:
+              CallbackAction<RequestPlayerShortcutFocusIntent>(
+                onInvoke: (_) {
+                  _requestShortcutsFocus();
+                  return null;
+                },
+              ),
         },
         child: FocusScope(
           node: _focusScopeNode,
-          autofocus: true,
           debugLabel: 'GlobalShortcutsFocusScope',
-          child: Listener(
-            behavior: HitTestBehavior.translucent,
-            onPointerDown: _handlePointerDown,
-            child: widget.child,
-          ),
+          child: Focus(focusNode: _shortcutFocusNode, child: widget.child),
         ),
       ),
     );

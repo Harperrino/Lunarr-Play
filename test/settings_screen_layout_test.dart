@@ -10,6 +10,7 @@ import 'package:m3uxtream_player/features/player/providers/vod_pre_buffer_settin
 import 'package:m3uxtream_player/features/settings/providers/debug_mode_providers.dart';
 import 'package:m3uxtream_player/app/composition/settings/widgets/settings_screen.dart';
 import 'package:m3uxtream_player/features/settings/widgets/settings_section_navigation.dart';
+import 'package:m3uxtream_player/shared/widgets/m3_navigation_item.dart';
 
 class _TestPlayerBufferSecondsNotifier extends PlayerBufferSecondsNotifier {
   @override
@@ -94,7 +95,10 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('PLAYBACK'), findsOneWidget);
-    expect(find.byType(SettingsSectionNavigation), findsNothing);
+    expect(find.byType(SettingsSectionNavigation), findsOneWidget);
+    expect(find.text('Playback'), findsOneWidget);
+    expect(find.text('Discovery'), findsAtLeast(1));
+    expect(find.text('Tabs and navigation'), findsOneWidget);
     expect(find.text('ADD PLAYLIST'), findsNothing);
     expect(find.text('SAVED PLAYLISTS'), findsNothing);
   });
@@ -107,7 +111,10 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
-    expect(find.byKey(const ValueKey('settings-scroll')), findsOneWidget);
+    expect(
+      find.byKey(const PageStorageKey<String>('settings-scroll')),
+      findsOneWidget,
+    );
     expect(find.text('ADD PLAYLIST'), findsNothing);
   });
 
@@ -122,26 +129,72 @@ void main() {
     expect(find.text('ADD PLAYLIST'), findsNothing);
     expect(
       tester.getTopLeft(find.text('Restore defaults')).dy,
-      greaterThan(tester.getTopLeft(find.text('Appearance')).dy),
+      greaterThan(tester.getTopLeft(find.text('Appearance').last).dy),
     );
   });
 
-  testWidgets(
-    'wide settings keeps bounded content without playlist navigation',
-    (tester) async {
-      await pumpSettings(tester, size: const Size(1280, 720));
+  testWidgets('compact section menu jumps to the selected settings card', (
+    tester,
+  ) async {
+    await pumpSettings(tester, size: const Size(400, 720));
 
-      expect(find.byKey(const ValueKey('settings-wide-group')), findsNothing);
-      expect(
-        tester.getSize(find.byKey(const ValueKey('settings-content'))).width,
-        lessThanOrEqualTo(SettingsLayoutMetrics.contentMaxWidth),
-      );
-      expect(find.byType(SettingsSectionNavigation), findsNothing);
-      expect(find.text('Playlist setup'), findsNothing);
-      expect(find.text('Saved playlists'), findsNothing);
-      expect(tester.takeException(), isNull);
-    },
-  );
+    expect(
+      find.byKey(const ValueKey('settings-compact-navigation')),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('settings-section-menu-general')),
+    );
+    await tester.pumpAndSettle();
+    final appearanceEntry = find.descendant(
+      of: find.byType(MenuItemButton),
+      matching: find.text('Appearance'),
+    );
+    expect(appearanceEntry, findsAtLeast(1));
+    await tester.tap(appearanceEntry.last);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('settings-section-menu-appearance')),
+      findsOneWidget,
+    );
+    final scrollView = tester.widget<SingleChildScrollView>(
+      find.byKey(const PageStorageKey<String>('settings-scroll')),
+    );
+    expect(scrollView.controller!.position.pixels, greaterThan(0));
+  });
+
+  testWidgets('wide scrollspy marks the final visible section', (tester) async {
+    await pumpSettings(tester, size: const Size(1280, 720));
+    final scrollView = tester.widget<SingleChildScrollView>(
+      find.byKey(const PageStorageKey<String>('settings-scroll')),
+    );
+    final position = scrollView.controller!.position;
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pump();
+    await tester.pump();
+
+    final appearanceItem = tester.widget<M3NavigationItem>(
+      find.byKey(const ValueKey('settings-section-appearance')),
+    );
+    expect(appearanceItem.selected, isTrue);
+  });
+
+  testWidgets('wide settings keeps bounded content beside section navigation', (
+    tester,
+  ) async {
+    await pumpSettings(tester, size: const Size(1280, 720));
+
+    expect(find.byKey(const ValueKey('settings-wide-group')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('settings-content'))).width,
+      lessThanOrEqualTo(SettingsLayoutMetrics.contentMaxWidth),
+    );
+    expect(find.byType(SettingsSectionNavigation), findsOneWidget);
+    expect(find.text('Playlist setup'), findsNothing);
+    expect(find.text('Saved playlists'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   test('settings navigation geometry remains available to legacy layouts', () {
     for (final width in [1024.0, 1080.0, 1280.0, 1600.0]) {

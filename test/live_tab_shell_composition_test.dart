@@ -1,6 +1,3 @@
-@Tags(['native'])
-library;
-
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,7 +26,6 @@ import 'package:m3uxtream_player/app/widgets/global_search_field.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_pane_edge_handle.dart';
 import 'package:m3uxtream_player/shared/widgets/m3_pane_toggle_button.dart';
 
-import 'helpers/media_kit_test_init.dart';
 import 'support/fake_media_player.dart';
 
 class _TestBufferSecondsNotifier extends PlayerBufferSecondsNotifier {
@@ -79,8 +75,6 @@ class _TestPlayerNotifier extends PlayerNotifier {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-
-  setUpAll(ensureMediaKitForTests);
 
   Future<void> pumpShell(
     WidgetTester tester, {

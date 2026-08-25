@@ -147,6 +147,106 @@ void main() {
     );
   });
 
+  group('player focus boundary', () {
+    testWidgets('focused controls receive Space before player shortcuts', (
+      tester,
+    ) async {
+      final buttonFocus = FocusNode();
+      addTearDown(buttonFocus.dispose);
+      var buttonCalls = 0;
+      var playerCalls = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: GlobalShortcutsWrapper(
+            channelNavigationEnabled: false,
+            onPlayPause: () => playerCalls++,
+            child: Scaffold(
+              body: ElevatedButton(
+                focusNode: buttonFocus,
+                onPressed: () => buttonCalls++,
+                child: const Text('Focused control'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      buttonFocus.requestFocus();
+      await tester.pump();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pump();
+
+      expect(buttonCalls, 1);
+      expect(playerCalls, 0);
+    });
+
+    testWidgets('disabled scope never handles playback shortcuts', (
+      tester,
+    ) async {
+      var playerCalls = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: GlobalShortcutsWrapper(
+            enabled: false,
+            channelNavigationEnabled: false,
+            onPlayPause: () => playerCalls++,
+            child: const Scaffold(body: SizedBox.expand()),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      expect(playerCalls, 0);
+    });
+
+    testWidgets('video focus region restores player shortcuts on activation', (
+      tester,
+    ) async {
+      final buttonFocus = FocusNode();
+      addTearDown(buttonFocus.dispose);
+      var playerCalls = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: GlobalShortcutsWrapper(
+            channelNavigationEnabled: false,
+            onPlayPause: () => playerCalls++,
+            child: Scaffold(
+              body: Column(
+                children: [
+                  ElevatedButton(
+                    focusNode: buttonFocus,
+                    onPressed: () {},
+                    child: const Text('Control'),
+                  ),
+                  const Expanded(
+                    child: PlayerShortcutFocusRegion(
+                      child: ColoredBox(
+                        key: ValueKey('video-canvas'),
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      buttonFocus.requestFocus();
+      await tester.pump();
+      Actions.invoke(
+        tester.element(find.byType(PlayerShortcutFocusRegion)),
+        const RequestPlayerShortcutFocusIntent(),
+      );
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+
+      expect(playerCalls, 1);
+    });
+  });
+
   group('channel navigation boundary', () {
     test('non-Live shortcut map leaves all arrow keys unmapped', () {
       final shortcuts = playerShortcutMap(channelNavigationEnabled: false);

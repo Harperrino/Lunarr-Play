@@ -45,7 +45,10 @@ void main() {
         tester.widget<M3ExpressiveSlider>(sliders.first).size,
         M3ExpressiveSliderSize.m,
       );
-      expect(find.byType(Slider), findsNothing);
+      expect(find.text('App background'), findsOneWidget);
+      expect(find.text('Lunarr background'), findsOneWidget);
+      expect(find.byType(Switch), findsOneWidget);
+      expect(find.byType(Slider), findsOneWidget);
 
       final accentRect = tester.getRect(sliders.first);
       await tester.tapAt(
