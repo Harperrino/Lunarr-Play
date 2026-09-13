@@ -48,6 +48,9 @@ docs/SECURITY_HARDENING_IMPLEMENTATION_PLAN.md
 *.user
 *.userosscache
 *.sln.docstates
+.netrc
+.npmrc
+.pypirc
 
 # Keep shareable VS Code launch/tasks configuration commit-capable; only the
 # user-specific settings file is ignored above.
@@ -72,6 +75,9 @@ docs/SECURITY_HARDENING_IMPLEMENTATION_PLAN.md
 /ios/Flutter/flutter_export_environment.sh
 /macos/Flutter/ephemeral/
 /android/local.properties
+/android/key.properties
+**/google-services.json
+**/GoogleService-Info.plist
 
 # User data, local IPTV input, diagnostics exports
 *.db
@@ -98,6 +104,13 @@ pub-credentials.json
 *.jks
 *.keystore
 *.mobileprovision
+*.mobileconfig
+*.ovpn
+wg*.conf
+*.cer
+*.crt
+*.der
+*.kdbx
 *.db-wal
 *.db-shm
 *.sqlite-wal

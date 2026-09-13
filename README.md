@@ -138,6 +138,18 @@ runtime and compiles a persistent per-user installer with selectable destination
 Start menu shortcuts and an uninstaller. The setup executable and its SHA-256
 file are written to `release/`.
 
+Before packaging, the builder scans the staged release for embedded user-profile
+paths, private network endpoints, credential-bearing URLs, known token formats
+and files that can contain local credentials. Build release artifacts from a
+neutral path such as `C:\build\Lunarr-Play`; a build below `C:\Users\...` is
+rejected if Flutter embeds that path. Additional private identifiers can be
+blocked with a comma-separated environment variable:
+
+```powershell
+$env:LUNARR_RELEASE_PRIVATE_MARKERS = "local-user,private-hostname"
+dart run tool/build_windows_installer.dart
+```
+
 ## Contributors
 
 - **Harperrino** — creator and maintainer
