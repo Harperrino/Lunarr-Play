@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
+import 'release_privacy_scan.dart';
+
 const _runtimeFileNames = <String>[
   'msvcp140.dll',
   'vcruntime140.dll',
@@ -113,6 +115,16 @@ Future<void> main(List<String> arguments) async {
     for (final fileName in _runtimeFileNames) {
       await File(p.join(runtimeDirectory.path, fileName))
           .copy(p.join(stagingDirectory.path, fileName));
+    }
+
+    final privacyFindings = await scanReleaseDirectory(stagingDirectory);
+    if (privacyFindings.isNotEmpty) {
+      final details = privacyFindings.map((finding) => '  - $finding').join('\n');
+      throw StateError(
+        'Release privacy scan failed:\n$details\n'
+        'Build from a neutral path such as C:\\build\\Lunarr-Play and remove '
+        'all private data before publishing.',
+      );
     }
 
     await _runChecked(iscc.path, [
