@@ -44,7 +44,7 @@ const _forbiddenFileNames = <String>{
   'key.properties',
 };
 
-final _contentRules = <(String, RegExp)>[
+final _binarySafeContentRules = <(String, RegExp)>[
   (
     'absolute Windows user-profile path',
     RegExp(
@@ -56,13 +56,6 @@ final _contentRules = <(String, RegExp)>[
     'absolute Unix user-profile path',
     RegExp(
       r'''file:///(?:home|users)/[^/\x00-\x20]+/''',
-      caseSensitive: false,
-    ),
-  ),
-  (
-    'URL containing embedded credentials',
-    RegExp(
-      r'''(?:https?|rtsp|rtmp)://[^\s/:@]+:[^\s/@]+@''',
       caseSensitive: false,
     ),
   ),
@@ -80,6 +73,16 @@ final _contentRules = <(String, RegExp)>[
     RegExp(
       r'''(?:https?|wss?|rtsp|rtmp)://[^\s/:]+\.'''
       r'''(?:home|internal|lan|local)(?=[:/\s])''',
+      caseSensitive: false,
+    ),
+  ),
+];
+
+final _textContentRules = <(String, RegExp)>[
+  (
+    'URL containing embedded credentials',
+    RegExp(
+      r'''(?:https?|rtsp|rtmp)://[^\s/:@]+:[^\s/@]+@''',
       caseSensitive: false,
     ),
   ),
@@ -155,7 +158,7 @@ Future<List<ReleasePrivacyFinding>> scanReleaseDirectory(
       _projectUtf16LeAscii(bytes, 1),
     ];
 
-    for (final (category, pattern) in _contentRules) {
+    for (final (category, pattern) in _binarySafeContentRules) {
       if (searchableRepresentations.any(pattern.hasMatch)) {
         findings.add(
           ReleasePrivacyFinding(
@@ -163,6 +166,20 @@ Future<List<ReleasePrivacyFinding>> scanReleaseDirectory(
             category: category,
           ),
         );
+      }
+    }
+
+    if (_isProbablyText(bytes)) {
+      final textContent = utf8.decode(bytes, allowMalformed: true);
+      for (final (category, pattern) in _textContentRules) {
+        if (pattern.hasMatch(textContent)) {
+          findings.add(
+            ReleasePrivacyFinding(
+              relativePath: relativePath,
+              category: category,
+            ),
+          );
+        }
       }
     }
 
@@ -185,6 +202,24 @@ Future<List<ReleasePrivacyFinding>> scanReleaseDirectory(
     return pathResult != 0 ? pathResult : left.category.compareTo(right.category);
   });
   return findings;
+}
+
+bool _isProbablyText(List<int> bytes) {
+  if (bytes.isEmpty) {
+    return true;
+  }
+  final sampleLength = bytes.length < 65536 ? bytes.length : 65536;
+  var controlBytes = 0;
+  for (var index = 0; index < sampleLength; index++) {
+    final byte = bytes[index];
+    if (byte == 0) {
+      return false;
+    }
+    if (byte < 0x09 || (byte > 0x0d && byte < 0x20)) {
+      controlBytes++;
+    }
+  }
+  return controlBytes / sampleLength < 0.01;
 }
 
 bool _hasForbiddenFileName(String lowerName) =>

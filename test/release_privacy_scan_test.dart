@@ -99,4 +99,19 @@ void main() {
       3,
     );
   });
+
+  test('does not treat opaque native bytes as text credentials', () async {
+    await File('${temporaryDirectory.path}/runtime.dll').writeAsBytes(<int>[
+      0,
+      ...('s' + 'k-' + List<String>.filled(40, 'A').join()).codeUnits,
+      0,
+      1,
+      2,
+      3,
+    ]);
+
+    final findings = await scanReleaseDirectory(temporaryDirectory);
+
+    expect(findings, isEmpty);
+  });
 }

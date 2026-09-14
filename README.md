@@ -131,6 +131,7 @@ flutter analyze lib test --no-pub
 flutter test --concurrency=1 --no-pub
 flutter build windows --release
 dart run tool/build_windows_installer.dart
+.\tool\build_windows_portable.ps1
 ```
 
 The installer builder creates the release build, adds the app-local Visual C++
@@ -138,12 +139,15 @@ runtime and compiles a persistent per-user installer with selectable destination
 Start menu shortcuts and an uninstaller. The setup executable and its SHA-256
 file are written to `release/`.
 
-Before packaging, the builder scans the staged release for embedded user-profile
-paths, private network endpoints, credential-bearing URLs, known token formats
-and files that can contain local credentials. Build release artifacts from a
-neutral path such as `C:\build\Lunarr-Play`; a build below `C:\Users\...` is
-rejected if Flutter embeds that path. Additional private identifiers can be
-blocked with a comma-separated environment variable:
+The portable builder creates a ZIP that can be extracted and started without
+installation. It contains `lunarr_one.exe`, Flutter data, application DLLs, the
+required Visual C++ runtime files and license notices. GitHub Actions creates
+the same ZIP after each push to `main` and exposes it as a workflow artifact.
+
+Before packaging, both builders scan the staged files for local-only metadata,
+private endpoints, credential-bearing URLs, known token formats and files that
+can contain local credentials. Additional private identifiers can be blocked
+with a comma-separated environment variable:
 
 ```powershell
 $env:LUNARR_RELEASE_PRIVATE_MARKERS = "local-user,private-hostname"
