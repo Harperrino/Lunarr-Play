@@ -1,0 +1,67 @@
+name: m3uxtream_player
+description: "Lunarr Player, a Material 3 IPTV, Jellyfin, and discovery player for Windows desktop, backed by Drift, Riverpod, and media_kit."
+publish_to: 'none'
+version: 1.0.1+5
+
+environment:
+  sdk: '>=3.13.1 <4.0.0'
+  flutter: '>=3.47.1'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management & DI (gepinnt — siehe PUBSPEC_POLICY.md)
+  flutter_riverpod: 2.6.1
+
+  # Media Engine
+  media_kit: 1.2.6
+  media_kit_video: 2.0.1
+
+  # Native OS Binaries — exakte Pins, niemals `any`
+  media_kit_libs_windows_video: 1.0.11
+
+  # Local SQLite Database & Path Utilities
+  drift: 2.34.3
+  sqlite3: 3.5.2
+  path_provider: 2.1.6
+  screen_retriever: 0.2.2
+  path: 1.9.1
+
+  # Windows Native Integrations
+  window_manager: 0.5.2
+  flutter_single_instance: 1.7.0
+
+  # UI & Material 3 Design System
+  material_ui: 1.0.1
+  cached_network_image: 3.4.1
+  flutter_svg: 2.3.0
+  shimmer: 4.0.0
+  google_fonts: 8.2.1
+  intl: 0.20.3
+  url_launcher: 6.3.2
+
+  # Data Parsing & Utilities
+  xml: 7.0.1
+  logger: 2.7.0
+  http: 1.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 6.0.0
+  crypto: 3.0.7
+
+  # Code Generation Tools (drift_dev und drift gemeinsam kompatibel aktualisieren)
+  build_runner: 2.16.0
+  drift_dev: 2.34.5
+
+flutter:
+  generate: true
+  uses-material-design: true
+  assets:
+    - assets/branding/lunarr-player-logo.png
+    - assets/branding/lunarr-player-wordmark.png
+    - assets/branding/tmdb-blue-short.svg

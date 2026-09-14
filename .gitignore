@@ -1,0 +1,137 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# Unsupported platform targets
+/ios/
+/linux/
+/macos/
+/web/
+
+# Local AI/editor tooling
+.codex/
+.agents/
+.codebase-memory/
+/docs/
+
+# Private project memory / handoff notes
+opencode.json
+memory.md
+project_notes/
+KNOWN_BUGS.md
+planliste.md
+devlog.md
+VERSIONS.md
+docs/SECURITY_HARDENING_IMPLEMENTATION_PLAN.md
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Local editor/workspace state
+.vs/
+.vscode/settings.json
+*.code-workspace
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.netrc
+.npmrc
+.pypirc
+
+# Keep shareable VS Code launch/tasks configuration commit-capable; only the
+# user-specific settings file is ignored above.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+/test/failures/
+.packages
+
+# Flutter generated platform state (rebuilt by Flutter/Xcode/Gradle)
+**/flutter/ephemeral/
+**/Flutter/ephemeral/
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/flutter_export_environment.sh
+/macos/Flutter/ephemeral/
+/android/local.properties
+/android/key.properties
+**/google-services.json
+**/GoogleService-Info.plist
+
+# User data, local IPTV input, diagnostics exports
+*.db
+*.sqlite
+*.sqlite3
+*.m3u
+*.m3u8
+*.xmltv
+*.epg.xml
+*.env
+.env.*
+!.env.example
+.envrc
+.direnv/
+*.local
+credentials*.json
+secrets*.json
+service-account*.json
+pub-credentials.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+*.mobileconfig
+*.ovpn
+wg*.conf
+*.cer
+*.crt
+*.der
+*.kdbx
+*.db-wal
+*.db-shm
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.dmp
+*.dump
+diagnostics_exports/
+exports/
+dist/
+docs/player-design-concept.html
+release/
+releases/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+.projectmem/events.jsonl
+.projectmem/watch.pid
+.projectmem/watch.log

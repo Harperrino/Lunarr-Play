@@ -1,0 +1,110 @@
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:m3uxtream_player/app/shell/shell_tab_labels.dart';
+import 'package:m3uxtream_player/l10n/generated/app_localizations_en.dart';
+import 'package:m3uxtream_player/shared/navigation/shell_tabs.dart';
+
+void main() {
+  final l10n = AppLocalizationsEn();
+  group('shell tab catalog', () {
+    test('keeps stable numeric identities and catalog order', () {
+      expect(shellLiveTabIndex, 0);
+      expect(shellPlaylistsTabIndex, 1);
+      expect(shellEpgTabIndex, 2);
+      expect(shellVodTabIndex, 3);
+      expect(shellSeriesTabIndex, 4);
+      expect(shellSettingsTabIndex, 5);
+      expect(shellDiagnosticsTabIndex, 6);
+      expect(shellFavoritesTabIndex, 7);
+      expect(shellMediaLibraryTabIndex, 8);
+      expect(shellJellyfinTabIndex, 9);
+      expect(shellHomeTabIndex, 10);
+      expect(shellTabSpecs.map((tab) => tab.index), [
+        10,
+        0,
+        8,
+        9,
+        7,
+        1,
+        2,
+        3,
+        4,
+        6,
+        5,
+      ]);
+    });
+
+    test('keeps playlists visible and settings as the final visible item', () {
+      for (final debugModeEnabled in [false, true]) {
+        final tabs = shellVisibleTabs(debugModeEnabled: debugModeEnabled);
+
+        expect(tabs.any((tab) => tab.index == shellPlaylistsTabIndex), isTrue);
+        expect(tabs.any((tab) => tab.index == shellFavoritesTabIndex), isTrue);
+        expect(
+          tabs.any((tab) => tab.index == shellMediaLibraryTabIndex),
+          isTrue,
+        );
+        expect(tabs.any((tab) => tab.index == shellJellyfinTabIndex), isTrue);
+        expect(tabs.last.index, shellSettingsTabIndex);
+      }
+    });
+
+    test('hides diagnostics when debug mode is off', () {
+      final tabs = shellVisibleTabs(debugModeEnabled: false);
+
+      expect(tabs.any((tab) => tab.index == shellDiagnosticsTabIndex), isFalse);
+      expect(tabs.any((tab) => tab.index == shellSettingsTabIndex), isTrue);
+    });
+
+    test('shows diagnostics when debug mode is on', () {
+      final tabs = shellVisibleTabs(debugModeEnabled: true);
+
+      expect(tabs.any((tab) => tab.index == shellDiagnosticsTabIndex), isTrue);
+    });
+
+    test('returns diagnostics header copy only when visible', () {
+      expect(
+        shellHeaderTitle(
+          shellDiagnosticsTabIndex,
+          debugModeEnabled: false,
+          l10n: l10n,
+        ),
+        'Settings',
+      );
+
+      expect(
+        shellHeaderTitle(
+          shellDiagnosticsTabIndex,
+          debugModeEnabled: true,
+          l10n: l10n,
+        ),
+        'Diagnostics / Logs',
+      );
+    });
+
+    test('jellyfin tab exposes the connected TV icon and localized copy', () {
+      final tab = shellTabSpecs.firstWhere(
+        (tab) => tab.kind == ShellTabKind.jellyfin,
+      );
+
+      expect(tab.index, shellJellyfinTabIndex);
+      expect(tab.visibleInNavigation, isTrue);
+      expect(tab.icon, Icons.connected_tv_rounded);
+      expect(shellTabTitle(tab, l10n), 'Jellyfin');
+      expect(shellTabSubtitle(tab, l10n), 'Your personal media library');
+    });
+
+    test('fallback tab stays on settings', () {
+      expect(shellFallbackTabIndex(), shellSettingsTabIndex);
+    });
+
+    test('exposes the Material 3 shell geometry tokens', () {
+      expect(shellSidebarWidth(false), shellSidebarCollapsedWidth);
+      expect(shellSidebarWidth(true), shellSidebarExpandedWidth);
+      expect(shellSidebarCollapsedWidth, 80);
+      expect(shellSidebarExpandedWidth, 256);
+      expect(shellSidebarNavigationRowHeight, 48);
+      expect(shellSidebarSelectedRadius, 24);
+    });
+  });
+}

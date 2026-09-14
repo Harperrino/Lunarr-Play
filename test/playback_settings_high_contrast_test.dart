@@ -1,0 +1,160 @@
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
+import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
+import 'package:m3uxtream_player/features/player/providers/vod_pre_buffer_settings_providers.dart';
+import 'package:m3uxtream_player/app/composition/settings/widgets/playback_settings_card.dart';
+import 'package:m3uxtream_player/shared/theme/app_theme.dart';
+import 'package:m3uxtream_player/shared/widgets/app_surface.dart';
+
+class _TestPlayerBufferSecondsNotifier extends PlayerBufferSecondsNotifier {
+  @override
+  Future<int> build() async => PlayerBufferSecondsNotifier.defaultSeconds;
+}
+
+class _TestVodPreBufferNotifier extends VodPreBufferTargetSecondsNotifier {
+  @override
+  Future<int> build() async => VodPreBufferTargetSecondsNotifier.defaultSeconds;
+}
+
+class _TestForceStereoNotifier extends ForceStereoEnabledNotifier {
+  @override
+  Future<bool> build() async => false;
+}
+
+class _TestPreferredAudioLanguageNotifier
+    extends PreferredAudioLanguageNotifier {
+  @override
+  Future<String?> build() async => null;
+}
+
+Widget _host({required bool highContrast}) {
+  final theme = highContrast
+      ? AppTheme.highContrastDarkTheme
+      : AppTheme.darkTheme;
+  return ProviderScope(
+    overrides: [
+      databaseProvider.overrideWith(
+        (ref) => throw StateError('Playback contrast contract opened database'),
+      ),
+      playerBufferSecondsProvider.overrideWith(
+        _TestPlayerBufferSecondsNotifier.new,
+      ),
+      vodPreBufferTargetSecondsProvider.overrideWith(
+        _TestVodPreBufferNotifier.new,
+      ),
+      forceStereoEnabledProvider.overrideWith(_TestForceStereoNotifier.new),
+      preferredAudioLanguageProvider.overrideWith(
+        _TestPreferredAudioLanguageNotifier.new,
+      ),
+    ],
+    child: MaterialApp(
+      key: ValueKey<bool>(highContrast),
+      theme: theme,
+      home: const Scaffold(
+        body: SizedBox(width: 760, height: 700, child: PlaybackSettingsCard()),
+      ),
+    ),
+  );
+}
+
+Text _text(WidgetTester tester, String value) {
+  return tester.widget<Text>(find.text(value));
+}
+
+Text _description(WidgetTester tester, String prefix) {
+  return tester.widget<Text>(
+    find.byWidgetPredicate(
+      (widget) => widget is Text && widget.data?.startsWith(prefix) == true,
+    ),
+  );
+}
+
+void _expectRoles(WidgetTester tester, ColorScheme colors) {
+  final surfaces = tester.widgetList<AppSurface>(find.byType(AppSurface));
+  expect(
+    surfaces.where((surface) => surface.level == AppSurfaceLevel.high),
+    hasLength(1),
+  );
+  expect(
+    surfaces.where((surface) => surface.level == AppSurfaceLevel.low),
+    hasLength(2),
+  );
+  expect(
+    _description(tester, 'Choose how much content').style?.color,
+    colors.onSurfaceVariant,
+  );
+  expect(
+    _description(tester, 'VOD pre-buffering loads').style?.color,
+    colors.onSurfaceVariant,
+  );
+  expect(_text(tester, 'Live startup buffer').style?.color, colors.onSurface);
+  expect(_text(tester, 'VOD pre-buffer').style?.color, colors.onSurface);
+  expect(_text(tester, 'Force stereo').style?.color, colors.onSurface);
+  expect(
+    _text(tester, 'Preferred audio language').style?.color,
+    colors.onSurface,
+  );
+
+  final dropdowns = tester
+      .widgetList<DropdownMenu<dynamic>>(
+        find.byWidgetPredicate((widget) => widget is DropdownMenu),
+      )
+      .toList(growable: false);
+  expect(dropdowns, hasLength(5));
+  for (final dropdown in dropdowns) {
+    expect(
+      dropdown.inputDecorationTheme?.fillColor,
+      colors.surfaceContainerHigh,
+    );
+    expect(dropdown.textStyle?.color, colors.onSurface);
+  }
+
+  final switches = tester.widgetList<Switch>(find.byType(Switch));
+  expect(switches, hasLength(3));
+  expect(find.text('App background'), findsNothing);
+  for (final switchWidget in switches) {
+    expect(switchWidget.activeThumbColor, isNull);
+    expect(switchWidget.inactiveThumbColor, isNull);
+    expect(switchWidget.inactiveTrackColor, isNull);
+  }
+  final switchTheme = Theme.of(tester.element(find.byType(Switch).first))
+      .switchTheme;
+  expect(
+    switchTheme.thumbColor?.resolve(const <WidgetState>{WidgetState.selected}),
+    colors.onPrimary,
+  );
+  expect(
+    switchTheme.thumbColor?.resolve(const <WidgetState>{}),
+    colors.outline,
+  );
+  expect(
+    switchTheme.trackColor?.resolve(const <WidgetState>{}),
+    colors.surfaceContainerHighest,
+  );
+}
+
+void main() {
+  testWidgets(
+    'playback settings neutral roles follow normal and high contrast',
+    (tester) async {
+      await tester.pumpWidget(_host(highContrast: false));
+      await tester.pump();
+      await tester.pump();
+      final normalColors = AppTheme.darkTheme.colorScheme;
+      _expectRoles(tester, normalColors);
+
+      await tester.pumpWidget(_host(highContrast: true));
+      await tester.pump();
+      await tester.pump();
+      final highContrastColors = AppTheme.highContrastDarkTheme.colorScheme;
+      _expectRoles(tester, highContrastColors);
+      expect(
+        normalColors.onSurfaceVariant,
+        isNot(highContrastColors.onSurfaceVariant),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+}
