@@ -37,7 +37,10 @@ void main() {
 
       expect(requests, hasLength(1));
       expect(requests.single.url.path, '/Sessions/Playing');
-      expect(requests.single.headers['X-Emby-Token'], 'token-abc-123');
+      expect(
+        requests.single.headers['Authorization'],
+        contains('Token="${Uri.encodeComponent('token-abc-123')}"'),
+      );
       final startBody =
           jsonDecode(requests.single.body) as Map<String, dynamic>;
       expect(startBody['ItemId'], 'movie-1');

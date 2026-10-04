@@ -10,6 +10,44 @@ import 'package:m3uxtream_player/features/playlists/providers/pinned_groups_prov
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 
 void main() {
+  test('pins first category, persisted categories and unpins without list mutation errors', () async {
+    final db = AppDatabase.executor(NativeDatabase.memory());
+    addTearDown(db.close);
+    final repository = AppStateRepository(db);
+    await repository.setGroupPinned(1, 'News', true);
+    await repository.setGroupPinned(1, 'Sports', true);
+    await repository.setGroupPinned(1, 'News', false);
+    expect(await repository.getPinnedGroups(1), ['Sports']);
+  });
+
+  test(
+    'simultaneous pins retain both categories and target the managed playlist',
+    () async {
+      final db = AppDatabase.executor(NativeDatabase.memory());
+      addTearDown(db.close);
+      final repository = AppStateRepository(db);
+      final container = ProviderContainer(
+        overrides: [appStateRepositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(container.dispose);
+      await repository.setPinnedGroups(1, ['Original']);
+      await repository.setPinnedGroups(2, ['Existing']);
+      container.read(selectedPlaylistIdProvider.notifier).state = 1;
+      await container.read(pinnedGroupsProvider.future);
+      final notifier = container.read(pinnedGroupsProvider.notifier);
+      await Future.wait([
+        notifier.toggleGroup(2, 'News', true),
+        notifier.toggleGroup(2, 'Sports', true),
+      ]);
+      expect(
+        await repository.getPinnedGroups(2),
+        containsAll(['Existing', 'News', 'Sports']),
+      );
+      expect(await repository.getPinnedGroups(1), ['Original']);
+      expect(container.read(pinnedGroupsProvider).requireValue, ['Original']);
+    },
+  );
+
   test('persists channel sort mode independently per playlist', () async {
     final db = AppDatabase.executor(NativeDatabase.memory());
     addTearDown(() async => db.close());

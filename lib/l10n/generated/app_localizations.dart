@@ -4303,6 +4303,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This product uses the TMDB API but is not endorsed or certified by TMDB.'**
   String get discoveryTmdbAttribution;
+
+  /// No description provided for @epgFilterPlaylists.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlists'**
+  String get epgFilterPlaylists;
+
+  /// No description provided for @epgFilterCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get epgFilterCategories;
+
+  /// No description provided for @epgFilterSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search filters'**
+  String get epgFilterSearch;
+
+  /// No description provided for @epgFilterSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get epgFilterSelectAll;
+
+  /// No description provided for @epgFilterSelectNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Select none'**
+  String get epgFilterSelectNone;
+
+  /// No description provided for @epgFilterCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get epgFilterCancel;
+
+  /// No description provided for @epgFilterApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get epgFilterApply;
+
+  /// No description provided for @epgFilterReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset filters'**
+  String get epgFilterReset;
+
+  /// No description provided for @epgFilterSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} ({selected}/{total})'**
+  String epgFilterSelection(String label, int selected, int total);
+
+  /// No description provided for @epgLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'The programme guide could not be loaded.'**
+  String get epgLoadError;
+
+  /// No description provided for @epgRetrySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry loading the cached guide, or update the selected playlists.'**
+  String get epgRetrySubtitle;
+
+  /// No description provided for @epgRetryAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get epgRetryAction;
+
+  /// No description provided for @epgPlayerNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next at {time}: {title}'**
+  String epgPlayerNext(String time, String title);
 }
 
 class _AppLocalizationsDelegate

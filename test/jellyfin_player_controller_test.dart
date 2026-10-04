@@ -195,7 +195,10 @@ void main() {
     expect(media.uri, contains('/Videos/movie-1/stream'));
     expect(media.uri, contains('static=true'));
     expect(media.uri, contains('MediaSourceId=ms-1'));
-    expect(media.httpHeaders, {'X-Emby-Token': 'token-abc-123'});
+    expect(
+      media.httpHeaders,
+      containsPair('Authorization', contains('Token="token-abc-123"')),
+    );
     expect(media.start, const Duration(seconds: 90));
     expect(controller.state.value.initialized, isTrue);
     expect(controller.state.value.method, JellyfinPlaybackMethod.directPlay);
@@ -315,7 +318,7 @@ void main() {
       expect(instance.state.value.method, JellyfinPlaybackMethod.directStream);
       expect(player.openedMedia.single.uri, isNot(contains('static=true')));
       expect(
-        Uri.parse(player.openedMedia.single.uri).queryParameters['api_key'],
+        Uri.parse(player.openedMedia.single.uri).queryParameters['ApiKey'],
         'token-abc-123',
       );
       expect(playbackInfoBodies, hasLength(2));

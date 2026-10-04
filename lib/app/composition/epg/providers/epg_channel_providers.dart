@@ -4,6 +4,7 @@ import 'package:m3uxtream_player/core/models/playlist_epg_channel_key.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
 import 'package:m3uxtream_player/app/composition/epg/providers/epg_providers.dart';
 import 'package:m3uxtream_player/app/composition/epg/providers/epg_sync_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
 import 'package:m3uxtream_player/features/epg/providers/visible_live_channel_registry.dart';
 
 /// True once the EPG catalogue inputs have delivered at least one value, so
@@ -31,6 +32,14 @@ final visibleLiveEpgMatchesProvider =
         return const AsyncValue.data(<int, EpgChannelMatchResult>{});
       }
       if (!ref.watch(epgMatchingInputsReadyProvider)) {
+        final ids = ref.watch(knownEpgChannelIdsProvider);
+        final names = ref.watch(epgChannelDisplayNamesProvider);
+        if (ids.hasError) {
+          return AsyncValue.error(ids.error!, ids.stackTrace!);
+        }
+        if (names.hasError) {
+          return AsyncValue.error(names.error!, names.stackTrace!);
+        }
         return const AsyncValue.loading();
       }
       final index = ref.watch(epgMatchingIndexProvider);
@@ -57,7 +66,11 @@ final visibleLiveEpgMatchesProvider =
 final currentProgramsForVisibleChannelsProvider =
     StreamProvider.autoDispose<Map<int, EpgEntry?>>((ref) {
       ref.watch(epgCompletionRevisionProvider);
-      final matches = ref.watch(visibleLiveEpgMatchesProvider).valueOrNull;
+      final matchState = ref.watch(visibleLiveEpgMatchesProvider);
+      if (matchState.hasError) {
+        return Stream.error(matchState.error!, matchState.stackTrace);
+      }
+      final matches = matchState.valueOrNull;
       if (matches == null) {
         // Matching is still warming up; stay in loading so rows render a
         // neutral EPG state instead of a wrong "Kein EPG".
@@ -92,7 +105,7 @@ final currentProgramsForVisibleChannelsProvider =
 
       var active = true;
       ref.onDispose(() => active = false);
-      final now = DateTime.now();
+      final now = ref.watch(epgCurrentMinuteProvider);
       return ref
           .read(epgRepositoryProvider)
           .watchEntriesInRangeForPlaylistChannelIds(

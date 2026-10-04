@@ -6,9 +6,9 @@ import 'package:m3uxtream_player/core/cache/bounded_async_cache.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/playlist_epg_channel_key.dart';
 import 'package:m3uxtream_player/core/services/epg_matching_service.dart';
-import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
 import 'package:m3uxtream_player/app/composition/epg/providers/epg_providers.dart';
 import 'package:m3uxtream_player/app/composition/epg/providers/epg_sync_providers.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_filter_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_catalog_providers.dart';
 import 'package:m3uxtream_player/l10n/generated/app_localizations.dart';
 
@@ -153,9 +153,9 @@ void jumpEpgWindowToNow(WidgetRef ref) {
   ref.read(epgGridScrollToNowTickProvider.notifier).state++;
 }
 
-/// Same channel pool as the Live tab (respects group filter).
+/// Guide filters are independent of the Live sidebar and playback selection.
 final epgGridChannelsProvider = Provider.autoDispose<List<Channel>>((ref) {
-  final channels = ref.watch(filteredChannelsProvider);
+  final channels = ref.watch(epgFilteredChannelsProvider);
   final sorted = List<Channel>.from(channels);
   sorted.sort((a, b) {
     final groupA = a.groupName ?? '';
@@ -167,11 +167,22 @@ final epgGridChannelsProvider = Provider.autoDispose<List<Channel>>((ref) {
   return sorted;
 });
 
+/// Match only the channels selected for the guide, including playlists that
+/// are not currently browsed or playing in the Live tab.
+final epgGridChannelMatchesProvider =
+    Provider.autoDispose<Map<int, EpgChannelMatchResult>>((ref) {
+      final index = ref.watch(epgMatchingIndexProvider);
+      return {
+        for (final channel in ref.watch(epgGridChannelsProvider))
+          channel.id: index.matchChannel(channel),
+      };
+    });
+
 /// Resolved XMLTV IDs grouped by their owning playlist.
 final epgGridResolvedChannelIdsProvider =
     Provider.autoDispose<Map<int, Set<String>>>((ref) {
       final channels = ref.watch(epgGridChannelsProvider);
-      final matches = ref.watch(epgChannelMatchesProvider);
+      final matches = ref.watch(epgGridChannelMatchesProvider);
       final result = <int, Set<String>>{};
       for (final channel in channels) {
         final resolvedId = matches[channel.id]?.resolvedEpgChannelId;
@@ -269,7 +280,7 @@ final epgGridSnapshotKeyProvider = Provider.autoDispose<EpgGridSnapshotKey>((
   final resolvedIds = ref.watch(epgGridResolvedChannelIdsProvider);
   return EpgGridSnapshotKey(
     scope: scope,
-    playlistIds: ref.watch(playlistCatalogPlaylistIdsProvider(scope)),
+    playlistIds: ref.watch(epgFilterPlaylistIdsProvider),
     windowStart: ref.watch(epgWindowStartProvider),
     windowEnd: ref.watch(epgWindowEndProvider),
     completionRevision: ref.watch(epgCompletionRevisionProvider),
@@ -282,7 +293,11 @@ final epgGridSnapshotKeyProvider = Provider.autoDispose<EpgGridSnapshotKey>((
 /// The grid observes exactly one logical snapshot provider.
 final epgGridEntriesSnapshotProvider =
     Provider.autoDispose<AsyncValue<List<EpgEntry>>>((ref) {
-      final knownIds = ref.watch(knownEpgChannelIdsProvider).valueOrNull;
+      final catalog = ref.watch(knownEpgChannelIdsProvider);
+      if (catalog.hasError && !catalog.hasValue) {
+        return AsyncValue.error(catalog.error!, catalog.stackTrace!);
+      }
+      final knownIds = catalog.valueOrNull;
       if (knownIds == null) return const AsyncValue.loading();
       final key = ref.watch(epgGridSnapshotKeyProvider);
       return ref.watch(epgGridSnapshotProvider(key));
@@ -326,6 +341,19 @@ final epgGridMinuteTickProvider = StreamProvider.autoDispose<DateTime>((ref) {
 });
 
 /// Programmes keyed by playlist-owned XMLTV channel id.
+/// A stable minute bucket prevents the first asynchronous clock emission
+/// from opening a duplicate query for the same programme window.
+final epgCurrentMinuteProvider = Provider.autoDispose<DateTime>((ref) {
+  return ref.watch(
+    epgGridMinuteTickProvider.select((value) {
+      final now = value.valueOrNull ?? DateTime.now();
+      return DateTime.fromMillisecondsSinceEpoch(
+        (now.millisecondsSinceEpoch ~/ 60000) * 60000,
+      );
+    }),
+  );
+});
+
 final epgGridDataProvider =
     Provider.autoDispose<Map<PlaylistEpgChannelKey, List<EpgEntry>>>((ref) {
       final entries =
@@ -337,7 +365,7 @@ final epgGridDataProvider =
 final epgGridRowsProvider = Provider.autoDispose<List<EpgGridRowData>>((ref) {
   final channels = ref.watch(epgGridChannelsProvider);
   final epgData = ref.watch(epgGridDataProvider);
-  final channelMatches = ref.watch(epgChannelMatchesProvider);
+  final channelMatches = ref.watch(epgGridChannelMatchesProvider);
   return buildEpgGridRows(
     channels: channels,
     epgData: epgData,

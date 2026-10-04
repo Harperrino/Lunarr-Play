@@ -153,6 +153,12 @@ class AppStateRepository {
   Future<void> setPinnedGroups(int playlistId, List<String> pinned) =>
       _playlistVisibility.setPinnedGroups(playlistId, pinned);
 
+  Future<List<String>> setGroupPinned(
+    int playlistId,
+    String groupName,
+    bool pinned,
+  ) => _playlistVisibility.setGroupPinned(playlistId, groupName, pinned);
+
   Future<ChannelSortMode> getChannelSortMode(int playlistId) =>
       _catalogue.getChannelSortMode(playlistId);
   Future<void> setChannelSortMode(int playlistId, ChannelSortMode mode) =>

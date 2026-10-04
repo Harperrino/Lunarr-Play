@@ -7,7 +7,7 @@ void main() {
   const images = JellyfinImageService();
 
   group('JellyfinImageService', () {
-    test('builds primary poster URLs with tag, maxWidth and api_key', () {
+    test('builds primary poster URLs with tag, maxWidth and ApiKey', () {
       final url = images.posterUrl(
         jellyfinTestConnection,
         itemId: 'item-1',
@@ -18,7 +18,7 @@ void main() {
       expect(
         url,
         'http://server:8096/Items/item-1/Images/Primary'
-        '?maxWidth=400&tag=tag-abc&api_key=token-abc-123',
+        '?maxWidth=400&tag=tag-abc&ApiKey=token-abc-123',
       );
     });
 
@@ -32,7 +32,7 @@ void main() {
       expect(
         url,
         'http://server:8096/Items/item-1/Images/Backdrop'
-        '/0?maxWidth=1600&tag=tag-backdrop&api_key=token-abc-123',
+        '/0?maxWidth=1600&tag=tag-backdrop&ApiKey=token-abc-123',
       );
     });
 
@@ -46,7 +46,7 @@ void main() {
       expect(
         url,
         'http://server:8096/Items/item-1/Images/Logo'
-        '?maxWidth=500&tag=tag-logo&api_key=token-abc-123',
+        '?maxWidth=500&tag=tag-logo&ApiKey=token-abc-123',
       );
     });
 

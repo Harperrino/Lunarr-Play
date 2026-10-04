@@ -191,48 +191,54 @@ Future<EpgParseResult> _downloadAndParseInIsolate(
   void Function()? unregisterCancellation;
   var isGzipped = urlOrFilePath.toLowerCase().endsWith('.gz');
 
-  if (RegExp(r'^https?://', caseSensitive: false).hasMatch(urlOrFilePath)) {
-    AppLogger.info(
-      'EpgSyncService (Isolate): Direct streaming EPG from remote HTTP URL...',
-    );
-    client = HttpClient();
-    unregisterCancellation = budget.cancellation.register(
-      () => client?.close(force: true),
-    );
-    client.connectionTimeout = const Duration(seconds: 15);
-    final request = await client.getUrl(Uri.parse(urlOrFilePath));
-    final response = await request.close();
-
-    if (response.statusCode != HttpStatus.ok) {
-      client.close();
-      throw HttpException(
-        'HTTP error during EPG download: Status ${response.statusCode}',
-        uri: Uri.parse(urlOrFilePath),
-      );
-    }
-
-    final contentEncoding =
-        response.headers.value('content-encoding')?.toLowerCase() ?? '';
-    if (contentEncoding.contains('gzip')) {
-      isGzipped = true;
-    }
-
-    byteStream = response;
-  } else {
-    AppLogger.info(
-      'EpgSyncService (Isolate): Streaming EPG from local file path...',
-    );
-    final file = File(urlOrFilePath);
-    if (!await file.exists()) {
-      throw FileSystemException(
-        'Local EPG XMLTV file not found at specified path.',
-        urlOrFilePath,
-      );
-    }
-    byteStream = file.openRead();
-  }
-
   try {
+    if (RegExp(r'^https?://', caseSensitive: false).hasMatch(urlOrFilePath)) {
+      AppLogger.info(
+        'EpgSyncService (Isolate): Direct streaming EPG from remote HTTP URL...',
+      );
+      // The parser owns gzip decompression. HttpClient's automatic decoding
+      // otherwise decompresses Content-Encoding:gzip feeds twice.
+      client = HttpClient()..autoUncompress = false;
+      unregisterCancellation = budget.cancellation.register(
+        () => client?.close(force: true),
+      );
+      client.connectionTimeout = const Duration(seconds: 15);
+      final request = await client
+          .getUrl(Uri.parse(urlOrFilePath))
+          .timeout(const Duration(seconds: 30));
+      final response = await request.close().timeout(
+        const Duration(seconds: 30),
+      );
+
+      if (response.statusCode != HttpStatus.ok) {
+        client.close();
+        throw HttpException(
+          'HTTP error during EPG download: Status ${response.statusCode}',
+          uri: Uri.parse(urlOrFilePath),
+        );
+      }
+
+      final contentEncoding =
+          response.headers.value('content-encoding')?.toLowerCase() ?? '';
+      if (contentEncoding.contains('gzip')) {
+        isGzipped = true;
+      }
+
+      byteStream = response.timeout(const Duration(seconds: 30));
+    } else {
+      AppLogger.info(
+        'EpgSyncService (Isolate): Streaming EPG from local file path...',
+      );
+      final file = File(urlOrFilePath);
+      if (!await file.exists()) {
+        throw FileSystemException(
+          'Local EPG XMLTV file not found at specified path.',
+          urlOrFilePath,
+        );
+      }
+      byteStream = file.openRead();
+    }
+
     final budgetedTransport = byteStream.map((chunk) {
       budget.consumeTransportBytes(chunk.length, phase: 'xmltv_transport');
       return chunk;
@@ -244,7 +250,7 @@ Future<EpgParseResult> _downloadAndParseInIsolate(
     );
   } finally {
     unregisterCancellation?.call();
-    client?.close();
+    client?.close(force: true);
   }
 }
 

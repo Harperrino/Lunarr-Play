@@ -56,14 +56,12 @@ final epgWindowEndProvider = StateProvider<DateTime>((ref) {
 /// All known XMLTV channel IDs grouped by owning playlist.
 final knownEpgChannelIdsProvider =
     StreamProvider.autoDispose<Map<int, Set<String>>>((ref) {
-      ref.watch(epgSyncServiceProvider);
       return ref.watch(epgRepositoryProvider).watchKnownEpgChannelIds();
     });
 
 /// XMLTV display names grouped by playlist and channel id.
 final epgChannelDisplayNamesProvider =
     StreamProvider.autoDispose<Map<int, Map<String, List<String>>>>((ref) {
-      ref.watch(epgSyncServiceProvider);
       return ref.watch(epgRepositoryProvider).watchEpgChannelDisplayNames();
     });
 
@@ -97,8 +95,6 @@ final epgMatchingIndexProvider = Provider.autoDispose<PlaylistEpgMatchingIndex>(
     ref.onDispose(() {
       disposeTimer?.cancel();
     });
-
-    ref.watch(epgSyncServiceProvider);
 
     final knownIds =
         ref.watch(knownEpgChannelIdsProvider).valueOrNull ?? const {};

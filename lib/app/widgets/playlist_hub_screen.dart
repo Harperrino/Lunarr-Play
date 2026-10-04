@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
+import 'package:m3uxtream_player/features/playlists/providers/pinned_groups_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/epg_refresh_interval.dart';
 import 'package:m3uxtream_player/core/models/epg_sync_job.dart';
@@ -115,20 +116,8 @@ class PlaylistHubScreen extends ConsumerWidget {
                 if (playlistId == null) return;
                 unawaited(
                   ref
-                      .read(appStateRepositoryProvider)
-                      .getPinnedGroups(playlistId)
-                      .then((current) async {
-                        if (shouldPin) {
-                          current.remove(group);
-                          current.add(group);
-                        } else {
-                          current.remove(group);
-                        }
-                        await ref
-                            .read(appStateRepositoryProvider)
-                            .setPinnedGroups(playlistId, current);
-                        ref.invalidate(managedPinnedGroupsProvider(playlistId));
-                      }),
+                      .read(pinnedGroupsProvider.notifier)
+                      .toggleGroup(playlistId, group, shouldPin),
                 );
               },
             ),

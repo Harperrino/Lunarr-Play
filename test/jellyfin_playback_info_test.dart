@@ -17,7 +17,10 @@ void main() {
         transport: MockClient((request) async {
           expect(request.method, 'POST');
           expect(request.url.path, '/Items/movie-1/PlaybackInfo');
-          expect(request.headers['X-Emby-Token'], 'token-abc-123');
+          expect(
+            request.headers['Authorization'],
+            contains('Token="${Uri.encodeComponent('token-abc-123')}"'),
+          );
           body = jsonDecode(request.body) as Map<String, dynamic>;
           return http.Response(
             jsonEncode({

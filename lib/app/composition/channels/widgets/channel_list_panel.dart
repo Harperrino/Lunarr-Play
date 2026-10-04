@@ -827,6 +827,15 @@ class _ChannelEpgLine extends ConsumerWidget {
     final matches = ref.watch(visibleLiveEpgMatchesProvider);
     final programs = ref.watch(currentProgramsForVisibleChannelsProvider);
 
+    if (matches.hasError || programs.hasError) {
+      return Text(
+        context.l10n.epgLoadError,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+      );
+    }
+
     final match = matches.valueOrNull?[channelDbId];
     final program = programs.valueOrNull?[channelDbId];
 

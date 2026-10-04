@@ -44,7 +44,7 @@ The file `libmpv-2.dll` is the unmodified binary selected by
 - License text: `third_party_licenses/LGPL-2.1.txt`
 
 The libmpv binary is dynamically loaded. Recipients may replace it with a
-compatible modified build. Nothing in Lunarr Player's installer or license is
+compatible modified build. Nothing in Lunarr Player's portable distribution or license is
 intended to restrict debugging, reverse engineering for such modifications, or
 the other rights granted by the LGPL.
 
@@ -73,14 +73,7 @@ That bundle also contains SwiftShader/Vulkan components and zlib:
 
 ## Microsoft redistributable components
 
-The installer carries the Visual C++ runtime DLLs and Direct3D compiler DLL
+The portable archive carries the Visual C++ runtime DLLs and Direct3D compiler DLL
 permitted for redistribution with applications built using Microsoft Visual
 Studio. They remain Microsoft components and are subject to the Microsoft
 Visual Studio licensing terms.
-
-## Inno Setup
-
-The setup executable is compiled with Inno Setup 6.7.3. Inno Setup is
-copyright Jordan Russell and Martijn Laan and is distributed under its own
-license with commercial-distribution exceptions. Source and license:
-<https://jrsoftware.org/isinfo.php>.

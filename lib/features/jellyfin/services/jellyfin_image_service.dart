@@ -3,7 +3,7 @@ import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart
 /// Central builder for Jellyfin image URLs.
 ///
 /// Cards and details never construct image URLs themselves. The access token
-/// travels as an `api_key` query parameter (standard Jellyfin scheme) and is
+/// travels as an `ApiKey` query parameter (current Jellyfin scheme) and is
 /// covered by the feature log redactor.
 class JellyfinImageService {
   const JellyfinImageService();
@@ -76,7 +76,7 @@ class JellyfinImageService {
           queryParameters: {
             'maxWidth': '$maxWidth',
             'tag': imageTag,
-            'api_key': connection.accessToken,
+            'ApiKey': connection.accessToken,
           },
         )
         .toString();

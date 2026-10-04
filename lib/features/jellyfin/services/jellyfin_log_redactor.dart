@@ -13,7 +13,7 @@ class JellyfinLogRedactor {
     caseSensitive: false,
   );
   static final RegExp _authorizationHeaderPattern = RegExp(
-    r'(X-Emby-Authorization:\s*)[^\r\n]+',
+    r'((?:X-Emby-)?Authorization:\s*)[^\r\n]+',
     caseSensitive: false,
   );
   static final RegExp _authorizationInnerTokenPattern = RegExp(
@@ -21,7 +21,7 @@ class JellyfinLogRedactor {
     caseSensitive: false,
   );
   static final RegExp _credentialQueryPattern = RegExp(
-    r'([?&](?:api_key|token|access_token|auth)=)[^&\s]+',
+    r'([?&](?:api_?key|token|access_token|auth)=)[^&\s]+',
     caseSensitive: false,
   );
   static final RegExp _jsonPasswordPattern = RegExp(

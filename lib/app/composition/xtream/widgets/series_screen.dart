@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/services/detached_future.dart';
 import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
@@ -194,27 +193,13 @@ class SeriesScreen extends ConsumerWidget {
                                 },
                           onCategoryPinChanged: (category, pinned) {
                             runDetached(() async {
-                              final repository = ref.read(
-                                appStateRepositoryProvider,
-                              );
-                              final current = await repository.getPinnedGroups(
-                                category.playlistId,
-                              );
-                              if (pinned) {
-                                current.remove(category.groupName);
-                                current.add(category.groupName);
-                              } else {
-                                current.remove(category.groupName);
-                              }
-                              await repository.setPinnedGroups(
-                                category.playlistId,
-                                current,
-                              );
-                              ref.invalidate(
-                                pinnedGroupsForPlaylistProvider(
-                                  category.playlistId,
-                                ),
-                              );
+                              await ref
+                                  .read(pinnedGroupsProvider.notifier)
+                                  .toggleGroup(
+                                    category.playlistId,
+                                    category.groupName,
+                                    pinned,
+                                  );
                             }, label: 'pin series category');
                           },
                           title: context.l10n.catalogGenresTitle,

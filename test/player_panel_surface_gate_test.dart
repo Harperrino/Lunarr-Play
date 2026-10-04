@@ -13,6 +13,8 @@ import 'package:m3uxtream_player/features/player/providers/player_providers.dart
 import 'package:m3uxtream_player/features/player/providers/player_settings_providers.dart';
 import 'package:m3uxtream_player/app/composition/player/providers/player_ui_providers.dart';
 import 'package:m3uxtream_player/app/composition/player/widgets/player_panel.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/selected_channel_epg_provider.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
 import 'package:m3uxtream_player/app/composition/player/widgets/player_transport_bar.dart';
 import 'package:m3uxtream_player/shared/theme/app_color_roles.dart';
 import 'package:m3uxtream_player/shared/theme/app_elevation.dart';
@@ -64,6 +66,10 @@ void main() {
           (ref) => null,
         ),
         selectedChannelProvider.overrideWith((ref) => liveChannel),
+        epgCurrentMinuteProvider.overrideWithValue(DateTime(2030)),
+        selectedChannelProgrammesProvider.overrideWith(
+          (ref) => Stream.value(const []),
+        ),
         playerBufferSecondsProvider.overrideWith(
           _TestBufferSecondsNotifier.new,
         ),
@@ -236,6 +242,10 @@ void main() {
             (ref) => null,
           ),
           selectedChannelProvider.overrideWith((ref) => liveChannel),
+          epgCurrentMinuteProvider.overrideWithValue(DateTime(2030)),
+          selectedChannelProgrammesProvider.overrideWith(
+            (ref) => Stream.value(const []),
+          ),
           playerBufferSecondsProvider.overrideWith(
             _TestBufferSecondsNotifier.new,
           ),

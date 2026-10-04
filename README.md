@@ -77,22 +77,24 @@ series or looking through your provider's catalogue.
 
 ## Installation
 
-The Windows x64 release is distributed as one self-contained installer through
-GitHub Releases.
+Windows x64 builds are packaged as a self-contained portable ZIP. Build artifacts
+are available from the **Windows portable build** GitHub Actions workflow; future
+release uploads use this format.
 
-1. Download `Lunarr-Player-1.0.1-windows-x64-setup.exe`.
-2. Start the installer and choose where LUNARR should be stored.
-3. Launch LUNARR from the Start menu.
+1. Download the portable ZIP for the build you want to use.
+2. Extract the complete archive to a writable folder of your choice.
+3. Run `lunarr_one.exe` from that folder. Keep the DLLs and `data/` alongside it.
 
-The installer contains MPV/libmpv, Flutter, the Visual C++ runtime and every
-required application file. It installs them persistently at the selected
-location, creates a Start menu shortcut and registers a standard Windows
-uninstaller. No separate resource download is needed. Windows may display a
-SmartScreen warning because the application is not code-signed.
+The archive bundles MPV/libmpv, Flutter, the Visual C++ runtime and all required
+application files. No installer, administrator access, Start menu registration
+or uninstaller is needed. Application settings and existing local databases keep
+using their current per-user locations; extracting a new build does not reset them.
+Windows may display a SmartScreen warning because the application is not code-signed.
 
 ## Current Status
 
 The current stable release is **Lunarr Player 1.0.1** (`v1.0.1`).
+Its previously published assets predate the switch to portable distribution.
 
 [See what is new in 1.0.1](RELEASE_NOTES_1.0.1.md).
 
@@ -123,35 +125,28 @@ Lunarr is built with Flutter. A Windows build requires:
 
 - Flutter 3.47 or newer with Windows desktop support
 - Visual Studio with the Desktop development with C++ workload
-- Inno Setup 6.7 or newer (`winget install JRSoftware.InnoSetup`)
 
 ```powershell
 flutter pub get
 flutter analyze lib test --no-pub
 flutter test --concurrency=1 --no-pub
 flutter build windows --release
-dart run tool/build_windows_installer.dart
 .\tool\build_windows_portable.ps1
 ```
-
-The installer builder creates the release build, adds the app-local Visual C++
-runtime and compiles a persistent per-user installer with selectable destination,
-Start menu shortcuts and an uninstaller. The setup executable and its SHA-256
-file are written to `release/`.
 
 The portable builder creates a ZIP that can be extracted and started without
 installation. It contains `lunarr_one.exe`, Flutter data, application DLLs, the
 required Visual C++ runtime files and license notices. GitHub Actions creates
 the same ZIP after each push to `main` and exposes it as a workflow artifact.
 
-Before packaging, both builders scan the staged files for local-only metadata,
+Before packaging, the portable builder scans the staged files for local-only metadata,
 private endpoints, credential-bearing URLs, known token formats and files that
 can contain local credentials. Additional private identifiers can be blocked
 with a comma-separated environment variable:
 
 ```powershell
 $env:LUNARR_RELEASE_PRIVATE_MARKERS = "local-user,private-hostname"
-dart run tool/build_windows_installer.dart
+.\tool\build_windows_portable.ps1
 ```
 
 ## Contributors

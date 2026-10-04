@@ -115,6 +115,37 @@ void main() {
   });
 
   group('VisibleLiveChannelRow', () {
+    testWidgets('retained rows refresh their channel projection', (
+      tester,
+    ) async {
+      final registry = VisibleLiveChannelRegistry(
+        publishDelay: const Duration(milliseconds: 5),
+      );
+      addTearDown(registry.dispose);
+      Widget row(VisibleLiveChannelCandidate candidate) => ProviderScope(
+        overrides: [
+          visibleLiveChannelRegistryProvider.overrideWithValue(registry),
+        ],
+        child: VisibleLiveChannelRow(
+          key: const ValueKey(1),
+          candidate: candidate,
+          child: const SizedBox.shrink(),
+        ),
+      );
+      await tester.pumpWidget(row(_candidate(1)));
+      await tester.pump(const Duration(milliseconds: 10));
+      expect(registry.current.single.tvgId, 'epg-1');
+      await tester.pumpWidget(
+        row(_candidate(1, name: 'Renamed', tvgId: 'updated-epg-id')),
+      );
+      await tester.pump(const Duration(milliseconds: 10));
+      expect(registry.current.single.name, 'Renamed');
+      expect(registry.current.single.tvgId, 'updated-epg-id');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 10));
+      expect(registry.current, isEmpty);
+    });
+
     Widget buildList(int itemCount) {
       return MaterialApp(
         home: SizedBox(

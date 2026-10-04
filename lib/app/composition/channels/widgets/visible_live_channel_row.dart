@@ -35,6 +35,16 @@ class _VisibleLiveChannelRowState extends ConsumerState<VisibleLiveChannelRow> {
   }
 
   @override
+  void didUpdateWidget(VisibleLiveChannelRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.candidate == widget.candidate) return;
+    if (oldWidget.candidate.channelId != widget.candidate.channelId) {
+      _registry.unregister(oldWidget.candidate.channelId);
+    }
+    _registry.register(widget.candidate);
+  }
+
+  @override
   void dispose() {
     _registry.unregister(widget.candidate.channelId);
     super.dispose();

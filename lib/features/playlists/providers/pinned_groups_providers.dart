@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/core/providers/infrastructure_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
+import 'package:m3uxtream_player/features/playlists/providers/managed_playlist_providers.dart';
 
 /// Playlist-specific pinned-category read boundary for All-active catalogs.
 final pinnedGroupsForPlaylistProvider = FutureProvider.autoDispose
@@ -38,6 +39,7 @@ class PinnedGroupsNotifier extends AsyncNotifier<List<String>> {
       state = AsyncData(pinned);
     }
     ref.invalidate(pinnedGroupsForPlaylistProvider(playlistId));
+    ref.invalidate(managedPinnedGroupsProvider(playlistId));
   }
 
   Future<void> toggleGroup(
@@ -45,13 +47,13 @@ class PinnedGroupsNotifier extends AsyncNotifier<List<String>> {
     String groupName,
     bool pinned,
   ) async {
-    final current = [...(state.valueOrNull ?? const <String>[])];
-    if (pinned) {
-      current.remove(groupName);
-      current.add(groupName);
-    } else {
-      current.remove(groupName);
+    final current = await ref
+        .read(appStateRepositoryProvider)
+        .setGroupPinned(playlistId, groupName, pinned);
+    if (ref.read(selectedPlaylistIdProvider) == playlistId) {
+      state = AsyncData(current);
     }
-    await setPinned(playlistId, current);
+    ref.invalidate(pinnedGroupsForPlaylistProvider(playlistId));
+    ref.invalidate(managedPinnedGroupsProvider(playlistId));
   }
 }

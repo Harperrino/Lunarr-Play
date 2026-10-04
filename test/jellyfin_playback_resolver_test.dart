@@ -34,8 +34,11 @@ void main() {
     expect(uri.path, '/Videos/movie-1/stream');
     expect(uri.queryParameters['static'], 'true');
     expect(uri.queryParameters['MediaSourceId'], 'ms-1');
-    expect(uri.queryParameters['api_key'], 'token-abc-123');
-    expect(resolved.headers, {'X-Emby-Token': 'token-abc-123'});
+    expect(uri.queryParameters['ApiKey'], 'token-abc-123');
+    expect(
+      resolved.headers,
+      containsPair('Authorization', contains('Token="token-abc-123"')),
+    );
     expect(resolved.mediaSourceId, 'ms-1');
     expect(resolved.playSessionId, 'ps-1');
     expect(resolved.method, JellyfinPlaybackMethod.directPlay);
@@ -114,7 +117,7 @@ void main() {
     expect(uri.queryParameters['MediaSourceId'], 'ms-remux');
     expect(uri.queryParameters['AudioStreamIndex'], '2');
     expect(uri.queryParameters['SubtitleStreamIndex'], '-1');
-    expect(uri.queryParameters['api_key'], 'token');
+    expect(uri.queryParameters['ApiKey'], 'token');
   });
 
   test('uses Jellyfin TranscodingUrl for a transcode decision', () {
@@ -139,7 +142,7 @@ void main() {
     final uri = Uri.parse(resolved.uri);
     expect(uri.path, '/Videos/movie-1/master.m3u8');
     expect(uri.queryParameters['MediaSourceId'], 'ms-transcode');
-    expect(uri.queryParameters['api_key'], 'token');
+    expect(uri.queryParameters['ApiKey'], 'token');
     expect(resolved.startPosition, const Duration(seconds: 120));
   });
 
@@ -250,7 +253,7 @@ void main() {
     );
 
     final uri = Uri.parse(resolved.uri);
-    expect(uri.queryParameters['api_key'], 'token with & symbols');
+    expect(uri.queryParameters['ApiKey'], 'token with & symbols');
     expect(uri.queryParameters['MediaSourceId'], 'ms-transcode');
     expect(uri.queryParameters['Foo'], 'bar');
     expect(resolved.uri, isNot(contains('old-token')));

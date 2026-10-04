@@ -8,6 +8,7 @@ import 'package:m3uxtream_player/core/logger/app_logger.dart';
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_api_exception.dart';
 import 'package:m3uxtream_player/features/jellyfin/api/jellyfin_url_builder.dart';
 import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_connection.dart';
+import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_authorization.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_library.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_info.dart';
@@ -44,9 +45,6 @@ class JellyfinApiClient {
     this._urlBuilder = const JellyfinUrlBuilder(),
   }) : _transport = transport ?? http.Client(),
        _requestTimeout = Duration(microseconds: requestTimeout.inMicroseconds);
-
-  static const String _clientName = 'Lunarr Player';
-  static const String _clientVersion = '1.0.0';
 
   final http.Client _transport;
   final Duration _requestTimeout;
@@ -118,9 +116,7 @@ class JellyfinApiClient {
       baseUrl: baseUrl,
       headers: {
         'Content-Type': 'application/json',
-        'X-Emby-Authorization':
-            'MediaBrowser Client="$_clientName", Device="$_clientName", '
-            'DeviceId="$deviceId", Version="$_clientVersion", Token=""',
+        'Authorization': jellyfinAuthorization(deviceId: deviceId),
       },
       body: {'Username': username, 'Pw': password},
     );
@@ -194,7 +190,7 @@ class JellyfinApiClient {
       _urlBuilder.sessionsLogout(connection.baseUrl),
       method: 'POST',
       baseUrl: connection.baseUrl,
-      headers: {'X-Emby-Token': connection.accessToken},
+      headers: connection.authorizationHeaders,
     );
   }
 
@@ -399,7 +395,7 @@ class JellyfinApiClient {
         return null;
       }
       final request = http.Request('GET', uri)
-        ..headers['X-Emby-Token'] = connection.accessToken;
+        ..headers.addAll(connection.authorizationHeaders);
       final response = await _transport
           .send(request)
           .timeout(_remainingRequestTime(deadline));
@@ -514,7 +510,7 @@ class JellyfinApiClient {
       baseUrl: connection.baseUrl,
       headers: {
         'Content-Type': 'application/json',
-        'X-Emby-Token': connection.accessToken,
+        ...connection.authorizationHeaders,
       },
       body: {
         'UserId': connection.userId,
@@ -645,7 +641,7 @@ class JellyfinApiClient {
       baseUrl: connection.baseUrl,
       headers: {
         'Content-Type': 'application/json',
-        'X-Emby-Token': connection.accessToken,
+        ...connection.authorizationHeaders,
       },
       body: {
         'ItemId': itemId,
@@ -681,7 +677,7 @@ class JellyfinApiClient {
       uri,
       method: method,
       baseUrl: connection.baseUrl,
-      headers: {'X-Emby-Token': connection.accessToken},
+      headers: connection.authorizationHeaders,
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw JellyfinApiException(
@@ -706,7 +702,7 @@ class JellyfinApiClient {
       uri,
       method: 'GET',
       baseUrl: connection.baseUrl,
-      headers: {'X-Emby-Token': connection.accessToken},
+      headers: connection.authorizationHeaders,
     );
   }
 

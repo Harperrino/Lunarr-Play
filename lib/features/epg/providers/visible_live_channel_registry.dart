@@ -138,5 +138,14 @@ final visibleLiveChannelRegistryProvider = Provider<VisibleLiveChannelRegistry>(
 /// changes, never on scrolls that keep the same rows mounted.
 final visibleLiveChannelCandidatesProvider =
     StreamProvider<List<VisibleLiveChannelCandidate>>((ref) {
-      return ref.watch(visibleLiveChannelRegistryProvider).changes;
+      final registry = ref.watch(visibleLiveChannelRegistryProvider);
+      return Stream.multi((controller) {
+        final subscription = registry.changes.listen(
+          controller.addSync,
+          onError: controller.addErrorSync,
+          onDone: controller.closeSync,
+        );
+        controller.addSync(registry.current);
+        controller.onCancel = subscription.cancel;
+      });
     });

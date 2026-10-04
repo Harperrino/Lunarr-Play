@@ -249,7 +249,7 @@ void main() {
         final client = _client((request) async {
           expect(request.method, 'POST');
           expect(request.url.path, '/Users/AuthenticateByName');
-          final authorization = request.headers['X-Emby-Authorization']!;
+          final authorization = request.headers['Authorization']!;
           expect(authorization, contains('DeviceId="device-42"'));
           expect(authorization, contains('Token=""'));
 
@@ -325,7 +325,10 @@ void main() {
       final client = _client((request) async {
         expect(request.method, 'POST');
         expect(request.url.path, '/Sessions/Logout');
-        expect(request.headers['X-Emby-Token'], 'token-abc-123');
+        expect(
+          request.headers['Authorization'],
+          contains('Token="${Uri.encodeComponent('token-abc-123')}"'),
+        );
         logoutSeen = true;
         return http.Response('', 204);
       });
@@ -350,7 +353,10 @@ void main() {
       final requests = <http.BaseRequest>[];
       final client = _client((request) async {
         requests.add(request);
-        expect(request.headers['X-Emby-Token'], connection.accessToken);
+        expect(
+          request.headers['Authorization'],
+          contains('Token="${Uri.encodeComponent(connection.accessToken)}"'),
+        );
         return http.Response('', 204);
       });
 
@@ -392,7 +398,10 @@ void main() {
     test('parses media segments and treats 404 as unavailable', () async {
       var unavailable = false;
       final client = _client((request) async {
-        expect(request.headers['X-Emby-Token'], connection.accessToken);
+        expect(
+          request.headers['Authorization'],
+          contains('Token="${Uri.encodeComponent(connection.accessToken)}"'),
+        );
         if (unavailable) return http.Response('', 404);
         return http.Response(
           jsonEncode({
@@ -422,7 +431,10 @@ void main() {
 
     test('couples trickplay metadata and tiles to the media source', () async {
       final client = _client((request) async {
-        expect(request.headers['X-Emby-Token'], connection.accessToken);
+        expect(
+          request.headers['Authorization'],
+          contains('Token="${Uri.encodeComponent(connection.accessToken)}"'),
+        );
         if (request.url.path.contains('/Trickplay/')) {
           expect(request.url.queryParameters['MediaSourceId'], 'source-a');
           return http.Response.bytes([1, 2, 3], 200);

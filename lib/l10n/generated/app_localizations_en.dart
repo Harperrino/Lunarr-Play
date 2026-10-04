@@ -2442,4 +2442,48 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get discoveryTmdbAttribution =>
       'This product uses the TMDB API but is not endorsed or certified by TMDB.';
+
+  @override
+  String get epgFilterPlaylists => 'Playlists';
+
+  @override
+  String get epgFilterCategories => 'Categories';
+
+  @override
+  String get epgFilterSearch => 'Search filters';
+
+  @override
+  String get epgFilterSelectAll => 'Select all';
+
+  @override
+  String get epgFilterSelectNone => 'Select none';
+
+  @override
+  String get epgFilterCancel => 'Cancel';
+
+  @override
+  String get epgFilterApply => 'Apply';
+
+  @override
+  String get epgFilterReset => 'Reset filters';
+
+  @override
+  String epgFilterSelection(String label, int selected, int total) {
+    return '$label ($selected/$total)';
+  }
+
+  @override
+  String get epgLoadError => 'The programme guide could not be loaded.';
+
+  @override
+  String get epgRetrySubtitle =>
+      'Retry loading the cached guide, or update the selected playlists.';
+
+  @override
+  String get epgRetryAction => 'Retry';
+
+  @override
+  String epgPlayerNext(String time, String title) {
+    return 'Next at $time: $title';
+  }
 }

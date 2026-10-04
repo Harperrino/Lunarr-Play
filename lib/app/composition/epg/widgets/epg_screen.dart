@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:m3uxtream_player/core/database/app_database.dart';
 import 'package:m3uxtream_player/core/models/playlist_epg.dart';
 import 'package:m3uxtream_player/app/composition/epg/providers/epg_grid_providers.dart';
 import 'package:m3uxtream_player/app/composition/epg/providers/epg_providers.dart';
@@ -11,6 +10,8 @@ import 'package:m3uxtream_player/app/composition/epg/widgets/epg_compact_agenda.
 import 'package:m3uxtream_player/app/composition/epg/widgets/epg_grid.dart';
 import 'package:m3uxtream_player/features/epg/widgets/epg_screen_layout.dart';
 import 'package:m3uxtream_player/features/epg/widgets/epg_toolbar.dart';
+import 'package:m3uxtream_player/features/epg/widgets/epg_filters.dart';
+import 'package:m3uxtream_player/app/composition/epg/providers/epg_filter_providers.dart';
 import 'package:m3uxtream_player/app/composition/channels/providers/channel_providers.dart';
 import 'package:m3uxtream_player/features/playlists/providers/playlist_providers.dart';
 import 'package:m3uxtream_player/features/player/providers/player_providers.dart';
@@ -33,30 +34,48 @@ class EpgScreen extends ConsumerWidget {
     final searchQuery = ref.watch(globalSearchQueryProvider).trim();
     final totalLiveCount =
         ref.watch(liveChannelsStreamProvider).valueOrNull?.length ?? 0;
-    final selectedPlaylistId = ref.watch(selectedPlaylistIdProvider);
     final epgJobs = ref.watch(epgSyncJobsProvider).valueOrNull ?? const {};
-    final selectedEpgJob = selectedPlaylistId == null
-        ? null
-        : epgJobs[selectedPlaylistId];
+    final filterIds = ref.watch(epgFilterPlaylistIdsProvider);
     final playlists =
         ref.watch(playlistsStreamProvider).valueOrNull ?? const [];
 
-    Playlist? activePlaylist;
-    if (selectedPlaylistId != null) {
-      for (final p in playlists) {
-        if (p.id == selectedPlaylistId) {
-          activePlaylist = p;
-          break;
+    final sources = playlists
+        .where((p) => filterIds.contains(p.id) && p.effectiveEpgUrl != null)
+        .toList();
+    final hasEpgUrl = sources.isNotEmpty;
+    final categories = ref.watch(epgFilterCategoriesProvider);
+    final selectedCategories = ref.watch(epgCategoryFilterProvider);
+    Future<void> refresh() async {
+      try {
+        await Future.wait(
+          sources.map((p) => ref.read(epgSyncControllerProvider).enqueue(p.id)),
+        );
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(context.l10n.epgLoadError)));
         }
       }
     }
 
-    final hasEpgUrl = activePlaylist?.effectiveEpgUrl != null;
+    void retry() {
+      ref.invalidate(knownEpgChannelIdsProvider);
+      ref.invalidate(epgChannelDisplayNamesProvider);
+      ref.read(epgGridSnapshotCacheProvider).clear();
+      ref.invalidate(epgGridSnapshotProvider);
+    }
+
+    final guideError =
+        entriesAsync.hasError ||
+        catalogAsync.hasError ||
+        ref.watch(epgGuideChannelsProvider).hasError;
     final hasVisibleProgrammes = epgGridHasVisibleProgrammes(rows);
     final hasMatchedChannels = epgGridHasMatchedChannels(rows);
-    final isManualSync = selectedEpgJob?.isActive ?? false;
+    final isManualSync = filterIds.any((id) => epgJobs[id]?.isActive ?? false);
+    final guide = ref.watch(epgGuideChannelsProvider);
     final isInitialCatalogLoad =
-        catalogAsync.isLoading && !catalogAsync.hasValue;
+        (catalogAsync.isLoading && !catalogAsync.hasValue) ||
+        (guide.isLoading && (guide.valueOrNull?.isEmpty ?? true));
     final isEntriesLoading = entriesAsync.isLoading && !entriesAsync.hasValue;
 
     return AppSurface(
@@ -64,35 +83,98 @@ class EpgScreen extends ConsumerWidget {
       level: AppSurfaceLevel.high,
       padding: const EdgeInsets.all(20),
       child: EpgScreenLayout(
-        toolbar: EpgToolbar(
-          isBusy: isManualSync,
-          isEntriesLoading: isEntriesLoading,
-          onJumpToNow: () => jumpEpgWindowToNow(ref),
-          onBackTwoHours: () => shiftEpgWindow(ref, const Duration(hours: -2)),
-          onForwardTwoHours: () =>
-              shiftEpgWindow(ref, const Duration(hours: 2)),
-          onBackOneDay: () => shiftEpgWindow(ref, const Duration(days: -1)),
-          onForwardOneDay: () => shiftEpgWindow(ref, const Duration(days: 1)),
-          onZoomOut: () => adjustEpgGridPixelsPerMinute(ref, -0.25),
-          onZoomIn: () => adjustEpgGridPixelsPerMinute(ref, 0.25),
-          onResetZoom: () =>
-              setEpgGridPixelsPerMinute(ref, epgGridPixelsPerMinuteDefault),
+        toolbar: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            EpgToolbar(
+              isBusy: false,
+              isEntriesLoading: isEntriesLoading || isManualSync,
+              onJumpToNow: () => jumpEpgWindowToNow(ref),
+              onBackTwoHours: () =>
+                  shiftEpgWindow(ref, const Duration(hours: -2)),
+              onForwardTwoHours: () =>
+                  shiftEpgWindow(ref, const Duration(hours: 2)),
+              onBackOneDay: () => shiftEpgWindow(ref, const Duration(days: -1)),
+              onForwardOneDay: () =>
+                  shiftEpgWindow(ref, const Duration(days: 1)),
+              onZoomOut: () => adjustEpgGridPixelsPerMinute(ref, -0.25),
+              onZoomIn: () => adjustEpgGridPixelsPerMinute(ref, 0.25),
+              onResetZoom: () =>
+                  setEpgGridPixelsPerMinute(ref, epgGridPixelsPerMinuteDefault),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                EpgFilterButton<int>(
+                  title: context.l10n.epgFilterPlaylists,
+                  options: [
+                    for (final p in playlists) EpgFilterOption(p.id, p.name),
+                  ],
+                  selected: filterIds.toSet(),
+                  onChanged: (ids) {
+                    ref.read(epgPlaylistFilterProvider.notifier).state = ids;
+                    ref.read(epgCategoryFilterProvider.notifier).state = null;
+                  },
+                ),
+                EpgFilterButton<String>(
+                  title: context.l10n.epgFilterCategories,
+                  options: [
+                    for (final category in categories)
+                      EpgFilterOption(
+                        category.filterKey,
+                        '${category.playlistName} · ${category.groupName}',
+                      ),
+                  ],
+                  selected:
+                      selectedCategories ??
+                      categories.map((c) => c.filterKey).toSet(),
+                  onChanged: (keys) =>
+                      ref.read(epgCategoryFilterProvider.notifier).state = keys,
+                ),
+                TextButton(
+                  onPressed: () {
+                    ref.read(epgPlaylistFilterProvider.notifier).state = null;
+                    ref.read(epgCategoryFilterProvider.notifier).state = null;
+                  },
+                  child: Text(context.l10n.epgFilterReset),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: !hasEpgUrl || isManualSync
+                      ? null
+                      : () => unawaited(refresh()),
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: Text(context.l10n.epgUpdateAction),
+                ),
+              ],
+            ),
+          ],
         ),
-        body: _buildBody(
-          context,
-          ref,
-          isInitialCatalogLoad: isInitialCatalogLoad,
-          isManualSync: isManualSync,
-          isEntriesLoading: isEntriesLoading,
-          channelsEmpty: channels.isEmpty,
-          searchQuery: searchQuery,
-          totalLiveCount: totalLiveCount,
-          hasVisibleProgrammes: hasVisibleProgrammes,
-          hasMatchedChannels: hasMatchedChannels,
-          hasEpgUrl: hasEpgUrl,
-          selectedPlaylistId: selectedPlaylistId,
-          rows: rows,
-        ),
+        body: guideError
+            ? _EmptyState(
+                icon: Icons.error_outline_rounded,
+                title: context.l10n.epgLoadError,
+                subtitle: context.l10n.epgRetrySubtitle,
+                actionLabel: context.l10n.epgRetryAction,
+                onAction: retry,
+              )
+            : _buildBody(
+                context,
+                ref,
+                isInitialCatalogLoad: isInitialCatalogLoad,
+                isEntriesLoading: isEntriesLoading,
+                channelsEmpty: channels.isEmpty,
+                searchQuery: searchQuery,
+                totalLiveCount: totalLiveCount,
+                hasVisibleProgrammes: hasVisibleProgrammes,
+                hasMatchedChannels: hasMatchedChannels,
+                hasEpgUrl: hasEpgUrl,
+                selectedPlaylistId: sources.isEmpty ? null : sources.first.id,
+                onRefresh: () => unawaited(refresh()),
+                rows: rows,
+              ),
       ),
     );
   }
@@ -101,7 +183,6 @@ class EpgScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref, {
     required bool isInitialCatalogLoad,
-    required bool isManualSync,
     required bool isEntriesLoading,
     required bool channelsEmpty,
     required String searchQuery,
@@ -110,8 +191,12 @@ class EpgScreen extends ConsumerWidget {
     required bool hasMatchedChannels,
     required bool hasEpgUrl,
     required int? selectedPlaylistId,
+    required VoidCallback onRefresh,
     required List<EpgGridRowData> rows,
   }) {
+    if (isInitialCatalogLoad) {
+      return _EpgGridShimmer(rowCount: rows.length.clamp(4, 10));
+    }
     if (channelsEmpty) {
       if (searchQuery.isNotEmpty && totalLiveCount > 0) {
         return _EmptyState(
@@ -127,14 +212,6 @@ class EpgScreen extends ConsumerWidget {
       );
     }
 
-    if (isInitialCatalogLoad) {
-      return _EpgGridShimmer(rowCount: rows.length.clamp(4, 10));
-    }
-
-    if (isManualSync) {
-      return _EpgGridShimmer(rowCount: rows.length.clamp(4, 10));
-    }
-
     if (!hasVisibleProgrammes &&
         !hasMatchedChannels &&
         !isEntriesLoading &&
@@ -148,14 +225,7 @@ class EpgScreen extends ConsumerWidget {
         actionLabel: hasEpgUrl && selectedPlaylistId != null
             ? context.l10n.epgUpdateAction
             : null,
-        onAction: hasEpgUrl && selectedPlaylistId != null
-            ? () => unawaited(
-                ref
-                    .read(epgSyncControllerProvider)
-                    .enqueue(selectedPlaylistId)
-                    .catchError((_) {}),
-              )
-            : null,
+        onAction: hasEpgUrl && selectedPlaylistId != null ? onRefresh : null,
       );
     }
 

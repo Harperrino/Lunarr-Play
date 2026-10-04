@@ -1156,5 +1156,41 @@
   },
   "discoveryCreditsTitle": "Data source credits",
   "discoveryTmdbLogoSemantics": "The Movie Database logo",
-  "discoveryTmdbAttribution": "This product uses the TMDB API but is not endorsed or certified by TMDB."
+  "discoveryTmdbAttribution": "This product uses the TMDB API but is not endorsed or certified by TMDB.",
+  "epgFilterPlaylists": "Playlists",
+  "epgFilterCategories": "Categories",
+  "epgFilterSearch": "Search filters",
+  "epgFilterSelectAll": "Select all",
+  "epgFilterSelectNone": "Select none",
+  "epgFilterCancel": "Cancel",
+  "epgFilterApply": "Apply",
+  "epgFilterReset": "Reset filters",
+  "epgFilterSelection": "{label} ({selected}/{total})",
+  "@epgFilterSelection": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "selected": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "epgLoadError": "The programme guide could not be loaded.",
+  "epgRetrySubtitle": "Retry loading the cached guide, or update the selected playlists.",
+  "epgRetryAction": "Retry",
+  "epgPlayerNext": "Next at {time}: {title}",
+  "@epgPlayerNext": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  }
 }

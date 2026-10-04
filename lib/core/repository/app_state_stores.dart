@@ -682,6 +682,24 @@ class PlaylistVisibilityStateStore {
     'pinned groups',
   );
 
+  /// Read/modify/write in one transaction so simultaneous UI actions cannot
+  /// overwrite another category or borrow the selected playlist's pins.
+  Future<List<String>> setGroupPinned(
+    int playlistId,
+    String groupName,
+    bool pinned,
+  ) {
+    _values.lifecycleGate?.ensureWritable();
+    final operation = _values._db.transaction(() async {
+      final groups = [...await getPinnedGroups(playlistId)];
+      groups.removeWhere((group) => group == groupName);
+      if (pinned) groups.add(groupName);
+      await setPinnedGroups(playlistId, groups);
+      return groups;
+    });
+    return _values.lifecycleGate?.track(operation) ?? operation;
+  }
+
   Future<void> _write(String key, String value, String label) async {
     try {
       await _values.write(key, value);

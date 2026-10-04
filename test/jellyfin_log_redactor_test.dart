@@ -2,7 +2,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:m3uxtream_player/features/jellyfin/services/jellyfin_log_redactor.dart';
 
 void main() {
+  test('redacts modern Authorization headers with URI-encoded tokens', () {
+    final output = const JellyfinLogRedactor().redact(
+      'Authorization: MediaBrowser Client="Lunarr", Token="sentinel%26token"',
+    );
+    expect(output, 'Authorization: ***');
+    expect(output, isNot(contains('sentinel')));
+  });
   const redactor = JellyfinLogRedactor();
+
+  test('redacts the modern ApiKey query parameter', () {
+    expect(
+      redactor.redact(
+        'https://server/Items/x/Images/Primary?ApiKey=sentinel&tag=x',
+      ),
+      'https://server/Items/x/Images/Primary?ApiKey=***&tag=x',
+    );
+  });
 
   test('redacts X-Emby-Token header values', () {
     final result = redactor.redact(

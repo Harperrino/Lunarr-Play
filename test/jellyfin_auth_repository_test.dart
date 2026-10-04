@@ -68,7 +68,7 @@ void main() {
           transport: MockClient((request) async {
             if (request.url.path == '/Users/AuthenticateByName') {
               deviceIds.add(
-                request.headers['X-Emby-Authorization']!
+                request.headers['Authorization']!
                     .split('DeviceId="')[1]
                     .split('"')[0],
               );

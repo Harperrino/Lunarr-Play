@@ -1,5 +1,13 @@
+import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_authorization.dart';
+
 /// Full authenticated Jellyfin session and the persisted credential context.
 class JellyfinConnection {
+  Map<String, String> get authorizationHeaders => {
+    'Authorization': jellyfinAuthorization(
+      deviceId: deviceId,
+      token: accessToken,
+    ),
+  };
   const JellyfinConnection({
     required this.baseUrl,
     required this.serverId,

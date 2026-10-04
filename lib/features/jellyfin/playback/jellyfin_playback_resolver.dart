@@ -1,3 +1,4 @@
+import 'package:m3uxtream_player/features/jellyfin/auth/jellyfin_authorization.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_item.dart';
 import 'package:m3uxtream_player/features/jellyfin/models/jellyfin_playback_info.dart';
 
@@ -116,7 +117,7 @@ class JellyfinPlaybackResolver {
     final ticks = startTimeTicks ?? item.playbackPositionTicks;
     return JellyfinResolvedPlayback(
       uri: uri,
-      headers: {'X-Emby-Token': accessToken},
+      headers: {'Authorization': jellyfinAuthorization(token: accessToken)},
       mediaSource: source,
       playSessionId: playbackInfo.playSessionId,
       startPosition: ticks > 0
@@ -270,6 +271,7 @@ class JellyfinPlaybackResolver {
     for (final entry in uri.queryParametersAll.entries) {
       final key = entry.key.toLowerCase();
       if (key == 'api_key' ||
+          key == 'apikey' ||
           key == 'audiostreamindex' ||
           key == 'subtitlestreamindex' ||
           key == 'mediasourceid' ||
@@ -278,7 +280,7 @@ class JellyfinPlaybackResolver {
       }
       query[entry.key] = entry.value;
     }
-    query['api_key'] = accessToken;
+    query['ApiKey'] = accessToken;
     if (mediaSourceId.isNotEmpty) query['MediaSourceId'] = mediaSourceId;
     if (audioStreamIndex != null) {
       query['AudioStreamIndex'] = audioStreamIndex.toString();

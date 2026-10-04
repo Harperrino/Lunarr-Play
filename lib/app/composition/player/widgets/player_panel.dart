@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:m3uxtream_player/app/composition/player/widgets/player_epg_panel.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -199,6 +201,7 @@ class _PlayerPanelState extends ConsumerState<PlayerPanel> {
                         .seekRelative(delta),
                     onToggleFullscreen: widget.onToggleFullscreen,
                   ),
+                  PlayerEpgPanel(compact: compact),
                 ],
               ],
             ),
