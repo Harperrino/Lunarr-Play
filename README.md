@@ -30,9 +30,11 @@ series or looking through your provider's catalogue.
   the top bar
 - Favorites, Watch Later, hideable and pinnable playlist categories, playback
   progress and resume support
-- Global Live TV search, a responsive EPG grid, compact agenda and current
-  programme information
-- Multiple local Jellyfin server and user profiles with fast account switching
+- Global Live TV search, a responsive EPG grid and compact agenda with
+  independent playlist/category filters, current programmes in the channel
+  list and current/next programme information below the player
+- Jellyfin 12.1-compatible authentication and multiple local server/user
+  profiles with fast account switching
   from the top bar
 - Jellyfin libraries, Continue Watching, Next Up, recently added media,
   responsive series details and an in-player season/episode browser
@@ -77,11 +79,10 @@ series or looking through your provider's catalogue.
 
 ## Installation
 
-Windows x64 builds are packaged as a self-contained portable ZIP. Build artifacts
-are available from the **Windows portable build** GitHub Actions workflow; future
-release uploads use this format.
+The Windows x64 release is distributed as a self-contained portable ZIP through
+[GitHub Releases](https://github.com/Harperrino/Lunarr-Play/releases/latest).
 
-1. Download the portable ZIP for the build you want to use.
+1. Download `Lunarr-Player-1.0.2-windows-x64-portable.zip`.
 2. Extract the complete archive to a writable folder of your choice.
 3. Run `lunarr_one.exe` from that folder. Keep the DLLs and `data/` alongside it.
 
@@ -93,10 +94,9 @@ Windows may display a SmartScreen warning because the application is not code-si
 
 ## Current Status
 
-The current stable release is **Lunarr Player 1.0.1** (`v1.0.1`).
-Its previously published assets predate the switch to portable distribution.
+The current stable release is **Lunarr Player 1.0.2** (`v1.0.2`).
 
-[See what is new in 1.0.1](RELEASE_NOTES_1.0.1.md).
+[See what is new in 1.0.2](RELEASE_NOTES_1.0.2.md).
 
 Windows desktop is the currently supported platform. Android smartphone and
 foldable support is the next planned platform effort; Android TV is a separate
@@ -107,7 +107,7 @@ Lunarr Player 1.0 is considered feature complete. Development now focuses on
 bug fixes and project maintenance. New features will be added selectively when
 they materially improve the simple, quality-of-life-focused player experience.
 
-Existing 0.9.x and 0.10.x installations keep using their local application
+Existing 0.9.x, 0.10.x and 1.0.x builds keep using their local application
 database, so playlists, settings, favorites and playback progress remain
 available after updating. Jellyfin connection profiles are stored locally per
 Windows user.
@@ -123,21 +123,21 @@ contents first.
 
 Lunarr is built with Flutter. A Windows build requires:
 
-- Flutter 3.47 or newer with Windows desktop support
+- Flutter 3.47.1 stable (Dart 3.13.1) with Windows desktop support
 - Visual Studio with the Desktop development with C++ workload
 
 ```powershell
-flutter pub get
+flutter pub get --enforce-lockfile
 flutter analyze lib test --no-pub
 flutter test --concurrency=1 --no-pub
-flutter build windows --release
 .\tool\build_windows_portable.ps1
 ```
 
 The portable builder creates a ZIP that can be extracted and started without
 installation. It contains `lunarr_one.exe`, Flutter data, application DLLs, the
 required Visual C++ runtime files and license notices. GitHub Actions creates
-the same ZIP after each push to `main` and exposes it as a workflow artifact.
+the same ZIP for main/build branches and publishes tagged stable releases
+with their SHA-256 checksums.
 
 Before packaging, the portable builder scans the staged files for local-only metadata,
 private endpoints, credential-bearing URLs, known token formats and files that

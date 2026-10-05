@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.0.2
+
+### Fixes and programme guide
+
+- Category pinning works again in playlist management, Live TV, VOD and series.
+  Concurrent changes retain the correct playlist's pins.
+- Jellyfin 12.1 connections use current authentication for login, libraries,
+  playback, artwork and session reporting.
+- Fixed compressed XMLTV downloads, stalled network requests and programme
+  information that failed to load again after list changes or tab returns.
+- Current programme titles advance with time without needing to scroll.
+- Added searchable multi-select playlist/category filters in the guide,
+  independent of the Live TV sidebar and the playing channel.
+- Added current/next programme information below the Live TV player, including
+  broadcast times and the current programme description when available.
+- Cached guide data stays visible during refresh; loading errors offer retry.
+
+### Windows distribution
+
+- Windows releases are portable ZIPs with MPV/libmpv, Flutter, the Visual C++
+  runtime and license notices. Extract the complete archive and run
+  `lunarr_one.exe`; no installer or fixed installation is required.
+- Existing per-user application data remains compatible. ZIP releases include
+  a SHA-256 checksum and retain the unsigned-build SmartScreen notice.
+
 ## 1.0.1
 
 ### Fixes and security

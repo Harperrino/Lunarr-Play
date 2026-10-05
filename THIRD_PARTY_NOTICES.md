@@ -1,7 +1,7 @@
 # Third-Party Notices
 
 This document describes the principal native components bundled with the
-Windows distribution of Lunarr Player 1.0.1. It is provided for attribution
+Windows distribution of Lunarr Player 1.0.2. It is provided for attribution
 and license compliance and is not legal advice.
 
 The Flutter asset bundle also contains `data/flutter_assets/NOTICES.Z`, which
