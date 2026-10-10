@@ -1195,6 +1195,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
         preloadSeconds: bufferSeconds,
         aggressivePreload: preBuffer,
       );
+      if (audioDelay.value != 0) await audioDelay.reapply();
       await current.player.seek(target);
       if (wasPlaying) {
         await current.player.play();
@@ -2350,6 +2351,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
           preloadSeconds: bufferSeconds,
           aggressivePreload: preBuffer,
         );
+        if (audioDelay.value != 0) await audioDelay.reapply();
       }
 
       if (!_isLiveOpenSessionCurrent(sessionToken)) {
@@ -2726,6 +2728,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                 _lastAppliedLiveDelivery ?? LiveStreamDelivery.continuous,
             liveStartupBuffer: true,
           );
+          if (audioDelay.value != 0) await audioDelay.reapply();
           if (!_isLiveOpenSessionCurrent(sessionToken)) {
             _update((s) => s.copyWith(isLiveStartupBuffering: false));
             return false;

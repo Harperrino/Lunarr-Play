@@ -2,6 +2,8 @@
 library;
 
 import 'dart:io';
+import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit/media_kit.dart';
@@ -89,6 +91,123 @@ void main() {
     },
     skip: fixture == null
         ? 'Set LUNARR_AUDIO_SYNC_FIXTURE for playback verification.'
+        : false,
+  );
+
+  final ffmpeg = Platform.environment['LUNARR_FFMPEG'];
+  test(
+    'paced live MPEG-TS recovers from large offsets and both tracks stay smooth',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final producers = <Process>[];
+      server.listen((request) async {
+        final producer = await Process.start(ffmpeg!, [
+          '-hide_banner',
+          '-loglevel',
+          'error',
+          '-re',
+          '-stream_loop',
+          '-1',
+          '-i',
+          fixture!,
+          '-c:v',
+          'mpeg2video',
+          '-c:a',
+          'aac',
+          '-flush_packets',
+          '1',
+          '-f',
+          'mpegts',
+          'pipe:1',
+        ]);
+        producers.add(producer);
+        unawaited(producer.stderr.drain<void>());
+        request.response.headers.contentType = ContentType('video', 'mp2t');
+        try {
+          await request.response.addStream(producer.stdout);
+          await request.response.close();
+        } catch (_) {
+          // Player disposal closes the stream before the looping producer ends.
+        }
+      });
+      addTearDown(() async {
+        await server.close(force: true);
+        for (final producer in producers) {
+          producer.kill();
+          await producer.exitCode;
+        }
+      });
+      final player = Player();
+      addTearDown(player.dispose);
+      final native = player.platform as NativePlayer;
+      for (final entry in {
+        'vo': 'null',
+        'ao': 'null',
+        'vid': 'auto',
+        'cache-pause': 'no',
+        'cache-pause-initial': 'no',
+        'demuxer-readahead-secs': '3',
+        'demuxer-max-back-bytes': '0',
+        'demuxer-lavf-format': 'mpegts',
+      }.entries) {
+        await native.setProperty(entry.key, entry.value);
+      }
+      await player.open(Media('http://127.0.0.1:${server.port}/live.ts'));
+
+      Future<void> expectSmoothOffset(int milliseconds) async {
+        // Live cannot supply future data instantly. Allow one initial realignment,
+        // then require continuous advancement of BOTH tracks at the chosen offset.
+        final deadline = DateTime.now().add(const Duration(seconds: 50));
+        double? previousAudio;
+        double? previousVideo;
+        var stableSamples = 0;
+        do {
+          await Future<void>.delayed(const Duration(milliseconds: 250));
+          final audio = double.tryParse(await native.getProperty('audio-pts'));
+          final video = double.tryParse(await native.getProperty('time-pos'));
+          final cacheText = await native.getProperty('demuxer-cache-state');
+          final cache = cacheText.isEmpty
+              ? <String, dynamic>{}
+              : jsonDecode(cacheText) as Map<String, dynamic>;
+          if (audio != null &&
+              video != null &&
+              previousAudio != null &&
+              previousVideo != null &&
+              cache['underrun'] == false &&
+              (audio - video + milliseconds / 1000).abs() < 0.2 &&
+              audio - previousAudio > 0.1 &&
+              audio - previousAudio < 0.5 &&
+              video - previousVideo > 0.1 &&
+              video - previousVideo < 0.5) {
+            stableSamples++;
+          } else {
+            stableSamples = 0;
+          }
+          previousAudio = audio;
+          previousVideo = video;
+        } while (stableSamples < 20 && DateTime.now().isBefore(deadline));
+        expect(
+          stableSamples,
+          20,
+          reason:
+              'Both live tracks must advance continuously at $milliseconds ms',
+        );
+      }
+
+      await expectSmoothOffset(0);
+      for (final value in [-15000, 15000, 0]) {
+        await applyNativeAudioDelay(player, value);
+        await expectSmoothOffset(value);
+      }
+      expect(await native.getProperty('cache-pause'), 'no');
+      expect(
+        double.parse(await native.getProperty('demuxer-readahead-secs')),
+        3,
+      );
+    },
+    timeout: const Timeout(Duration(minutes: 3)),
+    skip: fixture == null || ffmpeg == null
+        ? 'Set LUNARR_AUDIO_SYNC_FIXTURE and LUNARR_FFMPEG for paced live verification.'
         : false,
   );
 }

@@ -5,7 +5,13 @@ import 'package:media_kit/media_kit.dart';
 import 'package:m3uxtream_player/core/services/audio_delay_session.dart';
 
 class _NativePlayer extends Fake implements NativePlayer {
-  final properties = <String, String>{};
+  final properties = <String, String>{
+    'audio-delay': '0.0',
+    'cache-pause': 'no',
+    'cache-pause-wait': '1',
+    'demuxer-readahead-secs': '3',
+    'demuxer-max-bytes': '33554432',
+  };
   String? reportedValue;
 
   @override
@@ -21,7 +27,10 @@ class _NativePlayer extends Fake implements NativePlayer {
   Future<String> getProperty(
     String property, {
     bool waitForInitialization = true,
-  }) async => reportedValue ?? properties[property] ?? '';
+  }) async =>
+      (property == 'audio-delay' ? reportedValue : null) ??
+      properties[property] ??
+      '';
 }
 
 class _Player extends Fake implements Player {
@@ -46,6 +55,56 @@ void main() {
     await applyNativeAudioDelay(player, 60000);
     expect(native.properties['audio-delay'], '60.0');
   });
+
+  test(
+    'large offsets reserve both track timelines and reset restores live policy',
+    () async {
+      final native = _NativePlayer();
+      final original = Map<String, String>.of(native.properties);
+      final player = _Player(native);
+      await applyNativeAudioDelay(player, -30000);
+      expect(native.properties['cache-pause'], 'yes');
+      expect(double.parse(native.properties['demuxer-readahead-secs']!), 35);
+      expect(
+        int.parse(native.properties['demuxer-max-bytes']!),
+        greaterThan(33554432),
+      );
+      await applyNativeAudioDelay(player, 60000);
+      expect(double.parse(native.properties['demuxer-readahead-secs']!), 65);
+      // A reconnect's startup profile may have overwritten the cache policy.
+      native.properties['cache-pause'] = 'no';
+      native.properties['demuxer-readahead-secs'] = '3';
+      await applyNativeAudioDelay(player, 60000);
+      expect(native.properties['cache-pause'], 'yes');
+      expect(double.parse(native.properties['demuxer-readahead-secs']!), 65);
+      await applyNativeAudioDelay(player, 0);
+      expect(native.properties, original);
+    },
+  );
+
+  test(
+    'offset reserves preserve larger VOD caches and restore after failure',
+    () async {
+      final native = _NativePlayer();
+      native.properties['cache-pause'] = 'yes';
+      native.properties['cache-pause-wait'] = '2';
+      native.properties['demuxer-readahead-secs'] = '120';
+      native.properties['demuxer-max-bytes'] = '251658240';
+      final original = Map<String, String>.of(native.properties);
+      final player = _Player(native);
+      await applyNativeAudioDelay(player, 30000);
+      expect(native.properties['demuxer-readahead-secs'], '120.0');
+      expect(native.properties['demuxer-max-bytes'], '251658240');
+      await applyNativeAudioDelay(player, 0);
+      expect(native.properties, original);
+      native.reportedValue = '0.0';
+      await expectLater(
+        applyNativeAudioDelay(player, -30000),
+        throwsStateError,
+      );
+      expect(native.properties, original);
+    },
+  );
 
   test(
     'an ignored or unreadable native offset is reported as a failure',

@@ -2492,7 +2492,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get audioDelayDescription =>
-      'Sound behind the picture? Use a negative value to play it earlier. Sound ahead of the picture? Use a positive value to play it later. Range: −60 to +60 seconds (1000 ms = 1 second). Resets for a new channel or title.';
+      'If sound is late, use a negative value. If sound is early, use a positive value. Range: ±60 seconds (1000 ms = 1 second). Large live offsets may pause to buffer. Resets for a new channel or title.';
 
   @override
   String audioDelayValue(int milliseconds) {
