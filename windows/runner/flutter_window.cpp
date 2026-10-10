@@ -93,6 +93,54 @@ bool FlutterWindow::OnCreate() {
         }
         result->Success(flutter::EncodableValue(output));
       });
+  fullscreen_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), "lunarr/fullscreen",
+          &flutter::StandardMethodCodec::GetInstance());
+  fullscreen_channel_->SetMethodCallHandler(
+      [this](const auto& call, auto result) {
+        if (call.method_name() == "prepare") {
+          const auto* enabled = std::get_if<bool>(call.arguments());
+          if (enabled == nullptr) {
+            result->Error("invalid_arguments", "Expected fullscreen state.");
+            return;
+          }
+          if (*enabled && !fullscreen_geometry_active_) {
+            fullscreen_placement_.length = sizeof(fullscreen_placement_);
+            if (!GetWindowPlacement(GetHandle(), &fullscreen_placement_)) {
+              result->Error("fullscreen_failed", "Could not save placement.");
+              return;
+            }
+            fullscreen_style_ = GetWindowLongPtr(GetHandle(), GWL_STYLE);
+            fullscreen_placement_saved_ = true;
+            fullscreen_monitor_ =
+                MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONEAREST);
+          }
+          fullscreen_geometry_active_ = *enabled;
+          result->Success();
+        } else if (call.method_name() == "fit") {
+          if (!fullscreen_geometry_active_ || !FitFullscreenMonitor()) {
+            result->Error("fullscreen_failed", "Could not fit the monitor.");
+          } else {
+            result->Success();
+          }
+        } else if (call.method_name() == "restore") {
+          if (fullscreen_placement_saved_) {
+            SetWindowLongPtr(GetHandle(), GWL_STYLE, fullscreen_style_);
+            if (!SetWindowPlacement(GetHandle(), &fullscreen_placement_)) {
+              result->Error("fullscreen_failed", "Could not restore placement.");
+              return;
+            }
+            SetWindowPos(GetHandle(), nullptr, 0, 0, 0, 0,
+                         SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+                         SWP_NOACTIVATE | SWP_FRAMECHANGED);
+            fullscreen_placement_saved_ = false;
+          }
+          result->Success();
+        } else {
+          result->NotImplemented();
+        }
+      });
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
@@ -119,6 +167,25 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
+  // Fullscreen has no non-client inset. window_manager's frameless adjustment
+  // otherwise uses rcWork (excluding the taskbar) and can leave desktop edges.
+  if (fullscreen_geometry_active_ && message == WM_NCCALCSIZE && wparam) {
+    return 0;
+  }
+
+  if (fullscreen_geometry_active_ && message == WM_GETMINMAXINFO) {
+    MONITORINFO monitor{};
+    monitor.cbSize = sizeof(monitor);
+    if (GetMonitorInfo(fullscreen_monitor_, &monitor)) {
+      auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
+      info->ptMinTrackSize = {0, 0};
+      info->ptMaxTrackSize = {
+          monitor.rcMonitor.right - monitor.rcMonitor.left,
+          monitor.rcMonitor.bottom - monitor.rcMonitor.top};
+      return 0;
+    }
+  }
+
   // Give Flutter, including plugins, an opportunity to handle window messages.
   if (flutter_controller_) {
     std::optional<LRESULT> result =
@@ -129,6 +196,17 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
     }
   }
 
+  if (fullscreen_geometry_active_ &&
+      (message == WM_DPICHANGED || message == WM_DISPLAYCHANGE)) {
+    // Plugins first receive the new DPI. Ignore Windows' suggested logical
+    // rectangle and fit the full physical monitor instead.
+    if (message == WM_DISPLAYCHANGE) {
+      fullscreen_monitor_ = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    }
+    FitFullscreenMonitor();
+    return 0;
+  }
+
   switch (message) {
     case WM_FONTCHANGE:
       flutter_controller_->engine()->ReloadSystemFonts();
@@ -136,4 +214,26 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
   }
 
   return Win32Window::MessageHandler(hwnd, message, wparam, lparam);
+}
+
+bool FlutterWindow::FitFullscreenMonitor() {
+  MONITORINFO monitor{};
+  monitor.cbSize = sizeof(monitor);
+  if (!GetMonitorInfo(fullscreen_monitor_, &monitor)) {
+    fullscreen_monitor_ =
+        MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONEAREST);
+    if (!GetMonitorInfo(fullscreen_monitor_, &monitor)) return false;
+  }
+  const HWND window = GetHandle();
+  const auto style = GetWindowLongPtr(window, GWL_STYLE);
+  // A maximized window is constrained to the work area. Keep window_manager's
+  // saved placement/style for exit, but remove that constraint while fullscreen.
+  SetWindowLongPtr(window, GWL_STYLE,
+                   style & ~(WS_CAPTION | WS_THICKFRAME | WS_MAXIMIZE |
+                             WS_MINIMIZE));
+  return SetWindowPos(window, HWND_TOP, monitor.rcMonitor.left,
+                      monitor.rcMonitor.top,
+                      monitor.rcMonitor.right - monitor.rcMonitor.left,
+                      monitor.rcMonitor.bottom - monitor.rcMonitor.top,
+                      SWP_NOOWNERZORDER | SWP_FRAMECHANGED) != FALSE;
 }

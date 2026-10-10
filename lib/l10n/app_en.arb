@@ -1192,5 +1192,23 @@
         "type": "String"
       }
     }
-  }
+  },
+  "audioDelayTitle": "Audio sync",
+  "audioDelayDescription": "Adjust the sound timing for this playback. Positive values play sound later; negative values play it earlier. Resets for a new channel or title.",
+  "audioDelayValue": "{milliseconds} ms",
+  "@audioDelayValue": {
+    "placeholders": {
+      "milliseconds": {
+        "type": "int"
+      }
+    }
+  },
+  "audioDelayEarlier": "Sound earlier",
+  "audioDelayLater": "Sound later",
+  "audioDelayUnit": "ms",
+  "audioDelayInvalid": "Enter a whole number from −2000 to 2000.",
+  "audioDelayFailed": "Could not adjust audio sync. Please try again.",
+  "audioDelayReset": "Reset",
+  "audioDelayApply": "Apply",
+  "audioDelayClose": "Close"
 }

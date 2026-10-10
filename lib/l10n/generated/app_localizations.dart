@@ -4381,6 +4381,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next at {time}: {title}'**
   String epgPlayerNext(String time, String title);
+
+  /// No description provided for @audioDelayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio sync'**
+  String get audioDelayTitle;
+
+  /// No description provided for @audioDelayDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust the sound timing for this playback. Positive values play sound later; negative values play it earlier. Resets for a new channel or title.'**
+  String get audioDelayDescription;
+
+  /// No description provided for @audioDelayValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{milliseconds} ms'**
+  String audioDelayValue(int milliseconds);
+
+  /// No description provided for @audioDelayEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound earlier'**
+  String get audioDelayEarlier;
+
+  /// No description provided for @audioDelayLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound later'**
+  String get audioDelayLater;
+
+  /// No description provided for @audioDelayUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'ms'**
+  String get audioDelayUnit;
+
+  /// No description provided for @audioDelayInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a whole number from −2000 to 2000.'**
+  String get audioDelayInvalid;
+
+  /// No description provided for @audioDelayFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not adjust audio sync. Please try again.'**
+  String get audioDelayFailed;
+
+  /// No description provided for @audioDelayReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get audioDelayReset;
+
+  /// No description provided for @audioDelayApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get audioDelayApply;
+
+  /// No description provided for @audioDelayClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get audioDelayClose;
 }
 
 class _AppLocalizationsDelegate

@@ -1,3 +1,4 @@
+import 'package:m3uxtream_player/features/player/widgets/audio_delay_dialog.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
@@ -26,6 +27,7 @@ class AudioTrackMenuButton extends ConsumerWidget {
     final tracks = audioTracks;
     final hasTracks = tracks.isNotEmpty;
     final selectedTrackId = selectedAudioTrackId;
+    final enabled = hasTracks || ref.watch(selectedChannelProvider) != null;
     final colors = Theme.of(context).colorScheme;
     final shapes =
         Theme.of(context).extension<AppShapes>() ?? AppShapes.standard;
@@ -33,8 +35,10 @@ class AudioTrackMenuButton extends ConsumerWidget {
     return PopupMenuButton<String>(
       tooltip: hasTracks
           ? context.l10n.audioTrackChooseTooltip
+          : enabled
+          ? context.l10n.audioDelayTitle
           : context.l10n.audioTrackNoneDetectedTooltip,
-      enabled: hasTracks,
+      enabled: enabled,
       offset: const Offset(0, 12),
       color: colors.surfaceContainerHigh,
       surfaceTintColor: Colors.transparent,
@@ -44,27 +48,41 @@ class AudioTrackMenuButton extends ConsumerWidget {
       padding: EdgeInsets.zero,
       onSelected: (trackId) {
         onUserActivity?.call();
-        ref.read(playerNotifierProvider.notifier).selectAudioTrack(trackId);
+        if (trackId == 'audio-delay') {
+          showAudioDelayDialog(
+            context,
+            ref.read(playerNotifierProvider.notifier).audioDelay,
+          );
+        } else {
+          ref.read(playerNotifierProvider.notifier).selectAudioTrack(trackId);
+        }
       },
       itemBuilder: (context) => [
-        _menuItem(
-          context: context,
-          value: AudioTrack.auto().id,
-          label: context.l10n.audioTrackAutomatic,
-          selected: selectedTrackId == null,
+        PopupMenuItem<String>(
+          value: 'audio-delay',
+          child: Text(context.l10n.audioDelayTitle),
         ),
-        for (var index = 0; index < tracks.length; index++)
+        if (hasTracks) ...[
+          const PopupMenuDivider(),
           _menuItem(
             context: context,
-            value: tracks[index].id,
-            label: LiveAudioTrackService.labelFor(
-              tracks[index],
-              fallbackIndex: index + 1,
-            ),
-            selected: selectedTrackId == tracks[index].id,
+            value: AudioTrack.auto().id,
+            label: context.l10n.audioTrackAutomatic,
+            selected: selectedTrackId == null,
           ),
+          for (var index = 0; index < tracks.length; index++)
+            _menuItem(
+              context: context,
+              value: tracks[index].id,
+              label: LiveAudioTrackService.labelFor(
+                tracks[index],
+                fallbackIndex: index + 1,
+              ),
+              selected: selectedTrackId == tracks[index].id,
+            ),
+        ],
       ],
-      child: _AudioTrackButtonVisual(compact: compact, enabled: hasTracks),
+      child: _AudioTrackButtonVisual(compact: compact, enabled: enabled),
     );
   }
 

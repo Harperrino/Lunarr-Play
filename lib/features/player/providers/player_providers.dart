@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:m3uxtream_player/core/services/audio_delay_session.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/l10n/generated/app_localizations.dart';
 import 'package:m3uxtream_player/l10n/generated/app_localizations_en.dart';
@@ -575,6 +577,13 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
   /// the full analyzeduration cost, while keeping Dispatcharr/Proxy zaps fast.
   static const _quickAudioProbeTimeout = Duration(seconds: 2);
 
+  late final audioDelay = AudioDelaySession(
+    apply: (milliseconds) async {
+      final player = state.asData?.value.player;
+      if (player != null) await applyNativeAudioDelay(player, milliseconds);
+    },
+  );
+
   double? _volumeBeforeMute;
 
   final PlayerSessionLifecycle<PlayerState> _sessionLifecycle =
@@ -738,6 +747,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
 
   @override
   Future<PlayerState> build() async {
+    ref.onDispose(audioDelay.dispose);
     return _sessionLifecycle.initializeOnce(_initializePlayer);
   }
 
@@ -1207,7 +1217,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     if (current == null) return;
 
     AppLogger.info('PlayerNotifier: Stopping playback.');
-    _beginLiveOpenSession();
+    final sessionToken = _beginLiveOpenSession();
     _manualAudioTrackId = null;
     _lastAudioTrackSignature = null;
     _lastAppliedLiveDelivery = null;
@@ -1217,6 +1227,9 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
     _liveAudioRecovery.resetSession();
 
     await current.player.stop();
+    if (!_isLiveOpenSessionCurrent(sessionToken)) return;
+    await audioDelay.beginPlayback(null);
+    if (!_isLiveOpenSessionCurrent(sessionToken)) return;
 
     resetVodMainVideoSurfaceReady(ref);
     _sessionLifecycle.invalidateVideoController();
@@ -1266,6 +1279,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
 
     final canSeek = isSeekableChannel(channel);
     final sessionToken = _beginLiveOpenSession();
+    await audioDelay.beginPlayback((channel?.id, url));
+    if (!_isLiveOpenSessionCurrent(sessionToken)) return;
     _manualAudioTrackId = null;
     _lastAudioTrackSignature = null;
     _lastAppliedLiveDelivery = null;
@@ -2293,6 +2308,8 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
         ),
         play: !openPaused,
       );
+      if (!_isLiveOpenSessionCurrent(sessionToken)) return false;
+      await audioDelay.reapply();
       if (!_isLiveOpenSessionCurrent(sessionToken)) {
         return false;
       }

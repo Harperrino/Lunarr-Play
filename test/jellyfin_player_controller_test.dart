@@ -184,6 +184,24 @@ void main() {
     }
   });
 
+  test(
+    'audio sync survives seeking and track reopen but resets for another title',
+    () async {
+      final instance = buildController();
+      await instance.play(_item);
+      await instance.audioDelay.setMilliseconds(-250);
+      await instance.seek(const Duration(seconds: 30));
+      expect(instance.audioDelay.value, -250);
+      await instance.selectAudioTrack(1);
+      expect(instance.audioDelay.value, -250);
+      await instance.play(_secondItem);
+      expect(instance.audioDelay.value, 0);
+      await instance.audioDelay.setMilliseconds(100);
+      await instance.stop();
+      expect(instance.audioDelay.value, 0);
+    },
+  );
+
   test('play resolves direct play and opens the media with headers', () async {
     final controller = buildController();
 

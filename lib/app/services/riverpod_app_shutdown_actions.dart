@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:m3uxtream_player/core/services/desktop_fullscreen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/shared/providers/app_shell_state_providers.dart';
 import 'package:m3uxtream_player/core/logger/app_logger.dart';
@@ -50,7 +51,7 @@ class RiverpodAppShutdownActions implements AppShutdownActions {
     try {
       if (await windowManager.isFullScreen()) {
         ref.read(isFullscreenProvider.notifier).state = false;
-        await windowManager.setFullScreen(false);
+        await DesktopFullscreen.setEnabled(false);
       }
     } catch (e, stackTrace) {
       AppLogger.error('AppShutdown: Failed to exit fullscreen', e, stackTrace);

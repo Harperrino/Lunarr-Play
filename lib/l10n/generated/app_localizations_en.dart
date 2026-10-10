@@ -2486,4 +2486,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String epgPlayerNext(String time, String title) {
     return 'Next at $time: $title';
   }
+
+  @override
+  String get audioDelayTitle => 'Audio sync';
+
+  @override
+  String get audioDelayDescription =>
+      'Adjust the sound timing for this playback. Positive values play sound later; negative values play it earlier. Resets for a new channel or title.';
+
+  @override
+  String audioDelayValue(int milliseconds) {
+    return '$milliseconds ms';
+  }
+
+  @override
+  String get audioDelayEarlier => 'Sound earlier';
+
+  @override
+  String get audioDelayLater => 'Sound later';
+
+  @override
+  String get audioDelayUnit => 'ms';
+
+  @override
+  String get audioDelayInvalid => 'Enter a whole number from −2000 to 2000.';
+
+  @override
+  String get audioDelayFailed =>
+      'Could not adjust audio sync. Please try again.';
+
+  @override
+  String get audioDelayReset => 'Reset';
+
+  @override
+  String get audioDelayApply => 'Apply';
+
+  @override
+  String get audioDelayClose => 'Close';
 }

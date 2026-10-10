@@ -1,3 +1,4 @@
+import 'package:m3uxtream_player/core/services/desktop_fullscreen.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -146,7 +147,7 @@ class PlaybackPrepController extends Notifier<PlaybackPrepState> {
       try {
         if (await windowManager.isFullScreen()) {
           ref.read(isFullscreenProvider.notifier).state = false;
-          await windowManager.setFullScreen(false);
+          await DesktopFullscreen.setEnabled(false);
           await SchedulerBinding.instance.endOfFrame;
         }
       } catch (e, stackTrace) {

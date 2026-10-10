@@ -78,12 +78,16 @@ jobs:
         run: |
           set -euo pipefail
           version="${RELEASE_TAG#v}"
-          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]
           package_version=$(sed -n 's/^version: *\([^+ ]*\).*/\1/p' pubspec.yaml)
           test "$version" = "$package_version"
           test -f "RELEASE_NOTES_$version.md"
           archive="Lunarr-Player-$version-windows-x64-portable.zip"
           (cd release && sha256sum --check "$archive.sha256")
+          release_flags=(--latest)
+          if [[ "$version" == *-rc.* ]]; then
+            release_flags=(--prerelease --latest=false)
+          fi
           gh release create "$RELEASE_TAG" --verify-tag --title "Lunarr Player $version" \
-            --notes-file "RELEASE_NOTES_$version.md" --latest \
+            --notes-file "RELEASE_NOTES_$version.md" "${release_flags[@]}" \
             "release/$archive" "release/$archive.sha256"

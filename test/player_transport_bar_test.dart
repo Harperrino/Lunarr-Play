@@ -171,7 +171,7 @@ void main() {
       final volumeRect = tester.getRect(find.byTooltip('Mute'));
       final playRect = tester.getRect(find.byTooltip('Play'));
       final audioRect = tester.getRect(
-        find.byTooltip('No audio tracks detected'),
+        find.byTooltip('Audio sync'),
       );
       final fullscreenRect = tester.getRect(find.byTooltip('Fullscreen'));
       expect(volumeRect.center.dx, lessThan(playRect.center.dx));
@@ -463,7 +463,7 @@ void main() {
     },
   );
 
-  testWidgets('renders a disabled audio track button when no tracks exist', (
+  testWidgets('keeps audio sync available while audio tracks are not exposed', (
     tester,
   ) async {
     final player = _FakePlayer();
@@ -525,13 +525,19 @@ void main() {
       find.byWidgetPredicate((widget) => widget is PopupMenuButton<String>),
     );
 
-    expect(button.enabled, isFalse);
+    expect(button.enabled, isTrue);
     final colors = AppTheme.highContrastDarkTheme.colorScheme;
     expect(button.color, colors.surfaceContainerHigh);
     expect(
       tester.widget<Icon>(find.byIcon(Icons.audiotrack_rounded)).color,
-      colors.onSurface.withValues(alpha: 0.38),
+      colors.onSecondaryContainer,
     );
+    await tester.tap(
+      find.byWidgetPredicate((widget) => widget is PopupMenuButton<String>),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Audio sync'), findsOneWidget);
+    expect(find.text('Automatic'), findsNothing);
   });
 }
 

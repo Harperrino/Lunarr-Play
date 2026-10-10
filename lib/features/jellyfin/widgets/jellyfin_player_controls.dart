@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:m3uxtream_player/features/player/widgets/audio_delay_dialog.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_controller.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_state.dart';
@@ -369,7 +370,16 @@ class _TrackAndFullscreenControls extends StatelessWidget {
           SizedBox(width: compact ? 4 : 6),
         ],
         JellyfinPlayerTrackMenuButton(
-          enabled: enabled && state.audioTracks.isNotEmpty,
+          enabled: enabled,
+          additionalItems: [
+            MenuItemButton(
+              onPressed: enabled
+                  ? () => showAudioDelayDialog(context, controller.audioDelay)
+                  : null,
+              child: Text(l10n.audioDelayTitle),
+            ),
+            const Divider(),
+          ],
           tooltip: l10n.jellyfinAudioTrackTooltip,
           selectedValue: state.selectedAudioStreamIndex,
           onSelected: (index) => unawaited(controller.selectAudioTrack(index)),

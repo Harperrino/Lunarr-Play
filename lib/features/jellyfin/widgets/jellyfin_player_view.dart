@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:m3uxtream_player/core/logger/app_logger.dart';
+
+import 'package:m3uxtream_player/core/services/desktop_fullscreen.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -302,11 +305,31 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
       final target = !current;
       ref.read(isFullscreenProvider.notifier).state = target;
       _syncFullscreenControls(target);
-      await windowManager.setFullScreen(target);
+      await DesktopFullscreen.setEnabled(target);
+      await windowManager.focus();
       final actual = await windowManager.isFullScreen();
       if (mounted) {
         ref.read(isFullscreenProvider.notifier).state = actual;
         _syncFullscreenControls(actual);
+      }
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'JellyfinPlayer: Failed to toggle fullscreen',
+        error,
+        stackTrace,
+      );
+      try {
+        final actual = await windowManager.isFullScreen();
+        if (mounted) {
+          ref.read(isFullscreenProvider.notifier).state = actual;
+          _syncFullscreenControls(actual);
+        }
+      } catch (error, stackTrace) {
+        AppLogger.error(
+          'JellyfinPlayer: Failed to read fullscreen state',
+          error,
+          stackTrace,
+        );
       }
     } finally {
       _fullscreenBusy = false;
@@ -316,7 +339,7 @@ class _JellyfinPlayerViewState extends ConsumerState<JellyfinPlayerView> {
   Future<void> _exitFullscreen() async {
     if (!ref.read(isDesktopPlatformProvider)) return;
     if (!await windowManager.isFullScreen()) return;
-    await windowManager.setFullScreen(false);
+    await DesktopFullscreen.setEnabled(false);
     if (mounted) {
       ref.read(isFullscreenProvider.notifier).state = false;
       _syncFullscreenControls(false);

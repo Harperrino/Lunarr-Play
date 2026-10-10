@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:m3uxtream_player/core/services/audio_delay_session.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -80,6 +82,10 @@ class JellyfinPlayerController {
   Future<void> _playerLifecycleQueue = Future<void>.value();
   Future<void>? _disposeFuture;
   int _queuedStops = 0;
+
+  late final audioDelay = AudioDelaySession(
+    apply: (milliseconds) => applyNativeAudioDelay(_player, milliseconds),
+  );
 
   Player get player => _player;
   VideoController get videoController => _videoController;
@@ -259,6 +265,8 @@ class JellyfinPlayerController {
       } else if (!stopHostPlayback) {
         await _enqueuePlayerStop();
       }
+      if (!_isCurrentAttempt(attempt)) return;
+      await audioDelay.beginPlayback(item.id);
       if (!_isCurrentAttempt(attempt)) return;
 
       var playbackInfo = await _apiClient.fetchPlaybackInfo(
@@ -475,9 +483,12 @@ class JellyfinPlayerController {
   /// playback screen).
   Future<void> stop() async {
     if (_disposed) return;
-    ++_playAttempt;
+    final attempt = ++_playAttempt;
     _reportPlaybackStopped();
     await _enqueuePlayerStop();
+    if (!_isCurrentAttempt(attempt)) return;
+    await audioDelay.beginPlayback(null);
+    if (!_isCurrentAttempt(attempt)) return;
     _mutate(
       (s) => s.copyWith(
         playing: false,
@@ -509,6 +520,7 @@ class JellyfinPlayerController {
     ++_playAttempt;
     _reportPlaybackStopped();
     _disposed = true;
+    audioDelay.dispose();
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
@@ -568,6 +580,8 @@ class JellyfinPlayerController {
         if (!_disposed && _queuedStops == 0) await openingPlayer.stop();
         return;
       }
+      await audioDelay.reapply();
+      if (!_isCurrentAttempt(attempt)) return;
       if (disableSubtitles) {
         await openingPlayer.setSubtitleTrack(SubtitleTrack.no());
         if (!_isCurrentAttempt(attempt) ||

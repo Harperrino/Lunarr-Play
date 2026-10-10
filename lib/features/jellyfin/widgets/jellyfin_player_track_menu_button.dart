@@ -27,6 +27,7 @@ class JellyfinPlayerTrackMenuButton extends StatelessWidget {
     required this.selectedValue,
     required this.entries,
     required this.onSelected,
+    this.additionalItems = const [],
   });
 
   final IconData icon;
@@ -37,12 +38,14 @@ class JellyfinPlayerTrackMenuButton extends StatelessWidget {
   final int selectedValue;
   final List<JellyfinPlayerTrackMenuEntry> entries;
   final ValueChanged<int> onSelected;
+  final List<Widget> additionalItems;
 
   @override
   Widget build(BuildContext context) {
     return MenuAnchor(
       consumeOutsideTap: false,
       menuChildren: [
+        ...additionalItems,
         for (final entry in entries)
           Semantics(
             selected: entry.value == selectedValue,

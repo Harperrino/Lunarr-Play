@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:m3uxtream_player/core/services/desktop_fullscreen.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -246,7 +247,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
         await SchedulerBinding.instance.endOfFrame;
       }
 
-      await windowManager.setFullScreen(enabled);
+      await DesktopFullscreen.setEnabled(enabled);
       if (!mounted) return;
 
       final actual = await windowManager.isFullScreen();
@@ -276,6 +277,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
       });
     } catch (e, stackTrace) {
       AppLogger.error('MainLayout: Failed to set fullscreen', e, stackTrace);
+      await _syncFullscreenState();
     } finally {
       _fullscreenBusy = false;
     }
