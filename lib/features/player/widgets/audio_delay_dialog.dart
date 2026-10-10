@@ -96,7 +96,9 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
               key: const ValueKey('audio-delay-slider'),
               min: AudioDelaySession.minimumMs.toDouble(),
               max: AudioDelaySession.maximumMs.toDouble(),
-              divisions: 80,
+              divisions:
+                  (AudioDelaySession.maximumMs - AudioDelaySession.minimumMs) ~/
+                  AudioDelaySession.stepMs,
               value: _preview.toDouble(),
               semanticFormatterCallback: (value) =>
                   l10n.audioDelayValue(value.round()),

@@ -2492,7 +2492,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get audioDelayDescription =>
-      'Adjust the sound timing for this playback. Positive values play sound later; negative values play it earlier. Resets for a new channel or title.';
+      'Sound behind the picture? Use a negative value to play it earlier. Sound ahead of the picture? Use a positive value to play it later. Range: −60 to +60 seconds (1000 ms = 1 second). Resets for a new channel or title.';
 
   @override
   String audioDelayValue(int milliseconds) {
@@ -2509,7 +2509,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get audioDelayUnit => 'ms';
 
   @override
-  String get audioDelayInvalid => 'Enter a whole number from −2000 to 2000.';
+  String get audioDelayInvalid => 'Enter a whole number from −60000 to 60000.';
 
   @override
   String get audioDelayFailed =>

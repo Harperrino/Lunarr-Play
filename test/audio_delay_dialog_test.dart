@@ -41,16 +41,27 @@ void main() {
     await tester.tap(find.text('Reset'));
     await tester.pumpAndSettle();
     expect(session.value, 0);
+    for (final value in [-60000, 60000]) {
+      await tester.enterText(
+        find.byKey(const ValueKey('audio-delay-input')),
+        '$value',
+      );
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      expect(session.value, value);
+    }
+    await tester.tap(find.text('Reset'));
+    await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const ValueKey('audio-delay-input')),
-      '2500',
+      '60001',
     );
     await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
     expect(session.value, 0);
-    expect(writes, [-150, -100, 0]);
+    expect(writes, [-150, -100, 0, -60000, 60000, 0]);
     expect(
-      find.text('Enter a whole number from −2000 to 2000.'),
+      find.text('Enter a whole number from −60000 to 60000.'),
       findsOneWidget,
     );
   });

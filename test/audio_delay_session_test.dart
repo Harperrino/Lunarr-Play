@@ -6,6 +6,7 @@ import 'package:m3uxtream_player/core/services/audio_delay_session.dart';
 
 class _NativePlayer extends Fake implements NativePlayer {
   final properties = <String, String>{};
+  String? reportedValue;
 
   @override
   Future<void> setProperty(
@@ -15,6 +16,12 @@ class _NativePlayer extends Fake implements NativePlayer {
   }) async {
     properties[property] = value;
   }
+
+  @override
+  Future<String> getProperty(
+    String property, {
+    bool waitForInitialization = true,
+  }) async => reportedValue ?? properties[property] ?? '';
 }
 
 class _Player extends Fake implements Player {
@@ -34,7 +41,26 @@ void main() {
     expect(native.properties['audio-delay'], '-0.35');
     await applyNativeAudioDelay(player, 0);
     expect(native.properties['audio-delay'], '0.0');
+    await applyNativeAudioDelay(player, -60000);
+    expect(native.properties['audio-delay'], '-60.0');
+    await applyNativeAudioDelay(player, 60000);
+    expect(native.properties['audio-delay'], '60.0');
   });
+
+  test(
+    'an ignored or unreadable native offset is reported as a failure',
+    () async {
+      final native = _NativePlayer();
+      final player = _Player(native);
+      for (final reported in ['0', '', 'NaN', 'Infinity']) {
+        native.reportedValue = reported;
+        await expectLater(
+          applyNativeAudioDelay(player, -5000),
+          throwsStateError,
+        );
+      }
+    },
+  );
 
   test('reconnection preserves offset; new source and stop reset it', () async {
     final writes = <int>[];
@@ -109,7 +135,11 @@ void main() {
       await session.setMilliseconds(-100);
       expect(session.value, -100);
       await session.setMilliseconds(5000);
+      expect(session.value, 5000);
+      await session.setMilliseconds(65000);
       expect(session.value, AudioDelaySession.maximumMs);
+      await session.setMilliseconds(-65000);
+      expect(session.value, AudioDelaySession.minimumMs);
     },
   );
 

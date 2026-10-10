@@ -6,8 +6,8 @@ import 'package:media_kit/media_kit.dart';
 class AudioDelaySession extends ValueNotifier<int> {
   AudioDelaySession({required this.apply}) : super(0);
 
-  static const minimumMs = -2000;
-  static const maximumMs = 2000;
+  static const minimumMs = -60000;
+  static const maximumMs = 60000;
   static const stepMs = 50;
 
   final Future<void> Function(int milliseconds) apply;
@@ -57,7 +57,16 @@ class AudioDelaySession extends ValueNotifier<int> {
 Future<void> applyNativeAudioDelay(Player player, int milliseconds) async {
   final platform = player.platform;
   if (platform is NativePlayer) {
-    await platform.setProperty('audio-delay', (milliseconds / 1000).toString());
+    final seconds = milliseconds / 1000;
+    await platform.setProperty('audio-delay', seconds.toString());
+    // media_kit does not check mpv's return code when setting a property.
+    // Only confirm the adjustment after the engine reports the requested value.
+    final actual = double.tryParse(await platform.getProperty('audio-delay'));
+    if (actual == null ||
+        !actual.isFinite ||
+        (actual - seconds).abs() > 0.0005) {
+      throw StateError('The playback engine did not apply the audio offset.');
+    }
   } else if (platform != null) {
     throw UnsupportedError('Audio delay requires native playback.');
   }

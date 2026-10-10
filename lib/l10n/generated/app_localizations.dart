@@ -4391,7 +4391,7 @@ abstract class AppLocalizations {
   /// No description provided for @audioDelayDescription.
   ///
   /// In en, this message translates to:
-  /// **'Adjust the sound timing for this playback. Positive values play sound later; negative values play it earlier. Resets for a new channel or title.'**
+  /// **'Sound behind the picture? Use a negative value to play it earlier. Sound ahead of the picture? Use a positive value to play it later. Range: −60 to +60 seconds (1000 ms = 1 second). Resets for a new channel or title.'**
   String get audioDelayDescription;
 
   /// No description provided for @audioDelayValue.
@@ -4421,7 +4421,7 @@ abstract class AppLocalizations {
   /// No description provided for @audioDelayInvalid.
   ///
   /// In en, this message translates to:
-  /// **'Enter a whole number from −2000 to 2000.'**
+  /// **'Enter a whole number from −60000 to 60000.'**
   String get audioDelayInvalid;
 
   /// No description provided for @audioDelayFailed.
