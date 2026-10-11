@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:m3uxtream_player/features/updates/widgets/player_version_label.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/features/settings/providers/debug_mode_providers.dart';
 import 'package:m3uxtream_player/features/settings/widgets/appearance_settings_card.dart';
@@ -28,12 +29,17 @@ class SettingsScreen extends ConsumerWidget {
               id: SettingsSectionId.general,
               icon: Icons.tune_rounded,
               label: context.l10n.settingsSectionGeneral,
-              child: SettingsDebugModeCard(
-                isEnabled: debugModeAsync.valueOrNull ?? false,
-                isLoading: debugModeAsync.isLoading,
-                compact: compact,
-                onChanged: (value) =>
-                    ref.read(debugModeProvider.notifier).setEnabled(value),
+              child: Column(
+                children: [
+                  const PlayerVersionLabel(),
+                  SettingsDebugModeCard(
+                    isEnabled: debugModeAsync.valueOrNull ?? false,
+                    isLoading: debugModeAsync.isLoading,
+                    compact: compact,
+                    onChanged: (value) =>
+                        ref.read(debugModeProvider.notifier).setEnabled(value),
+                  ),
+                ],
               ),
             ),
             SettingsSectionDescriptor(

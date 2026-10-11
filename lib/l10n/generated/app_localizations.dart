@@ -4460,6 +4460,36 @@ abstract class AppLocalizations {
   /// **'Choose a value, then press Apply to pause, buffer and align playback.'**
   String get audioDelayApplyHint;
 
+  /// No description provided for @playerVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Player version: {version}'**
+  String playerVersion(String version);
+
+  /// No description provided for @playerVersionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get playerVersionUnavailable;
+
+  /// No description provided for @playerUpdateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available'**
+  String get playerUpdateAvailable;
+
+  /// No description provided for @playerUpdateVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} is available. Open release details.'**
+  String playerUpdateVersion(String version);
+
+  /// No description provided for @playerUpdateOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the release page.'**
+  String get playerUpdateOpenFailed;
+
   /// No description provided for @audioDelayPicture.
   ///
   /// In en, this message translates to:

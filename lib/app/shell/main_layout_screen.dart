@@ -1,3 +1,6 @@
+import 'package:m3uxtream_player/features/updates/providers/update_providers.dart';
+import 'package:m3uxtream_player/features/updates/widgets/update_available_button.dart';
+
 import 'dart:async';
 
 import 'package:m3uxtream_player/core/services/desktop_fullscreen.dart';
@@ -684,6 +687,11 @@ class _AppBarWrapper extends ConsumerWidget {
                 : TopBarPlaylistMenu.widthFor(constraints.maxWidth);
             return CustomAppBar(
               onCloseRequested: onCloseRequested,
+              brandAccessory:
+                  ref.watch(startupUpdateProvider).valueOrNull == null
+                  ? null
+                  : UpdateAvailableButton(compact: constraints.maxWidth < 900),
+              brandAccessoryWidth: constraints.maxWidth < 900 ? 48 : 160,
               leadingCommand: homeActive
                   ? null
                   : jellyfinActive

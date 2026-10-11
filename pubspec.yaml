@@ -47,6 +47,8 @@ dependencies:
   xml: 7.0.1
   logger: 2.7.0
   http: 1.6.0
+  package_info_plus: 10.2.1
+  pub_semver: 2.2.0
 
 dev_dependencies:
   flutter_test:

@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Playback
+
+- Windows playback fullscreen now fills the selected monitor, including mixed
+  4K/1080p setups, with the taskbar hidden while playback is fullscreen.
+- Audio sync supports ±60 seconds per playback and resets on a new channel/title.
+  Picture/sound markers, readable seconds, 10 ms fine adjustment and original
+  comparison help choose a correction. All edits require **Apply**.
+- Applying audio sync holds picture and sound together, fills the required cache
+  in addition to the configured pre-buffer target, aligns both tracks and resumes.
+  Manually paused playback remains paused. Progress, cancellation and visible
+  failure feedback are included; paused output clocks no longer cause valid
+  corrections to be rolled back.
+
+### App information and updates
+
+- Settings show the installed player's package version.
+- Each launch checks the public GitHub repository once for a newer full release.
+  Pre-releases/drafts are excluded. A notice beside the Lunarr logo opens the
+  release page; network failures remain silent and are not retried automatically.
+
 ## 1.0.2
 
 ### Fixes and programme guide

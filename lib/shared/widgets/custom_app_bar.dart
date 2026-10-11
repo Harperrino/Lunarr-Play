@@ -22,6 +22,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   /// Neutral command slot rendered directly before the centered search.
   /// Feature widgets are supplied by the shell and are intentionally not
   /// imported by this shared app-bar primitive.
+  final Widget? brandAccessory;
+  final double brandAccessoryWidth;
   final Widget? leadingCommand;
   final double leadingCommandWidth;
   final Widget? search;
@@ -32,6 +34,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     required this.onCloseRequested,
     this.title = AppIdentity.displayName,
+    this.brandAccessory,
+    this.brandAccessoryWidth = 0,
     this.leadingCommand,
     this.leadingCommandWidth = 0,
     this.search,
@@ -47,7 +51,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     final colors = Theme.of(context).colorScheme;
     final showsProductBrand = title == AppIdentity.displayName;
-    final brandWidth = showsProductBrand ? _logoBrandWidth : _titleBrandWidth;
+    final markWidth = showsProductBrand ? _logoBrandWidth : _titleBrandWidth;
+    final brandWidth =
+        markWidth + (brandAccessory == null ? 0 : brandAccessoryWidth);
     final titleContent = showsProductBrand
         ? AppBrandMark(
             key: const ValueKey('window-bar-brand-mark'),
@@ -143,7 +149,22 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 fit: StackFit.expand,
                 children: [
                   if (isDesktop) DragToMoveArea(child: const SizedBox.expand()),
-                  Align(alignment: Alignment.centerLeft, child: titleArea),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: brandAccessory == null
+                        ? titleArea
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(width: markWidth, child: titleArea),
+                              if (brandAccessory != null)
+                                SizedBox(
+                                  width: brandAccessoryWidth,
+                                  child: brandAccessory,
+                                ),
+                            ],
+                          ),
+                  ),
                   if (search != null || leadingCommand != null)
                     Center(
                       child: Row(

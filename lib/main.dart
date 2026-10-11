@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:m3uxtream_player/features/updates/providers/update_providers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
@@ -45,6 +46,7 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(startupUpdateProvider);
     final appearance = ref.watch(appearancePreferencesProvider);
     final darkTheme = AppTheme.darkThemeFor(
       accentHue: appearance.accentHue,

@@ -2534,6 +2534,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose a value, then press Apply to pause, buffer and align playback.';
 
   @override
+  String playerVersion(String version) {
+    return 'Player version: $version';
+  }
+
+  @override
+  String get playerVersionUnavailable => 'Unavailable';
+
+  @override
+  String get playerUpdateAvailable => 'Update available';
+
+  @override
+  String playerUpdateVersion(String version) {
+    return 'Version $version is available. Open release details.';
+  }
+
+  @override
+  String get playerUpdateOpenFailed => 'Could not open the release page.';
+
+  @override
   String get audioDelayPicture => 'Picture';
 
   @override
