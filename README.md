@@ -82,7 +82,7 @@ series or looking through your provider's catalogue.
 The Windows x64 release is distributed as a self-contained portable ZIP through
 [GitHub Releases](https://github.com/Harperrino/Lunarr-Play/releases/latest).
 
-1. Download `Lunarr-Player-1.0.2-windows-x64-portable.zip`.
+1. Download `Lunarr-Player-1.0.3-windows-x64-portable.zip`.
 2. Extract the complete archive to a writable folder of your choice.
 3. Run `lunarr_one.exe` from that folder. Keep the DLLs and `data/` alongside it.
 
@@ -94,9 +94,9 @@ Windows may display a SmartScreen warning because the application is not code-si
 
 ## Current Status
 
-The current stable release is **Lunarr Player 1.0.2** (`v1.0.2`).
+The current stable release is **Lunarr Player 1.0.3** (`v1.0.3`).
 
-[See what is new in 1.0.2](RELEASE_NOTES_1.0.2.md).
+[See what is new in 1.0.3](RELEASE_NOTES_1.0.3.md).
 
 Windows desktop is the currently supported platform. Android smartphone and
 foldable support is the next planned platform effort; Android TV is a separate
