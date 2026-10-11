@@ -4447,6 +4447,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get audioDelayClose;
+
+  /// No description provided for @audioDelayPicture.
+  ///
+  /// In en, this message translates to:
+  /// **'Picture'**
+  String get audioDelayPicture;
+
+  /// No description provided for @audioDelaySound.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound'**
+  String get audioDelaySound;
+
+  /// No description provided for @audioDelayEarlierSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound {seconds} seconds earlier'**
+  String audioDelayEarlierSeconds(String seconds);
+
+  /// No description provided for @audioDelayLaterSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound {seconds} seconds later'**
+  String audioDelayLaterSeconds(String seconds);
+
+  /// No description provided for @audioDelayNoOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'No timing offset'**
+  String get audioDelayNoOffset;
+
+  /// No description provided for @audioDelayFine.
+  ///
+  /// In en, this message translates to:
+  /// **'Fine adjustment'**
+  String get audioDelayFine;
+
+  /// No description provided for @audioDelayFineDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'±500 ms around your value, in 10 ms steps'**
+  String get audioDelayFineDescription;
+
+  /// No description provided for @audioDelayAligning.
+  ///
+  /// In en, this message translates to:
+  /// **'Aligning picture and sound…'**
+  String get audioDelayAligning;
+
+  /// No description provided for @audioDelayBuffering.
+  ///
+  /// In en, this message translates to:
+  /// **'Buffering {buffered} / {target} seconds…'**
+  String audioDelayBuffering(int buffered, int target);
+
+  /// No description provided for @audioDelayUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The sound needed for this offset is outside the available playback buffer. Try a smaller offset.'**
+  String get audioDelayUnavailable;
+
+  /// No description provided for @audioDelayTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'The buffer did not fill in time. The previous offset was restored.'**
+  String get audioDelayTimedOut;
+
+  /// No description provided for @audioDelayCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel adjustment'**
+  String get audioDelayCancel;
+
+  /// No description provided for @audioDelayCompareOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare with original'**
+  String get audioDelayCompareOriginal;
+
+  /// No description provided for @audioDelayUseCorrection.
+  ///
+  /// In en, this message translates to:
+  /// **'Use correction'**
+  String get audioDelayUseCorrection;
+
+  /// No description provided for @audioDelayTrackDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The markers show your selected offset, not an automatic sync measurement.'**
+  String get audioDelayTrackDescription;
 }
 
 class _AppLocalizationsDelegate

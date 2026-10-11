@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:m3uxtream_player/features/player/providers/vod_pre_buffer_settings_providers.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_player_controller.dart';
 import 'package:m3uxtream_player/features/jellyfin/playback/jellyfin_playback_reporter.dart';
 import 'package:m3uxtream_player/features/jellyfin/providers/jellyfin_library_providers.dart';
@@ -41,6 +42,11 @@ final jellyfinPlayerControllerProvider =
         ),
         playbackReporter: ref.watch(jellyfinPlaybackReporterProvider),
         onPlaybackStopped: () => ref.invalidate(jellyfinHomeDataProvider),
+        audioSyncPreBufferSeconds: () =>
+            (ref.read(vodPreBufferEnabledProvider).valueOrNull ?? true)
+            ? (ref.read(vodPreBufferTargetSecondsProvider).valueOrNull ??
+                  VodPreBufferTargetSecondsNotifier.defaultSeconds)
+            : 0,
       );
       ref.onDispose(() => unawaited(controller.disposeAsync()));
       return controller;

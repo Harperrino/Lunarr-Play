@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:m3uxtream_player/core/services/audio_delay_session.dart';
+import 'package:m3uxtream_player/core/services/audio_delay_adjustment.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m3uxtream_player/l10n/generated/app_localizations.dart';
@@ -582,6 +583,33 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
       final player = state.asData?.value.player;
       if (player != null) await applyNativeAudioDelay(player, milliseconds);
     },
+    adjust: (milliseconds, adjustment) async {
+      final player = state.asData?.value.player;
+      if (player == null) return;
+      final live = !isSeekableChannel(ref.read(selectedChannelProvider));
+      final target = live
+          ? (ref.read(playerBufferSecondsProvider).valueOrNull ??
+                PlayerBufferSecondsNotifier.defaultSeconds)
+          : ((ref.read(vodPreBufferEnabledProvider).valueOrNull ?? true)
+                ? (ref.read(vodPreBufferTargetSecondsProvider).valueOrNull ??
+                      VodPreBufferTargetSecondsNotifier.defaultSeconds)
+                : 0);
+      await alignNativeAudioDelay(
+        player,
+        milliseconds,
+        adjustment: AudioDelayAdjustment(
+          isCurrent: () =>
+              adjustment.isCurrent() &&
+              identical(player, state.asData?.value.player),
+          isCancelled: adjustment.isCancelled,
+          report: adjustment.report,
+        ),
+        isLive: live,
+        preBufferSeconds: target,
+        applyOffset: (value) =>
+            applyNativeAudioDelay(player, value, preBufferSeconds: target),
+      );
+    },
   );
 
   double? _volumeBeforeMute;
@@ -1069,6 +1097,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
   }
 
   Future<void> togglePlay() async {
+    if (audioDelay.progress.value.phase != AudioDelayPhase.idle) return;
     final current = state.asData?.value;
 
     if (current == null || !_hasActiveStream) return;
@@ -1169,6 +1198,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
   }
 
   Future<void> seek(Duration position) async {
+    if (audioDelay.progress.value.phase != AudioDelayPhase.idle) return;
     if (!isSeekableChannel(ref.read(selectedChannelProvider))) return;
 
     final current = state.asData?.value;
@@ -1195,7 +1225,10 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
         preloadSeconds: bufferSeconds,
         aggressivePreload: preBuffer,
       );
-      if (audioDelay.value != 0) await audioDelay.reapply();
+      if (audioDelay.value != 0) {
+        await refreshNativeAudioDelayBufferProfile(current.player);
+        await audioDelay.reapply();
+      }
       await current.player.seek(target);
       if (wasPlaying) {
         await current.player.play();
@@ -2310,6 +2343,7 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
         play: !openPaused,
       );
       if (!_isLiveOpenSessionCurrent(sessionToken)) return false;
+      await refreshNativeAudioDelayBufferProfile(current.player);
       await audioDelay.reapply();
       if (!_isLiveOpenSessionCurrent(sessionToken)) {
         return false;
@@ -2351,7 +2385,10 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
           preloadSeconds: bufferSeconds,
           aggressivePreload: preBuffer,
         );
-        if (audioDelay.value != 0) await audioDelay.reapply();
+        if (audioDelay.value != 0) {
+          await refreshNativeAudioDelayBufferProfile(current.player);
+          await audioDelay.reapply();
+        }
       }
 
       if (!_isLiveOpenSessionCurrent(sessionToken)) {
@@ -2728,7 +2765,10 @@ class PlayerNotifier extends AsyncNotifier<PlayerState> {
                 _lastAppliedLiveDelivery ?? LiveStreamDelivery.continuous,
             liveStartupBuffer: true,
           );
-          if (audioDelay.value != 0) await audioDelay.reapply();
+          if (audioDelay.value != 0) {
+            await refreshNativeAudioDelayBufferProfile(player);
+            await audioDelay.reapply();
+          }
           if (!_isLiveOpenSessionCurrent(sessionToken)) {
             _update((s) => s.copyWith(isLiveStartupBuffering: false));
             return false;

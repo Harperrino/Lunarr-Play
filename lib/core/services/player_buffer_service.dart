@@ -4,6 +4,15 @@ import 'package:m3uxtream_player/core/services/live_stream_url.dart';
 
 /// Applies mpv buffer, network and decode settings for live IPTV vs VOD playback.
 abstract final class PlayerBufferService {
+  // Retain packets for switching between the full −60/+60 s audio range.
+  // This bounds history by bytes; it does not extend the startup wait.
+  static const audioSyncHistoryBytes = 256 * 1024 * 1024;
+
+  static int audioSyncBufferBytes(int seconds) =>
+      (seconds.clamp(3, 365) * 2 * 1024 * 1024).clamp(
+        32 * 1024 * 1024,
+        768 * 1024 * 1024,
+      );
   static const int liveAnalyzeDurationSeconds = 5;
   static const int liveProbeSizeBytes = 5000000;
   static const int liveRecoveryAnalyzeDurationSeconds = 10;
@@ -255,8 +264,12 @@ abstract final class PlayerBufferService {
 
     await platform.setProperty('demuxer-readahead-secs', '$readAheadSeconds');
     await platform.setProperty('cache-secs', '$readAheadSeconds');
-    // Hard cap - demuxer-cache-time can otherwise exceed cache-secs on live MPEG-TS.
-    await platform.setProperty('demuxer-max-back-bytes', '0');
+    // Retained history supports earlier audio without extending forward read-ahead.
+    await platform.setProperty('cache-seeks', 'yes');
+    await platform.setProperty(
+      'demuxer-max-back-bytes',
+      '$audioSyncHistoryBytes',
+    );
     await platform.setProperty(
       'demuxer-max-bytes',
       '${bufferSizeBytesForSeconds(readAheadSeconds)}',

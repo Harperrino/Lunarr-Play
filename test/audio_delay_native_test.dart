@@ -8,6 +8,8 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:m3uxtream_player/core/services/audio_delay_session.dart';
+import 'package:m3uxtream_player/core/services/audio_delay_adjustment.dart';
+import 'package:m3uxtream_player/core/services/player_buffer_service.dart';
 
 import 'helpers/media_kit_test_init.dart';
 
@@ -96,6 +98,73 @@ void main() {
 
   final ffmpeg = Platform.environment['LUNARR_FFMPEG'];
   test(
+    'changing audio sync preserves a manual pause and the held track positions',
+    () async {
+      final player = Player();
+      addTearDown(player.dispose);
+      final native = player.platform as NativePlayer;
+      await native.setProperty('vo', 'null');
+      await native.setProperty('ao', 'null');
+      await native.setProperty('vid', 'auto');
+      await player.open(Media(fixture!));
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (double.tryParse(await native.getProperty('audio-pts')) == null) {
+        if (DateTime.now().isAfter(deadline)) fail('Audio did not start.');
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+      await player.seek(const Duration(seconds: 10));
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      await player.pause();
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      var heldVideo = double.parse(await native.getProperty('time-pos'));
+      for (final offset in [-5000, 5000, 0]) {
+        await alignNativeAudioDelay(
+          player,
+          offset,
+          adjustment: AudioDelayAdjustment(
+            isCurrent: () => true,
+            isCancelled: () => false,
+            report: (_) {},
+          ),
+          applyOffset: (value) =>
+              applyNativeAudioDelay(player, value, preBufferSeconds: 10),
+          isLive: false,
+          preBufferSeconds: 10,
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+        expect(await native.getProperty('pause'), 'yes');
+        expect(
+          double.parse(await native.getProperty('time-pos')),
+          closeTo(heldVideo, 0.05),
+        );
+        await player.play();
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        final video = double.parse(await native.getProperty('time-pos'));
+        final audio = double.parse(await native.getProperty('audio-pts'));
+        expect(video, greaterThan(heldVideo + 0.2));
+        expect(video - audio, closeTo(offset / 1000, 0.25));
+        await player.pause();
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        heldVideo = double.parse(await native.getProperty('time-pos'));
+      }
+      await player.play();
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      expect(await native.getProperty('pause'), 'no');
+      expect(
+        double.parse(await native.getProperty('time-pos')),
+        greaterThan(heldVideo + 0.2),
+      );
+      expect(
+        double.parse(await native.getProperty('audio-pts')),
+        greaterThan(heldVideo + 0.2),
+      );
+    },
+    skip: fixture == null
+        ? 'Set LUNARR_AUDIO_SYNC_FIXTURE for pause verification.'
+        : false,
+  );
+
+  test(
     'paced live MPEG-TS recovers from large offsets and both tracks stay smooth',
     () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -147,7 +216,8 @@ void main() {
         'cache-pause': 'no',
         'cache-pause-initial': 'no',
         'demuxer-readahead-secs': '3',
-        'demuxer-max-back-bytes': '0',
+        'demuxer-max-back-bytes':
+            '${PlayerBufferService.audioSyncHistoryBytes}',
         'demuxer-lavf-format': 'mpegts',
       }.entries) {
         await native.setProperty(entry.key, entry.value);
@@ -195,8 +265,79 @@ void main() {
       }
 
       await expectSmoothOffset(0);
+      var cancelled = false;
+      await expectLater(
+        alignNativeAudioDelay(
+          player,
+          -60000,
+          adjustment: AudioDelayAdjustment(
+            isCurrent: () => true,
+            isCancelled: () => cancelled,
+            report: (progress) {
+              if (progress.phase == AudioDelayPhase.buffering) {
+                expect(progress.targetSeconds, 70);
+                cancelled = true;
+              }
+            },
+          ),
+          applyOffset: (value) =>
+              applyNativeAudioDelay(player, value, preBufferSeconds: 10),
+          isLive: true,
+          preBufferSeconds: 10,
+        ),
+        throwsA(
+          isA<AudioDelayAdjustmentException>().having(
+            (e) => e.failure,
+            'failure',
+            AudioDelayFailure.cancelled,
+          ),
+        ),
+      );
+      expect(double.parse(await native.getProperty('audio-delay')), 0);
+      expect(await native.getProperty('pause'), 'no');
+      await expectSmoothOffset(0);
+      // Positive correction needs old audio; keep enough playback history first.
+      final historyDeadline = DateTime.now().add(const Duration(seconds: 40));
+      while ((double.tryParse(await native.getProperty('time-pos')) ?? 0) <
+          20) {
+        if (DateTime.now().isAfter(historyDeadline)) {
+          fail('History did not build.');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
       for (final value in [-15000, 15000, 0]) {
-        await applyNativeAudioDelay(player, value);
+        final held = double.parse(await native.getProperty('time-pos'));
+        final heldChecks = <Future<void>>[];
+        await alignNativeAudioDelay(
+          player,
+          value,
+          adjustment: AudioDelayAdjustment(
+            isCurrent: () => true,
+            isCancelled: () => false,
+            report: (progress) {
+              if (progress.phase == AudioDelayPhase.buffering) {
+                expect(progress.targetSeconds, value.abs() / 1000 + 2);
+                heldChecks.add(
+                  native
+                      .getProperty('time-pos')
+                      .then(
+                        (position) =>
+                            expect(double.parse(position), closeTo(held, 0.2)),
+                      ),
+                );
+              }
+            },
+          ),
+          applyOffset: (offset) =>
+              applyNativeAudioDelay(player, offset, preBufferSeconds: 2),
+          isLive: true,
+          preBufferSeconds: 2,
+        );
+        await Future.wait(heldChecks);
+        expect(
+          double.parse(await native.getProperty('time-pos')),
+          closeTo(held, 0.2),
+        );
         await expectSmoothOffset(value);
       }
       expect(await native.getProperty('cache-pause'), 'no');

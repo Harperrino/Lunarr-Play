@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:m3uxtream_player/core/services/audio_delay_adjustment.dart';
 import 'package:m3uxtream_player/core/services/audio_delay_session.dart';
 
 class _NativePlayer extends Fake implements NativePlayer {
@@ -41,6 +42,78 @@ class _Player extends Fake implements Player {
 }
 
 void main() {
+  test(
+    'pre-buffer adds to the offset and reset uses the latest profile',
+    () async {
+      final native = _NativePlayer();
+      final player = _Player(native);
+      await applyNativeAudioDelay(player, -60000, preBufferSeconds: 300);
+      expect(double.parse(native.properties['demuxer-readahead-secs']!), 365);
+      expect(
+        int.parse(native.properties['demuxer-max-bytes']!),
+        730 * 1024 * 1024,
+      );
+      native.properties['cache-pause'] = 'no';
+      native.properties['demuxer-readahead-secs'] = '120';
+      native.properties['demuxer-max-bytes'] = '536870912';
+      await refreshNativeAudioDelayBufferProfile(player);
+      await applyNativeAudioDelay(player, -60000);
+      expect(double.parse(native.properties['demuxer-readahead-secs']!), 365);
+      await applyNativeAudioDelay(player, 0);
+      expect(native.properties['demuxer-readahead-secs'], '120');
+      expect(native.properties['demuxer-max-bytes'], '536870912');
+      expect(native.properties['cache-pause'], 'no');
+    },
+  );
+
+  for (final changeSource in [false, true]) {
+    test(
+      'buffering ${changeSource ? 'source switch' : 'cancel'} does not commit an offset',
+      () async {
+        final gate = Completer<void>();
+        final started = Completer<void>();
+        final session = AudioDelaySession(
+          apply: (_) async {},
+          adjust: (_, context) async {
+            context.report(
+              const AudioDelayProgress(
+                AudioDelayPhase.buffering,
+                targetSeconds: 25,
+              ),
+            );
+            started.complete();
+            await gate.future;
+            context.check();
+          },
+        );
+        addTearDown(session.dispose);
+        await session.beginPlayback('first');
+        final operation = session.setMilliseconds(-15000);
+        final failure = expectLater(
+          operation,
+          throwsA(
+            isA<AudioDelayAdjustmentException>().having(
+              (e) => e.failure,
+              'failure',
+              changeSource
+                  ? AudioDelayFailure.superseded
+                  : AudioDelayFailure.cancelled,
+            ),
+          ),
+        );
+        await started.future;
+        expect(session.progress.value.phase, AudioDelayPhase.buffering);
+        final next = changeSource ? session.beginPlayback('second') : null;
+        if (!changeSource) session.cancelAdjustment();
+        gate.complete();
+        await failure;
+        if (next != null) await next;
+        expect(session.value, 0);
+        expect(session.progress.value.phase, AudioDelayPhase.idle);
+      },
+    );
+  }
+
   test('milliseconds map to signed mpv seconds', () async {
     final native = _NativePlayer();
     final player = _Player(native);

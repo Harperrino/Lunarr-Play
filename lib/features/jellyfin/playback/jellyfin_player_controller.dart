@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:m3uxtream_player/core/services/audio_delay_session.dart';
+import 'package:m3uxtream_player/core/services/audio_delay_adjustment.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
@@ -39,6 +40,7 @@ class JellyfinPlayerController {
     this._stopExistingPlayback,
     this._playbackReporter,
     this._onPlaybackStopped,
+    this.audioSyncPreBufferSeconds,
     Player? player,
     JellyfinPlayerFactory? playerFactory,
     JellyfinVideoControllerFactory? videoControllerFactory,
@@ -59,6 +61,7 @@ class JellyfinPlayerController {
   final JellyfinExistingPlaybackStopper? _stopExistingPlayback;
   final JellyfinPlaybackReporter? _playbackReporter;
   final VoidCallback? _onPlaybackStopped;
+  final int Function()? audioSyncPreBufferSeconds;
   final JellyfinLogRedactor _redactor = const JellyfinLogRedactor();
   final JellyfinPlaybackResolver _resolver = const JellyfinPlaybackResolver();
   late final JellyfinPlayerFactory _playerFactory;
@@ -85,6 +88,23 @@ class JellyfinPlayerController {
 
   late final audioDelay = AudioDelaySession(
     apply: (milliseconds) => applyNativeAudioDelay(_player, milliseconds),
+    adjust: (milliseconds, adjustment) {
+      final player = _player;
+      final target = audioSyncPreBufferSeconds?.call() ?? 0;
+      return alignNativeAudioDelay(
+        player,
+        milliseconds,
+        adjustment: AudioDelayAdjustment(
+          isCurrent: () => adjustment.isCurrent() && identical(player, _player),
+          isCancelled: adjustment.isCancelled,
+          report: adjustment.report,
+        ),
+        isLive: false,
+        preBufferSeconds: target,
+        applyOffset: (value) =>
+            applyNativeAudioDelay(player, value, preBufferSeconds: target),
+      );
+    },
   );
 
   Player get player => _player;
@@ -440,6 +460,7 @@ class JellyfinPlayerController {
   }
 
   Future<void> togglePlayPause() async {
+    if (audioDelay.progress.value.phase != AudioDelayPhase.idle) return;
     if (_disposed || !state.value.initialized || state.value.error) return;
     final wasPlaying = state.value.playing;
     await _player.playOrPause();
@@ -448,6 +469,7 @@ class JellyfinPlayerController {
   }
 
   Future<void> seek(Duration position) async {
+    if (audioDelay.progress.value.phase != AudioDelayPhase.idle) return;
     if (_disposed || !state.value.initialized) return;
     final target = Duration(
       milliseconds: position.inMilliseconds.clamp(0, _maxSeekMs),

@@ -2523,4 +2523,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get audioDelayClose => 'Close';
+
+  @override
+  String get audioDelayPicture => 'Picture';
+
+  @override
+  String get audioDelaySound => 'Sound';
+
+  @override
+  String audioDelayEarlierSeconds(String seconds) {
+    return 'Sound $seconds seconds earlier';
+  }
+
+  @override
+  String audioDelayLaterSeconds(String seconds) {
+    return 'Sound $seconds seconds later';
+  }
+
+  @override
+  String get audioDelayNoOffset => 'No timing offset';
+
+  @override
+  String get audioDelayFine => 'Fine adjustment';
+
+  @override
+  String get audioDelayFineDescription =>
+      '±500 ms around your value, in 10 ms steps';
+
+  @override
+  String get audioDelayAligning => 'Aligning picture and sound…';
+
+  @override
+  String audioDelayBuffering(int buffered, int target) {
+    return 'Buffering $buffered / $target seconds…';
+  }
+
+  @override
+  String get audioDelayUnavailable =>
+      'The sound needed for this offset is outside the available playback buffer. Try a smaller offset.';
+
+  @override
+  String get audioDelayTimedOut =>
+      'The buffer did not fill in time. The previous offset was restored.';
+
+  @override
+  String get audioDelayCancel => 'Cancel adjustment';
+
+  @override
+  String get audioDelayCompareOriginal => 'Compare with original';
+
+  @override
+  String get audioDelayUseCorrection => 'Use correction';
+
+  @override
+  String get audioDelayTrackDescription =>
+      'The markers show your selected offset, not an automatic sync measurement.';
 }

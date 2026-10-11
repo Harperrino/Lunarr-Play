@@ -4,5 +4,5 @@ String jellyfinAuthorization({String? deviceId, String? token}) {
   String quoted(String value) => '"${Uri.encodeComponent(value)}"';
   return 'MediaBrowser Client="Lunarr Player", Device="Lunarr Player", '
       '${deviceId == null ? '' : 'DeviceId=${quoted(deviceId)}, '}'
-      'Version="1.0.3-rc.3", Token=${quoted(token ?? '')}';
+      'Version="1.0.3-rc.4", Token=${quoted(token ?? '')}';
 }
