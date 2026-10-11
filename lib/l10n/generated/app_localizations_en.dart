@@ -2525,6 +2525,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get audioDelayClose => 'Close';
 
   @override
+  String audioDelayApplied(int milliseconds) {
+    return 'Applied: $milliseconds ms';
+  }
+
+  @override
+  String get audioDelayApplyHint =>
+      'Choose a value, then press Apply to pause, buffer and align playback.';
+
+  @override
   String get audioDelayPicture => 'Picture';
 
   @override
@@ -2561,6 +2570,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get audioDelayUnavailable =>
       'The sound needed for this offset is outside the available playback buffer. Try a smaller offset.';
+
+  @override
+  String get audioDelayInterrupted =>
+      'Playback changed while applying audio sync. The correction was not applied. Please try again.';
 
   @override
   String get audioDelayTimedOut =>

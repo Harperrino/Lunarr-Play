@@ -4448,6 +4448,18 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get audioDelayClose;
 
+  /// No description provided for @audioDelayApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied: {milliseconds} ms'**
+  String audioDelayApplied(int milliseconds);
+
+  /// No description provided for @audioDelayApplyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a value, then press Apply to pause, buffer and align playback.'**
+  String get audioDelayApplyHint;
+
   /// No description provided for @audioDelayPicture.
   ///
   /// In en, this message translates to:
@@ -4507,6 +4519,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The sound needed for this offset is outside the available playback buffer. Try a smaller offset.'**
   String get audioDelayUnavailable;
+
+  /// No description provided for @audioDelayInterrupted.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback changed while applying audio sync. The correction was not applied. Please try again.'**
+  String get audioDelayInterrupted;
 
   /// No description provided for @audioDelayTimedOut.
   ///

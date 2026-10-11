@@ -95,26 +95,24 @@ Future<void> alignNativeAudioDelay(
 
   Future<void> checkSource() async {
     adjustment.check();
-    if (await native.getProperty('path') != oldPath) {
+    final path = await native.getProperty('path');
+    if (path.isNotEmpty && path != oldPath) {
       throw const AudioDelayAdjustmentException(AudioDelayFailure.superseded);
     }
   }
 
   Future<void> seekHeld() async {
     // media_kit's seek uses keyframe seeking by default; exact is essential here.
+    // audio-pts belongs to the output device: while paused it may still report
+    // the OLD audio clock until resume, even when the seek/decode queues are ready.
+    // Waiting for it to change before resuming would roll back valid offsets.
     await native.command(['seek', '$held', 'absolute+exact']);
     do {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       await checkSource();
       final position = double.tryParse(await native.getProperty('time-pos'));
-      final audio = double.tryParse(await native.getProperty('audio-pts'));
       final seeking = await native.getProperty('seeking') == 'yes';
-      if (!seeking &&
-          position != null &&
-          (position - held).abs() < 0.15 &&
-          // audio-pts is an output clock, not the decode queue's timestamp.
-          // mpv may clear it on a paused seek until the audio output restarts.
-          (audio == null || (audio - (held - seconds)).abs() < 0.4)) {
+      if (!seeking && position != null && (position - held).abs() < 0.15) {
         return;
       }
       if (DateTime.now().isAfter(deadline)) {
@@ -204,6 +202,18 @@ Future<void> alignNativeAudioDelay(
     await checkSource();
     adjustment.report(const AudioDelayProgress(AudioDelayPhase.aligning));
     await seekHeld();
+    await checkSource();
+    // A completed seek must retain the requested setting before we commit it.
+    final activeDelay = double.tryParse(
+      await native.getProperty('audio-delay'),
+    );
+    if (activeDelay == null ||
+        !activeDelay.isFinite ||
+        (activeDelay - seconds).abs() > 0.0005) {
+      throw StateError(
+        'The playback engine did not retain the audio correction.',
+      );
+    }
     // VOD can retrieve old packets from its source, so fill after the exact seek.
     if (!isLive && preBufferSeconds > 0) {
       do {
@@ -240,8 +250,12 @@ Future<void> alignNativeAudioDelay(
   } catch (_) {
     // Sender switches/disposal own the new player state. Never resume them.
     try {
+      final path = adjustment.isCurrent()
+          ? await native.getProperty('path')
+          : null;
       if (adjustment.isCurrent() &&
-          await native.getProperty('path') == oldPath) {
+          path != null &&
+          (path.isEmpty || path == oldPath)) {
         if (changed) {
           for (final entry in temporaryCache.entries) {
             await setChecked(entry.key, entry.value);

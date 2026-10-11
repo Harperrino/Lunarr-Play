@@ -10,6 +10,108 @@ import 'support/localized_test_app.dart';
 
 void main() {
   testWidgets(
+    'all edits and Enter stay local until Apply; Close discards the draft',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1100));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final writes = <int>[];
+      final session = AudioDelaySession(
+        apply: (value) async => writes.add(value),
+      );
+      addTearDown(session.dispose);
+      await session.setMilliseconds(-500);
+      writes.clear();
+      await tester.pumpWidget(
+        LocalizedTestApp(
+          child: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => showAudioDelayDialog(context, session),
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('audio-delay-fine')));
+      await tester.pumpAndSettle();
+      await tester.drag(
+        find.byKey(const ValueKey('audio-delay-slider')),
+        const Offset(80, 0),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Sound later'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('audio-delay-input')),
+        '-12500',
+      );
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(find.text('Sound 12.5 seconds earlier'), findsOneWidget);
+      await tester.tap(find.text('Compare with original'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Use correction'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Reset'));
+      await tester.pumpAndSettle();
+      expect(find.text('Applied: -500 ms'), findsOneWidget);
+      expect(session.value, -500);
+      expect(writes, isEmpty);
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      expect(session.value, -500);
+      expect(writes, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'interrupted correction shows visible feedback instead of silently resetting',
+    (tester) async {
+      final session = AudioDelaySession(
+        apply: (_) async {},
+        adjust: (_, _) async {
+          throw const AudioDelayAdjustmentException(
+            AudioDelayFailure.superseded,
+          );
+        },
+      );
+      addTearDown(session.dispose);
+      await tester.pumpWidget(
+        LocalizedTestApp(
+          child: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => showAudioDelayDialog(context, session),
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('audio-delay-input')),
+        '-15000',
+      );
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      expect(
+        find
+            .text(
+              'Playback changed while applying audio sync. The correction was not applied. Please try again.',
+            )
+            .hitTestable(),
+        findsOneWidget,
+      );
+      expect(session.value, 0);
+    },
+  );
+
+  testWidgets(
     'buffer progress can be cancelled without committing the preview',
     (tester) async {
       final gate = Completer<void>();
@@ -106,12 +208,22 @@ void main() {
       expect(slider.divisions, 100);
       await tester.tap(find.byTooltip('Sound later'));
       await tester.pumpAndSettle();
+      expect(session.value, -15000);
+      expect(find.text('Applied: -15000 ms'), findsOneWidget);
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
       expect(session.value, -14990);
       await tester.tap(find.text('Compare with original'));
       await tester.pumpAndSettle();
-      expect(session.value, 0);
+      expect(session.value, -14990);
       expect(tester.getCenter(sound).dx, tester.getCenter(picture).dx);
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      expect(session.value, 0);
       await tester.tap(find.text('Use correction'));
+      await tester.pumpAndSettle();
+      expect(session.value, 0);
+      await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();
       expect(session.value, -14990);
       await tester.enterText(
@@ -159,8 +271,14 @@ void main() {
     expect(session.value, -150);
     await tester.tap(find.byTooltip('Sound later'));
     await tester.pumpAndSettle();
+    expect(session.value, -150);
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
     expect(session.value, -100);
     await tester.tap(find.text('Reset'));
+    await tester.pumpAndSettle();
+    expect(session.value, -100);
+    await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
     expect(session.value, 0);
     for (final value in [-60000, 60000]) {
@@ -173,6 +291,9 @@ void main() {
       expect(session.value, value);
     }
     await tester.tap(find.text('Reset'));
+    await tester.pumpAndSettle();
+    expect(session.value, 60000);
+    await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const ValueKey('audio-delay-input')),

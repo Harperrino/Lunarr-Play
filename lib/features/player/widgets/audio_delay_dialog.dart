@@ -25,6 +25,7 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
   int _fineAnchor = 0;
   int? _comparison;
   bool _fine = false;
+  final _feedbackKey = GlobalKey();
   bool _busy = false;
   bool _invalid = false;
   bool _failed = false;
@@ -55,7 +56,12 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
   int get _step => _fine ? 10 : AudioDelaySession.stepMs;
 
   void _refresh() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    if (_revision != widget.session.sourceRevision) {
+      _sync();
+    } else {
+      setState(() {});
+    }
   }
 
   void _sync() {
@@ -82,15 +88,28 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
     super.dispose();
   }
 
-  Future<void> _apply(int milliseconds, {bool comparing = false}) async {
+  void _showFeedback() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final feedback = _feedbackKey.currentContext;
+      if (feedback != null) {
+        Scrollable.ensureVisible(
+          feedback,
+          duration: const Duration(milliseconds: 150),
+        );
+      }
+    });
+  }
+
+  Future<void> _apply(int milliseconds) async {
     if (_busy) return;
     setState(() {
       _busy = true;
       _failed = false;
       _failure = null;
       _invalid = false;
-      if (!comparing) _comparison = null;
     });
+    _showFeedback();
     try {
       await widget.session.setMilliseconds(milliseconds);
       _sync();
@@ -98,12 +117,11 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
       if (mounted) {
         setState(() {
           _failure = e.failure;
-          _failed =
-              e.failure != AudioDelayFailure.cancelled &&
-              e.failure != AudioDelayFailure.superseded;
+          _failed = e.failure != AudioDelayFailure.cancelled;
           _comparison = null;
         });
         _sync();
+        _showFeedback();
       }
     } catch (_) {
       if (mounted) {
@@ -112,6 +130,7 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
           _comparison = null;
         });
         _sync();
+        _showFeedback();
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -129,14 +148,29 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
     _apply(value);
   }
 
-  Future<void> _compare() async {
+  void _setPreview(int milliseconds, {bool comparing = false}) {
+    setState(() {
+      _preview = milliseconds.clamp(
+        AudioDelaySession.minimumMs,
+        AudioDelaySession.maximumMs,
+      );
+      _input.text = '$_preview';
+      _invalid = false;
+      _failed = false;
+      if (!comparing) _comparison = null;
+      if (_preview < _minimum || _preview > _maximum) {
+        _fineAnchor = (_preview / 10).round() * 10;
+      }
+    });
+  }
+
+  void _compare() {
     final saved = _comparison;
     if (saved == null) {
-      _comparison = widget.session.value;
-      await _apply(0, comparing: true);
+      _comparison = _preview;
+      _setPreview(0, comparing: true);
     } else {
-      await _apply(saved, comparing: true);
-      if (mounted) setState(() => _comparison = null);
+      _setPreview(saved);
     }
   }
 
@@ -169,6 +203,11 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             Text(l10n.audioDelayValue(_preview)),
+            Text(
+              l10n.audioDelayApplied(widget.session.value),
+              key: const ValueKey('audio-delay-applied-value'),
+            ),
+            Text(l10n.audioDelayApplyHint),
             const SizedBox(height: 12),
             _AudioDelayTracks(milliseconds: _preview),
             const SizedBox(height: 8),
@@ -199,14 +238,12 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
                   l10n.audioDelayValue(value.round()),
               onChanged: _busy
                   ? null
-                  : (value) => setState(() {
-                      _preview = ((value / _step).round() * _step).clamp(
+                  : (value) => _setPreview(
+                      ((value / _step).round() * _step).clamp(
                         _minimum,
                         _maximum,
-                      );
-                      _input.text = '$_preview';
-                    }),
-              onChangeEnd: _busy ? null : (_) => _apply(_preview),
+                      ),
+                    ),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -222,7 +259,7 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
                   tooltip: l10n.audioDelayEarlier,
                   onPressed: _busy || _preview <= AudioDelaySession.minimumMs
                       ? null
-                      : () => _apply(_preview - _step),
+                      : () => _setPreview(_preview - _step),
                   icon: const Icon(Icons.remove_rounded),
                 ),
                 Expanded(
@@ -238,21 +275,36 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
                       suffixText: l10n.audioDelayUnit,
                       errorText: _invalid ? l10n.audioDelayInvalid : null,
                     ),
-                    onSubmitted: (_) => _submit(),
+                    onChanged: (text) {
+                      final value = int.tryParse(text.trim());
+                      if (value == null ||
+                          value < AudioDelaySession.minimumMs ||
+                          value > AudioDelaySession.maximumMs) {
+                        return;
+                      }
+                      setState(() {
+                        _preview = value;
+                        _comparison = null;
+                        _invalid = false;
+                        _failed = false;
+                        if (_preview < _minimum || _preview > _maximum) {
+                          _fineAnchor = (_preview / 10).round() * 10;
+                        }
+                      });
+                    },
                   ),
                 ),
                 IconButton(
                   tooltip: l10n.audioDelayLater,
                   onPressed: _busy || _preview >= AudioDelaySession.maximumMs
                       ? null
-                      : () => _apply(_preview + _step),
+                      : () => _setPreview(_preview + _step),
                   icon: const Icon(Icons.add_rounded),
                 ),
               ],
             ),
             TextButton(
-              onPressed:
-                  _busy || (_comparison == null && widget.session.value == 0)
+              onPressed: _busy || (_comparison == null && _preview == 0)
                   ? null
                   : _compare,
               child: Text(
@@ -274,14 +326,17 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
                     : null,
               ),
               const SizedBox(height: 8),
-              Text(
-                progress.phase == AudioDelayPhase.buffering
-                    ? l10n.audioDelayBuffering(
-                        progress.bufferedSeconds.floor(),
-                        progress.targetSeconds.ceil(),
-                      )
-                    : l10n.audioDelayAligning,
-                key: const ValueKey('audio-delay-status'),
+              Container(
+                key: _feedbackKey,
+                child: Text(
+                  progress.phase == AudioDelayPhase.buffering
+                      ? l10n.audioDelayBuffering(
+                          progress.bufferedSeconds.floor(),
+                          progress.targetSeconds.ceil(),
+                        )
+                      : l10n.audioDelayAligning,
+                  key: const ValueKey('audio-delay-status'),
+                ),
               ),
               TextButton(
                 onPressed: widget.session.cancelAdjustment,
@@ -290,12 +345,17 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
             ],
             if (_failed) ...[
               const SizedBox(height: 12),
-              Text(
-                _failure == AudioDelayFailure.unavailable
-                    ? l10n.audioDelayUnavailable
-                    : _failure == AudioDelayFailure.timeout
-                    ? l10n.audioDelayTimedOut
-                    : l10n.audioDelayFailed,
+              Container(
+                key: _feedbackKey,
+                child: Text(
+                  _failure == AudioDelayFailure.unavailable
+                      ? l10n.audioDelayUnavailable
+                      : _failure == AudioDelayFailure.timeout
+                      ? l10n.audioDelayTimedOut
+                      : _failure == AudioDelayFailure.superseded
+                      ? l10n.audioDelayInterrupted
+                      : l10n.audioDelayFailed,
+                ),
               ),
             ],
           ],
@@ -303,7 +363,7 @@ class _AudioDelayDialogState extends State<_AudioDelayDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _busy ? null : () => _apply(0),
+          onPressed: _busy ? null : () => _setPreview(0),
           child: Text(l10n.audioDelayReset),
         ),
         TextButton(
